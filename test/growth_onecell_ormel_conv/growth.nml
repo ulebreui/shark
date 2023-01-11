@@ -1,0 +1,35 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+static=.true.
+/
+
+&SETUP_PARAMS
+nh_cell=1d10
+tend=5 !kyr
+T0_cloud=10
+/
+
+&MHD_PARAMS
+/
+
+&DUST_PARAMS
+kernel_type=0
+smin     = 5d-7
+scutmin  = 1d-7
+scut     = 250d-7
+smax     = 1.0
+rhograin = 2.3d0
+dust2gas = 0.01d0
+mrn           = 3.5d0
+growth        =.true.
+fragmentation =.false.
+charging=.true.
+eps_threshold=1d-20
+dust_ratio_min=1d-30
+CFL_growth=0.5
+drift_in_growth     = .false.
+turb_in_growth      = .true.
+brownian_in_growth  = .true.
+ambipolar_in_growth = .true.
+/

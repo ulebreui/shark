@@ -1,0 +1,54 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+nr_cloud=1.d0
+nff=1.d0
+rin=0.1d0
+freq_out=500
+stop_at_first_core=.true.
+CFL=0.5
+nrestart=0
+/
+
+&GRAVITY_PARAMS
+sink=.false.
+/
+
+
+&MHD_PARAMS
+/
+
+&SETUP_PARAMS
+M_cloud=1.0d0
+alpha_cloud=0.25d0
+T0_cloud=10.0d0
+gamma=1.66667d0
+ramses_baro=.false.
+more_outputs=.false.
+rho_max_sim=1d-10
+/
+
+&DUST_PARAMS
+dust_distribution='mrn'
+smin     = 5d-7
+scutmin  = 1d-7
+scut     = 250!d-7
+smax     = 0.10d0
+rhograin = 2.3d0
+dust2gas = 0.01d0
+mrn           = 3.5d0
+growth        = .false.
+fragmentation = .false.
+coupled_dust=.false.
+charging=.true.
+eps_threshold=1d-20
+eps_threshold_frag=1d-7
+dust_ratio_min=1d-20
+CFL_growth=0.5d0
+drift_in_growth     = .true.
+turb_in_growth      = .true.
+brownian_in_growth  = .true.
+ambipolar_in_growth = .true.
+slope_mono=3.5d0
+/
+
