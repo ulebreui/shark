@@ -7,7 +7,7 @@ subroutine read_params
   character(len=70):: nmlfile,infile
   integer :: io
   logical::nml_ok
-  namelist/grid_params/nr_cloud,nff,rin,freq_out,stop_at_first_core,static,CFL,nrestart
+  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -38,11 +38,6 @@ subroutine read_params
    else
       print *, 'Dynamics activated'
    endif
-#if GRAVITY>0
-   print *, "Gravity namelist reading  !"
-   call read_gravity_params(13,nmlfile)
-#endif
-   call read_mhd_params(13,nmlfile)
 
 #if NDUST>0
    print *, "Dust namelist reading  !"

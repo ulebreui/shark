@@ -23,7 +23,7 @@ module dust_parameters
 
   real(dp):: rhodust_threshold = 1d-27
   real(dp):: dust_ratio_min    = 1d-11
-  integer:: kernel_type        = 0 !0 = physical, 1= constant, 2 = additive
+  integer :: kernel_type        = 0 !0 = physical, 1= constant, 2 = additive
   
   !Dust distribution
   real(dp)::  smin          = 1d-7    ! Minimum possible dust size 

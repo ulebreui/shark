@@ -9,19 +9,9 @@ subroutine dust(verbose,outputing)
   !We re-compute the primitive variables to compute the dust source terms
   call apply_boundaries(1,uold,ncells,nvar) 
   call ctoprim
-  call compute_B
   !We account for the gas-dust drag
   call dust_drag
   call apply_boundaries(1,uold,ncells,nvar) 
-  !We accound for the dust evolution, ie growth/fragmentation   
-  call ctoprim  
-  if(growth)call dust_growth(verbose)      
-  !call set_uold
-  call apply_boundaries(1,uold,ncells,nvar) 
-
-  !We compute the charge of the dust grains and the values of the resistivities
-  if(charging.and.charging_all_the_time) call charge
-  call apply_boundaries(1,uold,ncells,nvar)  ! Last application of boundaries
   
 end subroutine dust
 
@@ -35,30 +25,7 @@ subroutine predicting_dust(qpred,dq)
   implicit none
   integer :: i,idust,ind_rhod,ind_vd
   real(dp), dimension(1:ncells,1:nvar),intent(inout)  :: qpred,dq
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,idust,ind_rhod,ind_vd)
-  !$OMP DO
-  do idust=1,ndust
-     do i=first_active,last_active
-        ind_rhod = irhod(idust)
-        ind_vd   = ivd(idust)
-        qpred(i,ind_rhod) = qpred(i,ind_rhod)+0.5d0*dt*(-dq(i,ind_rhod)*q(i,ind_vd)-dq(i,ind_vd)*q(i,ind_rhod))/dx_c(i)
-#if SPHERE==1
-        !Spherical geometry source term
-        qpred(i,ind_rhod) = qpred(i,ind_rhod)-dt*q(i,ind_rhod)*q(i,ind_vd)/r_c(i)
-#endif       
-        qpred(i,ind_vd)   = qpred(i,ind_vd)+0.5d0*dt*(-dq(i,ind_vd)*q(i,ind_vd)/dx_c(i))
-#if GRAVITY==1
-        !Gravity source term
-        qpred(i,ind_vd)   = qpred(i,ind_vd)+0.5d0*dt*(-Mc(i)/(r_c(i)**2.+(l_soft/unit_l)**2.))
-#endif
-        !Force source term
-        qpred(i,ind_vd)   = qpred(i,ind_vd)+dt/2.0d0*force(i)
-     end do
-  end do
-  !$OMP END DO
-  !$OMP END PARALLEL
+
 end subroutine predicting_dust
 
 ! Dust drag is computed (implicitely)

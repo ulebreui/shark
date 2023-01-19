@@ -5,37 +5,31 @@ subroutine setup
   implicit none
 
   real(dp) :: rho_cloud,r_cloud,mcloud
-  real(dp) :: rmax
+  real(dp) :: rmax,vol_tot
+  real(dp) :: B_field
 
-  integer :: i,idust
-  
+  integer :: i,idust,imax,ix,iy,icell
+
+
   call allocate_init
-  if(kernel_type==1)list_times=(/0.0d0,10.0d0,100.0d0,1000.0d0,1d4,1d5,1d6/)
-  !if(kernel_type==2)list_times=(/0,2,4,6,8,8,8/)
-  if(kernel_type==2)list_times=(/0,1,2,3,3,3,3/)
-  if(kernel_type==1)list_times=(/0.0d0,1d4,2d4,3d4,3d4,3d4,3d4/)
-  
-  
-  ilist=2
-  tend=maxval(list_times)
- 
-  !initialisation of the hydro variables
-  q=0
-  uold=0
-  unew=0
-#if NDUST>0
-  call distribution_dust(.true.)
-  do i=1,ncells
-        q(i,irho)= 1.0d0
-        q(i,iv)= 0.0d0
-     do idust=1,ndust
-        q(i,irhod(idust))= epsilondust(i,idust)
-     end do
+  call gridinit(box_l)
+  q=0.d0
+  do iy = 1,ny_max
+    do ix = 1,nx_max
+      !print*, icell(ix,iy)
+      !print*, active_cell(icell(ix,iy)),ix,iy
+      q(icell(ix,iy),irho) = rho_l
+      q(icell(ix,iy),iv)   = v_l
+      q(icell(ix,iy),iP)   = P_l
+      if(ix-first_active+1>nx_max/2) then
+          q(icell(ix,iy),irho) = rho_r
+          q(icell(ix,iy),iv)   = v_r
+          q(icell(ix,iy),iP)   = P_r
+      endif
+    end do
   end do
-#endif
   call primtoc
 end subroutine setup
-
 
 
 subroutine write_setup_info(ilun)
@@ -44,9 +38,9 @@ subroutine write_setup_info(ilun)
   use units
   implicit none
   integer :: ilun
-  print *,'time', time 
   write(ilun,*) time
 end subroutine write_setup_info
+
 
 subroutine read_setup_info(ilun)
   use parameters
@@ -54,8 +48,13 @@ subroutine read_setup_info(ilun)
   use units
   implicit none
   integer :: ilun
-
+  real(dp):: info1
+  
+  read(ilun,*) info1
+  time=info1
+  close(ilun)
 end subroutine read_setup_info
+
 
 subroutine read_setup_params(ilun,nmlfile)
   use parameters
@@ -64,12 +63,16 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/list_times
+  namelist/setup_params/box_l,rho_l,rho_r,P_l,P_r,v_l,v_r
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
    read(13,setup_params,IOSTAT=io)
    rewind(13)
+   if (io/=0) then
+      write(*,*) 'Invalid line in the setup namelist'
+      stop
+   end if
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
 
@@ -83,14 +86,8 @@ subroutine read_setup_params(ilun,nmlfile)
    implicit none
    logical :: continue_sim
    !Here you can add flags to kill the simulation
+   if(time>=tend) continue_sim=.false.
 
-   dt=(list_times(ilist)-time)
-   
-   ilist=ilist+1
-   if(time>=tend) then
-      dt=0.0
-      continue_sim=.false.
-   endif
  end subroutine flag_continue
 
  subroutine check_output(icount,iout,outputing,verbose)
@@ -101,11 +98,23 @@ subroutine read_setup_params(ilun,nmlfile)
    integer :: icount,iout
    logical :: outputing,verbose
 
-   
-   outputing=.true.
-   verbose=.true.
-   call output(iout)
-   iout=iout+1
+        !We make an output at a certain frequency rate of for specific values of the density. This can be tuned at will
+     if(icount.eq.freq_out) then
+        print *, "time =",time,' tend = ', tend
+        verbose=.true.
+        outputing=.true.
+        icount=0
+     endif
+
+     if(time.eq.0) outputing=.true.   
+     if(outputing)call output(iout)
+     if(outputing) iout=iout+1
+     if(outputing) print *, "Outputing data "
+     if(outputing) print *, "Total mass is", sum(uold(:,irho))
+     if(outputing) print *, "Total momentum is", sum(uold(:,iv))
+     if(outputing) print *, "Total energy is", sum(uold(:,iP))
+
+     outputing=.false.
 
  end subroutine check_output
 
@@ -114,6 +123,7 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
+  
 end subroutine setup_preloop
 
 subroutine setup_inloop
@@ -121,4 +131,6 @@ subroutine setup_inloop
    use commons
    use units
    implicit none
+   !call output(1)
+   return
 end subroutine setup_inloop

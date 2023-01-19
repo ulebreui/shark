@@ -20,16 +20,17 @@ subroutine courant
   endif
   dt=2d44
  
-  do i = first_active,last_active
-     dt = min(dt,CFL*dx(i)/(cs(i)+abs(q(i,iv))))   
-#if GRAVITY==1     
-     dt = min(dt,CFL*dx(i)/sqrt(Mc(i)/sqrt(r_c(i)**2.+(l_soft/unit_l)**2.)))
-#endif     
+  do i = 1,ncells
+   if(active_cell(i)==1) then
+     dt = min(dt,CFL*dx(i,1)/(sqrt(gamma*q(i,iP)/q(i,irho))+abs(q(i,iv))))    
+     if(ndim==2) dt = min(dt,CFL*dx(i,2)/(sqrt(gamma*q(i,iP)/q(i,irho))+abs(q(i,ivy))))
 #if NDUST>0     
      do idust=1,ndust
-        dt=min(dt,CFL*dx(i)/abs(cs(i)+q(i,ivd(idust))))
+        dt=min(dt,CFL*dx(i,1)/abs(q(i,ivd(idust))))
      end do
 #endif     
+   endif
   end do
-  
+  !print *, 'dt=', dt
+
 end subroutine courant
