@@ -1,0 +1,24 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+freq_out=300
+CFL=0.5
+tend=1.5d0
+gamma=1.66667d0
+/
+
+&SETUP_PARAMS
+rho_dense=2.0d0
+rho_diffuse=1.0d0
+P_dense=4.0d0
+P_diffuse=4.0d0
+v_dense=1.0d0
+v_diffuse=0.0d0
+vy0=0.1d0
+kx=10.0d0
+/
+
+&DUST_PARAMS
+/
+
+
