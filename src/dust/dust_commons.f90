@@ -91,8 +91,9 @@ module dust_commons
 
   integer,  dimension(:),  allocatable     :: irhod
   integer,  dimension(:),  allocatable     :: ivd
-
-  real(dp), dimension(:,:,:),allocatable   :: vdrift_ad, vdrift_hydro, vdrift_brow, vdrift_turb
+#if NY>0
+  integer,  dimension(:),  allocatable     :: ivdy
+#endif
 
   real(dp) :: dt_cfl_dust=1d140
 

@@ -40,7 +40,7 @@ module parameters
 
   ! Variables
   integer,parameter   ::  Ndust       = NDUST  !Number of dust species
-  integer,parameter   ::  nvar        = 2 + ndim + Ndust * 2 !Number of variables
+  integer,parameter   ::  nvar        = 2 + ndim + Ndust * 3 !Number of variables
 
   real(dp),parameter            :: half = 0.5d0
 

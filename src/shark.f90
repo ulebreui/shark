@@ -56,9 +56,6 @@ subroutine time_loop
   continue_sim = .true.
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
-#if NDUST>0  
-  if(charging) call charge
-#endif  
   !Actual time loop, continues until continue_sim=.false.
   call flag_continue(continue_sim)
 

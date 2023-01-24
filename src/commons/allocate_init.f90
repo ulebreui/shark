@@ -60,6 +60,7 @@ subroutine allocate_init
   do idust=1,ndust
      irhod(idust)= 2+ndim+idust
      ivd(idust)  = 2+ndim+ndust+idust
+     ivdy(idust) = 2+ndim+2*ndust+idust
   end do
 #endif
 

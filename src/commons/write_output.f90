@@ -29,7 +29,7 @@ subroutine output(iout)
   do i = 1,ncells
    if(active_cell(i)==1) write(14,*) q(i,irho)*unit_d
   end do
-  close(14)
+  close(14)  
   open(14,file=trim(path) // trim(nchar)//trim('/v.dat'))
   do i = 1,ncells
    if(active_cell(i)==1) write(14,*) q(i,iv)*unit_v
@@ -53,6 +53,29 @@ subroutine output(iout)
   end do
   close(14)
 
+#if NDUST>0
+  open(14,file=trim(path) // trim(nchar)//trim('/rhod.dat'))
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(14,*) q(i,irhod(idust))*unit_d
+   end do
+  end do
+  close(14)
+  open(14,file=trim(path) // trim(nchar)//trim('/vd.dat'))
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(14,*) q(i,ivd(idust))*unit_d
+   end do
+  end do
+  close(14)
+  open(14,file=trim(path) // trim(nchar)//trim('/vdy.dat'))
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(14,*) q(i,ivdy(idust))*unit_d
+   end do
+  end do
+  close(14)
+#endif
  end subroutine output
 
 !===========================================================================

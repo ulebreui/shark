@@ -132,10 +132,8 @@ subroutine allocate_dust
   allocate(psi_old(1:ncells))
   allocate(irhod(1:ndust))
   allocate(ivd(1:ndust))
-  allocate(vdrift_ad(1:ncells,1:ndust,1:ndust))
-  allocate(vdrift_hydro(1:ncells,1:ndust,1:ndust))
-  allocate(vdrift_brow(1:ncells,1:ndust,1:ndust))
-  allocate(vdrift_turb(1:ncells,1:ndust,1:ndust))
+  allocate(ivdy(1:ndust))
+
 
 
   !Size : bin edges
@@ -161,10 +159,6 @@ subroutine allocate_dust
   psi_old=0.0d0
   gamma_d=0.0d0
 
-  vdrift_ad=0.0d0
-  vdrift_hydro=0.0d0
-  vdrift_brow=0.0d0
-  vdrift_turb=0.0d0
   
 end subroutine allocate_dust
 
@@ -284,14 +278,14 @@ subroutine themis_distri
   real(dp),dimension(1:ndust):: distrib_no_norm,distrib_no_norm1
   renorm=0.0d0
   do idust=1,ndust
-     distrib_no_norm(idust)=0.5d0*(aplus(idust)-aminus(idust))*(aplus(idust)**(2)*exp(-(log(aplus(idust)*unit_l/aO_themis)/sigma_themis)**2.0d0)+aminus(idust)**(2)*exp(-(log(aminus(idust)*unit_l/aO_themis)/sigma_themis)**2.0d0))
+     distrib_no_norm(idust)=half*(aplus(idust)-aminus(idust))*(aplus(idust)**(2)*exp(-(log(aplus(idust)*unit_l/aO_themis)/sigma_themis)**2.0d0)+aminus(idust)**(2)*exp(-(log(aminus(idust)*unit_l/aO_themis)/sigma_themis)**2.0d0))
      renorm=renorm+distrib_no_norm(idust)
   end do
   distrib_no_norm=dust2gas*distrib_no_norm/renorm*0.67d0
   renorm=0.0d0
   do idust=1,ndust
-     distrib_no_norm1(idust)=0.5d0*(aplus(idust)-aminus(idust))*(aplus(idust)**(3.0-themis_slope)+aminus(idust)**(3.0-themis_slope))
-     if(aplus(idust)>acut_themis/unit_l) distrib_no_norm1(idust)=  0.5d0*(aplus(idust)-aminus(idust))*(aplus(idust)**(3.0-themis_slope)*exp(-(aplus(idust)-acut_themis/unit_l/(awidthcut_themis/unit_l))**3.0)+aminus(idust)**(3.0-themis_slope)*exp(-(aminus(idust)-acut_themis/unit_l/(awidthcut_themis/unit_l))**3.0))
+     distrib_no_norm1(idust)=half*(aplus(idust)-aminus(idust))*(aplus(idust)**(3.0-themis_slope)+aminus(idust)**(3.0-themis_slope))
+     if(aplus(idust)>acut_themis/unit_l) distrib_no_norm1(idust)=  half*(aplus(idust)-aminus(idust))*(aplus(idust)**(3.0-themis_slope)*exp(-(aplus(idust)-acut_themis/unit_l/(awidthcut_themis/unit_l))**3.0)+aminus(idust)**(3.0-themis_slope)*exp(-(aminus(idust)-acut_themis/unit_l/(awidthcut_themis/unit_l))**3.0))
      renorm=renorm+distrib_no_norm1(idust)
   end do
   distrib_no_norm1=dust2gas*distrib_no_norm1/renorm*0.33d0

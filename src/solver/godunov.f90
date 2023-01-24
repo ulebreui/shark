@@ -12,6 +12,7 @@ subroutine predictor
   ! Initialise to zero
   allocate(dq(1:ncells,1:nvar,1:ndim))
   allocate(qpred(1:ncells,1:nvar))
+
   dq    = 0.0d0
   qr    = 0.0d0
   ql    = 0.0d0
@@ -52,6 +53,10 @@ subroutine calc_slope(qq,dq)
    iymin=2
    iymax=ny_max-1
   endif
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(ivar,ix,iy,idim,ix0,iy0,slope_left,slope_right,minmod)
+  !$OMP DO
     do ix = 2, nx_max-1
     do iy = iymin, iymax
       do ivar = 1,nvar
@@ -65,12 +70,13 @@ subroutine calc_slope(qq,dq)
           minmod = slope_left
           if(abs(slope_right)<abs(slope_left)) minmod = slope_right
           if(slope_right*slope_left<0.0d0) minmod = 0.0d0
-          dq(icell(ix,iy),ivar,idim)=minmod
-        
+          dq(icell(ix,iy),ivar,idim)=minmod  
         end do
       end do 
     end do
   end do
+ !$OMP END DO
+ !$OMP END PARALLEL
 end subroutine calc_slope
 
 ! Predictor step for the gas
@@ -81,7 +87,7 @@ subroutine predicting_gas(qpred,dq)
   use units
   use OMP_LIB
   implicit none
-  integer :: i,ivar,ix,iy,icell,ivv,iuu,iymin,iymax
+  integer :: i,ix,iy,icell,ivv,iuu,iymin,iymax,idust
   real(dp), dimension(1:ncells,1:nvar),intent(inout) :: qpred
   real(dp), dimension(1:ncells,1:nvar,1:ndim),intent(inout) :: dq
   iymin=1
@@ -90,6 +96,10 @@ subroutine predicting_gas(qpred,dq)
    iymin=2
    iymax=ny_max-1
   endif
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,ix,iy,ivv,iuu,idust)
+  !$OMP DO
   do ix = 2, nx_max-1
     do iy = iymin,iymax
       i=icell(ix,iy)
@@ -105,10 +115,23 @@ subroutine predicting_gas(qpred,dq)
         qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,2)*q(i,ivy))
         qpred(i,ivy)  = qpred(i,ivy)  + half*dt*(-dq(i,ivy,2)*q(i,ivy)-dq(i,ivy,1)*q(i,iv)-dq(i,iP,2)/q(i,irho))
         qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,ivy)*dq(i,iP,2)-gamma*q(i,iP)*dq(i,ivy,2))
-      endif 
+      endif
+      !Dust terms
+#if NDUST>0
+      do idust=1,ndust
+        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
+        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivd(idust)))
+        if(ndim==2) then
+          qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
+          qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
+          qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
+        endif
+      end do
+#endif
     end do
   end do
-
+  !$OMP END DO
+  !$OMP END PARALLEL
 end subroutine predicting_gas
 
 subroutine get_left_right_states(qpred,dq)
@@ -117,10 +140,13 @@ subroutine get_left_right_states(qpred,dq)
   use units
   use OMP_LIB
   implicit none
-  integer :: i,ivar,ix,iy,icell,ivv,iuu,ix0,iy0,idim
+  integer :: i,ivar,ix,iy,icell,idim
   real(dp), dimension(1:ncells,1:nvar),intent(in) :: qpred
   real(dp), dimension(1:ncells,1:nvar,1:ndim),intent(in)  :: dq
-
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,ivar,ix,iy,iv,idim)
+  !$OMP DO
       do ix=1,nx_max
         do iy=1,ny_max
           do idim =1,ndim
@@ -132,6 +158,8 @@ subroutine get_left_right_states(qpred,dq)
       end do
     end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
 end subroutine get_left_right_states
 ! This is the Riemmann solver : llf + Godunov scheme
 subroutine add_delta_u
@@ -155,21 +183,36 @@ subroutine add_delta_u
   flux       = 0.0d0
   delta_U    = 0.0d0
   lambda_llf = 0.0d0
-
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(ix,iy,i,il,ivn,idim)
+  !$OMP DO
   do ix=2,nx_max-1 ! -1 is necessary but not problematic since flux are computed on the left interfaces
     do iy=2,ny_max-1
       i  = icell(ix-1,iy)
       il  = icell(ix,iy)
-
       do idim = 1,ndim
         ivn = iv
-        if(idim==2)    i  = icell(ix,iy-1)
+        if(idim==2)    i   = icell(ix,iy-1)
         if(idim==2)    ivn = ivy
-        lambda_llf(i,idim)=max(abs(qr(i,ivn,idim))+sqrt(gamma*qr(i,iP,idim)/qr(i,irho,idim)),abs(ql(il,ivn,idim))+sqrt(gamma*ql(il,iP,idim)/ql(il,irho,idim)))
+        lambda_llf(i,idim) = max(abs(qr(i,ivn,idim))+sqrt(gamma*qr(i,iP,idim)/qr(i,irho,idim)),abs(ql(il,ivn,idim))+sqrt(gamma*ql(il,iP,idim)/ql(il,irho,idim)))
+#if NDUST>0
+        do idust=1,ndust
+          ivn = ivd(idust)
+          if(idim==2)    ivn = ivdy(idust)
+          lambda_llf(i,idim) = max(lambda_llf(i,idim),max(abs(qr(i,ivn,idim)),abs(ql(il,ivn,idim))))
+        end do
+#endif      
       end do
     end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
 
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,ivn,ivt,eleft, eright, vleft, vright, vtleft, vtright, rholeft,rhoright, Pleft,Pright)
+  !$OMP DO
   do ix = 2,nx_max-1 ! -1 is necessary but not problematic since flux are computed on the left interfaces
     do iy = 2,ny_max-1
       do idim = 1,ndim 
@@ -206,27 +249,65 @@ subroutine add_delta_u
         endif
         flux(i,iP,idim)    = half*((eleft+Pleft)*vleft+(eright+Pright)*vright)&
         & + half*lambda_llf(i,idim)*(eright-eleft)
+
+        !Dust fluxes
+#if NDUST>0
+        do idust=1,ndust
+          ivn = ivd(idust)
+          ivt = ivdy(idust)
+          if(idim==2) then
+            i = icell(ix,iy-1)
+            ivn = ivdy(idust)
+            ivt = ivd(idust)
+          endif 
+          rholeft  = ql(il,irhod(idust),idim)
+          rhoright = qr(i,irhod(idust),idim)
+          vleft    = ql(il,ivn,idim)
+          vright   = qr(i,ivn,idim)
+          if(ndim==2) then
+            vtleft   = ql(il,ivt,idim)
+            vtright  = qr(i,ivt,idim)
+          endif
+          flux(i,irhod(idust),idim)  = half  * (rholeft*vleft+rhoright*vright) &
+          & + half*lambda_llf(i,idim)* (rhoright-rholeft)
+          flux(i,ivn,idim)   = half  * (rholeft*vleft**2+rhoright*vright**2)&
+          & + half*lambda_llf(i,idim)* (rhoright*vright-rholeft*vleft)
+          if(ndim==2) then
+            flux(i,ivt,idim)   = half  * (rholeft*vleft*vtleft+rhoright*vright*vtright)&
+            & + half*lambda_llf(i,idim)* (rhoright*vtright-rholeft*vtleft)
+          endif
+        end do
+#endif
+
       end do
     end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
 
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(ivar,ix,iy,il,i)
+  !$OMP DO
   do ix = first_active,last_active
     do iy = first_active_y,last_active_y
       i = icell(ix,iy)
         do ivar = 1,nvar
           !if(active_cell(i)==1) then
             il = icell(ix-1,iy)
-            delta_U(i,ivar)=(flux(i,ivar,1)*surf(i,1)-flux(il,ivar,1)*surf(il,1))/vol(i)*dt
+            delta_U(i,ivar)=(flux(il,ivar,1)*surf(il,1)-flux(i,ivar,1)*surf(i,1))/vol(i)*dt
             if(ndim==2) then
               il = icell(ix,iy-1)
-              delta_U(i,ivar)=delta_U(i,ivar)+(flux(i,ivar,2)*surf(i,2)-flux(il,ivar,2)*surf(il,2))/vol(i)*dt
+              delta_U(i,ivar)=delta_U(i,ivar)+(flux(il,ivar,2)*surf(il,2)-flux(i,ivar,2)*surf(i,2))/vol(i)*dt
             endif
           !endif
         end do
       end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
   !Update state vector 
-  unew=unew-delta_U
+  unew=unew+delta_U
 
   deallocate(lambda_llf)
   deallocate(delta_U)

@@ -50,14 +50,14 @@ subroutine dust_drag
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(pn,rhon,alphak,i,idust)
   !$OMP DO
-  do i=first_active,last_active
+  do i=1,ncells
+   if(active_cell(i)==1) then
+     ! Direction - x
      pn   = uold(i,iv)
      rhon = uold(i,irho)
      do idust=1,ndust
         ! alpha = 1/ts
         alphak(idust) = 1.0d0/(sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i)))
-        if(coupled_dust)  alphak(idust)=1.0d0/(sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*(1d-25/unit_l)/(q(i,irho)*cs(i))) 
-
         pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivd(idust))
         rhon = rhon+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))
      end do
@@ -65,6 +65,20 @@ subroutine dust_drag
         uold(i,ivd(idust)) = q(i,irhod(idust))*(q(i,ivd(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
      end do 
      uold(i,iv) = pn/rhon*uold(i,irho)
+      ! Direction - y
+     pn   = uold(i,ivy)
+     rhon = uold(i,irho)
+     do idust=1,ndust
+        ! alpha = 1/ts
+        alphak(idust) = 1.0d0/(sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i)))
+        pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivdy(idust))
+        rhon = rhon+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))
+     end do
+     do idust = 1,ndust
+        uold(i,ivdy(idust)) = q(i,irhod(idust))*(q(i,ivdy(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
+     end do 
+     uold(i,ivy) = pn/rhon*uold(i,irho)    
+     end if
   end do
   !$OMP END DO
   !$OMP END PARALLEL
