@@ -139,13 +139,13 @@ subroutine add_delta_u
   !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,ivn,ivt,eleft, eright, vleft, vright, vtleft, vtright, rholeft,rhoright, Pleft,Pright)
 
   !$OMP DO
-  do ix=2,nx_max-1 ! -1 is necessary but not problematic since flux are computed on the left interfaces
+  do ix=2,nx_max-1 
     do iy=2,ny_max-1
-      i  = icell(ix-1,iy)
-      il  = icell(ix,iy)
+      il   = icell(ix+1,iy)
+      i  = icell(ix,iy)
       do idim = 1,ndim
         ivn = iv
-        if(idim==2)    i   = icell(ix,iy-1)
+        if(idim==2)    i   = icell(ix,iy+1)
         if(idim==2)    ivn = ivy
         lambda_llf(i,idim) = max(abs(qp(i,ivn,idim))+sqrt(gamma*qp(i,iP,idim)/qp(i,irho,idim)),abs(qm(il,ivn,idim))+sqrt(gamma*qm(il,iP,idim)/qm(il,irho,idim)))
 #if NDUST>0
@@ -163,15 +163,15 @@ subroutine add_delta_u
   !$OMP BARRIER
 
   !$OMP DO
-  do ix = 2,nx_max-1 ! -1 is necessary but not problematic since flux are computed on the left interfaces
+  do ix = 2,nx_max-1 
     do iy = 2,ny_max-1
       do idim = 1,ndim 
-        i  = icell(ix-1,iy)
-        il = icell(ix,iy)
+        il = icell(ix+1,iy)
+        i = icell(ix,iy)
         ivn = iv
         ivt = ivy
         if(idim==2) then
-          i = icell(ix,iy-1)
+          il = icell(ix,iy+1)
           ivn = ivy
           ivt = iv
         endif 
@@ -206,7 +206,7 @@ subroutine add_delta_u
           ivn = ivd(idust)
           ivt = ivdy(idust)
           if(idim==2) then
-            i = icell(ix,iy-1)
+            il = icell(ix,iy+1)
             ivn = ivdy(idust)
             ivt = ivd(idust)
           endif 
@@ -238,11 +238,12 @@ subroutine add_delta_u
   !$OMP DO
   do ix = first_active,last_active
     do iy = first_active_y,last_active_y
-      i = icell(ix,iy)
         do ivar = 1, nvar
+            i  = icell(ix,iy)
             il = icell(ix-1,iy)
             delta_U(i,ivar)=(flux(il,ivar,1)*surf(il,1)-flux(i,ivar,1)*surf(i,1))/vol(i)*dt
             if(ndim==2) then
+              i  = icell(ix,iy)
               il = icell(ix,iy-1)
               delta_U(i,ivar)=delta_U(i,ivar)+(flux(il,ivar,2)*surf(il,2)-flux(i,ivar,2)*surf(i,2))/vol(i)*dt
             endif
