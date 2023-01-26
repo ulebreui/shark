@@ -141,6 +141,10 @@ subroutine ctoprim
   implicit none
   integer :: i,idust
   ! Gas related primitive quantities
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
   do i = 1,ncells
      q(i,irho) = uold(i,irho)
      q(i,iv)   = uold(i,iv)/uold(i,irho)
@@ -149,16 +153,24 @@ subroutine ctoprim
      if(ndim==2)q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
      cs(i)     = sqrt(gamma*q(i,iP)/q(i,irho))
   end do
+  !!$OMP END DO
+  !!$OMP END PARALLEL
 
 #if NDUST>0
   ! Dust related primitive quantities
-  do idust = 1,ndust
-     do i  = 1,ncells
+  !!$OMP PARALLEL &
+  !!$OMP DEFAULT(SHARED)&
+  !!$OMP PRIVATE(i,idust)
+  !$OMP DO
+  do i  = 1,ncells
+    do idust = 1,ndust
         q(i,irhod(idust)) = uold(i,irhod(idust))
         q(i,ivd(idust))   = uold(i,ivd(idust))/uold(i,irhod(idust))
         q(i,ivdy(idust))  = uold(i,ivdy(idust))/uold(i,irhod(idust))
      end do
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
 #endif  
 #if NDUST>0  
   call distribution_dust(.false.)
@@ -181,6 +193,10 @@ subroutine primtoc
   use units
   implicit none
   integer :: i,idust
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
   do i = 1 ,ncells
      uold(i,irho) = q(i,irho)
      uold(i,iv)   = q(i,irho)*q(i,iv)
@@ -195,6 +211,8 @@ subroutine primtoc
      end do
 #endif     
   end do
+  !$OMP END DO
+  !$OMP END PARALLEL
 end subroutine primtoc
 
 

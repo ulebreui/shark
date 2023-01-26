@@ -24,7 +24,7 @@ subroutine setup
       q(icell(ix,iy),iv)    = v_dense
       call get_vxturb(vy0,perturbation)
       !print *, perturbation
-      q(icell(ix,iy),ivy)   = vy0*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l)
+      q(icell(ix,iy),ivy)   = vy0*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l) + perturbation
       q(icell(ix,iy),iP)    = P_dense   
       if((abs(yy)>box_l/4.0d0)) then
           q(icell(ix,iy),irho) = rho_diffuse
@@ -39,7 +39,7 @@ subroutine setup
      do idust=1,ndust
         epsilondust(i,idust) = 0.01 
         q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
-        sdust(i,idust) = 1d-5
+        sdust(i,idust) = 1.0d0
      end do
   end do
 #endif

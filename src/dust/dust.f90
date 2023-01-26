@@ -16,18 +16,6 @@ subroutine dust(verbose,outputing)
 end subroutine dust
 
 
-! This routine performs the dust predictor step
-subroutine predicting_dust(qpred,dq)
-  use parameters
-  use commons
-  use units
-  use OMP_LIB
-  implicit none
-  integer :: i,idust,ind_rhod,ind_vd
-  real(dp), dimension(1:ncells,1:nvar),intent(inout)  :: qpred,dq
-
-end subroutine predicting_dust
-
 ! Dust drag is computed (implicitely)
 subroutine dust_drag
   

@@ -20,7 +20,7 @@ subroutine courant
      return
   endif
   dt=2d44
- 
+
   do i = 1,ncells
    if(active_cell(i)==1) then
       if(ndim==1)vmax=abs(q(i,iv))
@@ -39,6 +39,7 @@ subroutine courant
 #endif     
    endif
   end do
+
   print *, 'time = ', time, 'dt = ', dt
 
 end subroutine courant

@@ -4,9 +4,9 @@ module hydro_commons
   real(dp), dimension(:,:), allocatable :: uold
   real(dp), dimension(:),   allocatable :: cs
   real(dp), dimension(:,:), allocatable :: q
-  real(dp), dimension(:,:,:), allocatable :: ql
-  real(dp), dimension(:,:,:), allocatable :: qr
-  real(dp), dimension(:),   allocatable :: force
+  real(dp), dimension(:,:,:), allocatable :: qm
+  real(dp), dimension(:,:,:), allocatable :: qp
+  real(dp), dimension(:,:),   allocatable :: force
 
   real(dp) :: gamma       = 1.66667d0   ! Adiabatic index
 

@@ -24,11 +24,11 @@ subroutine allocate_init
   allocate(unew(1:ncells,1:nvar))
   allocate(uold(1:ncells,1:nvar))
   allocate(q(1:ncells,1:nvar))
-  allocate(ql(1:ncells,1:nvar,1:ndim))
-  allocate(qr(1:ncells,1:nvar,1:ndim))
+  allocate(qm(1:ncells,1:nvar,1:ndim))
+  allocate(qp(1:ncells,1:nvar,1:ndim))
 
   ! Force on the gas
-  allocate(force(1:ncells))
+  allocate(force(1:ncells,1:ndim))
   allocate(cs(1:ncells))
 
 #if NDUST>0
@@ -39,8 +39,8 @@ subroutine allocate_init
   unew   = 0.0d0
   uold   = 0.0d0
   q      = 0.0d0
-  ql     = 0.0d0
-  qr     = 0.0d0
+  qm     = 0.0d0
+  qp     = 0.0d0
   force  = 0.0d0
   cs     = 0.0d0
   !Indexation of variables /!\ Every index must be unique but the order does not matter
@@ -54,15 +54,16 @@ subroutine allocate_init
   print *,'iv   =', iv
   if(ndim==2)print *,'ivy  =', ivy
   print *,'iP   =', iP
-  print *, 'Nvar =', nvar
 
 #if NDUST>0  
   do idust=1,ndust
-     irhod(idust)= 2+ndim+idust
-     ivd(idust)  = 2+ndim+ndust+idust
-     ivdy(idust) = 2+ndim+2*ndust+idust
+    print *,'idust   =', idust, 'irhod = ',2+ndim+idust, ' ivd = ', 2+ndim+ndust+idust,' ivdy = ',  2+ndim+2*ndust+idust
+    irhod(idust)= 2+ndim+idust
+    ivd(idust)  = 2+ndim+ndust+idust
+    ivdy(idust) = 2+ndim+2*ndust+idust
   end do
 #endif
+  print *, 'Nvar =', nvar
 
 
 end subroutine allocate_init
