@@ -9,8 +9,8 @@ NGHOST=2
 
 #Number of dust species
 NDUST=0
-#Spherical geometry (0 == Cartesian)
-SPHERE=0
+#Geometry (0 == Cartesian,1 == disk - mid plane)
+GEOM=0
 #Number of zones
 NX=128 # In X direction
 NY=1   # In Y direction
@@ -22,7 +22,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = collapse_spher
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DSPHERE=$(SPHERE) -DOPENMP=$(OPENMP) -DNGHOST=$(NGHOST)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DNGHOST=$(NGHOST)
 
 #############################################################################
 # Fortran compiler options and directives

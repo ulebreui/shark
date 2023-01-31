@@ -12,5 +12,4 @@ module units
     real(dp),parameter :: unit_m = 1.0d0
     real(dp),parameter :: unit_v = 1.0d0
     real(dp),parameter :: unit_nH= 1.0d0
-    real(dp),parameter :: unit_B =1./(4.d0*pi*unit_d*(unit_v)**2)
 end module units

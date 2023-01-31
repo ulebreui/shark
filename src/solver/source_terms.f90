@@ -29,7 +29,7 @@ subroutine Source_terms
   !Update state vector
   unew=unew+S_U
   deallocate(S_U)
-  !call kick
+  call kick
   
 end subroutine Source_terms
 
@@ -41,5 +41,10 @@ subroutine kick
   use units
   implicit none
   integer :: i,idust
-  
+  do i=1,ncells
+    if(active_cell(i)==1) then
+    unew(i,iv)=unew(i,iv) + q(i,irho)*dt*force(i,1)
+    if(ndim==2) unew(i,ivy)=unew(i,ivy) + q(i,irho)*dt*force(i,2)
+    endif
+  end do
 end subroutine kick

@@ -7,7 +7,7 @@ subroutine predictor
   implicit none
   integer :: i,ix,iy,icell,ivv,iuu,iymin,iymax,idust
   integer :: ivar,idim,ix0,iy0
-  real(dp) :: slope_left,slope_right,minmod
+  real(dp) :: slope_left,slope_right,slope_lim
   real(dp), dimension(:,:,:),allocatable :: dq
   real(dp), dimension(:,:)  ,allocatable :: qpred
   if(static) return
@@ -34,7 +34,7 @@ subroutine predictor
   qpred = q
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,ivar,ix,iy,idim,ix0,iy0,slope_left,slope_right,minmod,ivv,iuu,idust)
+  !$OMP PRIVATE(i,ivar,ix,iy,idim,ix0,iy0,slope_left,slope_right,slope_lim,ivv,iuu,idust)
   !$OMP DO
     do ix = 2, nx_max-1
     do iy = iymin, iymax
@@ -46,10 +46,10 @@ subroutine predictor
           if(idim==2) iy0=1
           slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-ix0,iy-iy0),ivar))/(dx(icell(ix,iy),idim)+dx(icell(ix-ix0,iy-iy0),idim))
           slope_right = 2.0d0*(q(icell(ix+ix0,iy+iy0),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+ix0,iy+iy0),idim)+dx(icell(ix,iy),idim))
-          minmod = slope_left
-          if(abs(slope_right)<abs(slope_left)) minmod = slope_right
-          if(slope_right*slope_left<0.0d0) minmod = 0.0d0
-          dq(icell(ix,iy),ivar,idim)=minmod  
+          slope_lim = slope_left
+          if(abs(slope_right)<abs(slope_left)) slope_lim = slope_right
+          if(slope_right*slope_left<0.0d0) slope_lim = 0.0d0
+          dq(icell(ix,iy),ivar,idim)=slope_lim  
         end do
       end do 
     end do
@@ -120,54 +120,33 @@ subroutine add_delta_u
 
   implicit none
   integer :: i,idust,ivar,ix,iy,il,ily,icell,idim,ivn,ivt
-  real(dp), dimension(:,:)  , allocatable  :: lambda_llf
+
   real(dp), dimension(:,:)  , allocatable  :: delta_U
   real(dp), dimension(:,:,:), allocatable  :: flux
-  real(dp) :: eleft, eright, vleft, vright, vtleft, vtright, rholeft,rhoright,Pleft,Pright
+  real(dp), dimension(1:nvar) :: flux_left,qleft,flux_right,qright,uleft,uright,lambda_llf,ustar,qstar,fstar,qstarleft,qstarright
+
+  real(dp) :: S_left,S_right,hllc_l,hllc_r,r_o,u_o,P_o,e_o
   if(static) return
 
   !Initialisation of the flux,lambda_llf and delta U: they must be allocatable for 2D simus with h-res
-  allocate(lambda_llf(1:ncells,1:ndim))
+
+
   allocate(delta_U(1:ncells,1:nvar))
   allocate(flux(1:ncells,1:nvar,1:ndim))
   flux       = 0.0d0
   delta_U    = 0.0d0
-  lambda_llf = 0.0d0
+
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
 
-  !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,ivn,ivt,eleft, eright, vleft, vright, vtleft, vtright, rholeft,rhoright, Pleft,Pright)
-
-  !$OMP DO
-  do ix=2,nx_max-1 
-    do iy=2,ny_max-1
-      il   = icell(ix+1,iy)
-      i  = icell(ix,iy)
-      do idim = 1,ndim
-        ivn = iv
-        if(idim==2)    i   = icell(ix,iy+1)
-        if(idim==2)    ivn = ivy
-        lambda_llf(i,idim) = max(abs(qp(i,ivn,idim))+sqrt(gamma*qp(i,iP,idim)/qp(i,irho,idim)),abs(qm(il,ivn,idim))+sqrt(gamma*qm(il,iP,idim)/qm(il,irho,idim)))
-#if NDUST>0
-        do idust=1,ndust
-          ivn = ivd(idust)
-          if(idim==2)    ivn = ivdy(idust)
-          lambda_llf(i,idim) = max(lambda_llf(i,idim),max(abs(qp(i,ivn,idim)),abs(qm(il,ivn,idim))))
-        end do
-#endif      
-      end do
-    end do
-  end do
-  !$OMP END DO
-
-  !$OMP BARRIER
+  !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,ivn,ivt,lambda_llf,flux_left,flux_right,uleft,uright,qleft,qright,S_right,S_left,hllc_r,hllc_l,qstarleft,qstarright,r_o,u_o,P_o,e_o,qstar)
 
   !$OMP DO
   do ix = 2,nx_max-1 
     do iy = 2,ny_max-1
       do idim = 1,ndim 
         il = icell(ix+1,iy)
-        i = icell(ix,iy)
+        i  = icell(ix,iy)
         ivn = iv
         ivt = ivy
         if(idim==2) then
@@ -175,59 +154,244 @@ subroutine add_delta_u
           ivn = ivy
           ivt = iv
         endif 
-        rhoright  = qm(il,irho,idim)
-        rholeft   = qp(i,irho,idim)
-        vright    = qm(il,ivn,idim)
-        vleft     = qp(i,ivn,idim)
-        Pright    = qm(il,iP,idim)
-        Pleft     = qp(i,iP,idim)
-        eleft    = Pleft /(gamma-1.d0) + half*rholeft*vleft**2.
-        eright   = Pright/(gamma-1.d0) + half*rhoright*vright**2.
-        if(ndim==2) then
-          vtright   = qm(il,ivt,idim)
-          vtleft  = qp(i,ivt,idim)
-          eleft    = eleft   + half*rholeft *vtleft**2.
-          eright   = eright  + half*rhoright*vtright**2.
-        endif
-        flux(i,irho,idim)  = half  * (rholeft*vleft+rhoright*vright) &
-        & - half*lambda_llf(il,idim)* (rhoright-rholeft)
-        flux(i,ivn,idim)   = half  * (rholeft*vleft**2+Pleft+rhoright*vright**2+Pright)&
-        & - half*lambda_llf(il,idim)* (rhoright*vright-rholeft*vleft)
-        if(ndim==2) then
-          flux(i,ivt,idim)   = half  * (rholeft*vleft*vtleft+rhoright*vright*vtright)&
-          & - half*lambda_llf(il,idim)* (rhoright*vtright-rholeft*vtleft)
-        endif
-        flux(i,iP,idim)    = half*((eleft+Pleft)*vleft+(eright+Pright)*vright)&
-        & - half*lambda_llf(il,idim)*(eright-eleft)
 
-        !Dust fluxes
+        flux_left  = 0.0d0
+        flux_right = 0.0d0
+        uleft      = 0.0d0
+        uright     = 0.0d0
+        qleft      = 0.0d0
+        qright     = 0.0d0
+        lambda_llf = 0.0d0
+        S_right    = 0.0d0
+        S_left     = 0.0d0
+
+        if(solver==2) then
+          qstar      = 0.0d0
+          qstarleft  = 0.0d0
+          qstarright = 0.0d0
+        endif
+        
+        !Density
+        qright(irho)  = qm(il,irho,idim) !rho
+        qleft(irho)   = qp(i,irho,idim)
+
+        uright(irho)  = qm(il,irho,idim)
+        uleft(irho)   = qp(i,irho,idim)
+
+        flux_right(irho) = qm(il,irho,idim) * qm(il,ivn,idim) ! rho u
+        flux_left(irho)  = qp(i,irho,idim)  * qp(i,ivn,idim)
+
+        !Momentum
+        qright(ivn)   = qm(il,ivn,idim) ! v
+        qleft(ivn)    = qp(i,ivn,idim)
+
+        uright(ivn)   = qm(il,irho,idim) * qm(il,ivn,idim)  ! rho u
+        uleft(ivn)    = qp(i,irho,idim)  * qp(i,ivn,idim)  
+        
+        flux_right(ivn) = qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivn,idim) + qm(il,iP,idim) ! rho u u + P
+        flux_left(ivn)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivn,idim)  + qp(i,iP,idim)
+
+
+        if(ndim==2) then
+          !Transverse momentum
+          qright(ivt)     = qm(il,ivt,idim) ! v
+          qleft(ivt)      = qp(i,ivt,idim)
+
+          uright(ivt)     = qm(il,irho,idim) * qm(il,ivt,idim) ! rho v
+          uleft(ivt)      = qp(i,irho,idim)  * qp(i,ivt,idim) 
+        
+          flux_right(ivt) = qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivt,idim) ! rho u v
+          flux_left(ivt)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivt,idim) 
+        endif
+
+        !Energy
+
+        qright(iP)    = qm(il,iP,idim) ! P
+        qleft(iP)     = qp(i,iP,idim)
+
+        uright(iP)    = qm(il,iP,idim)/(gamma-1.d0) + half * qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivn,idim)! E
+        uleft(iP)     = qp(i,iP,idim) /(gamma-1.d0) + half * qp(i,irho,idim)  * qp(i,ivn,idim)  *  qp(i,ivn,idim)
+
+        if(ndim==2) then
+          uright(iP)   = uright(iP)  + half * qm(il,irho,idim) * qm(il,ivt,idim) * qm(il,ivt,idim)
+          uleft(iP)    = uleft(iP)   + half * qp(i,irho,idim)  * qp(i,ivt,idim)  * qp(i,ivt,idim)
+        endif
+
+        flux_right(iP) = (uright(iP)+qright(iP)) * qright(ivn) ! (E+P) v
+        flux_left(iP)  = (uleft(iP) +qleft(iP))  * qleft(ivn)
+
 #if NDUST>0
         do idust=1,ndust
           ivn = ivd(idust)
           ivt = ivdy(idust)
           if(idim==2) then
-            il = icell(ix,iy+1)
             ivn = ivdy(idust)
             ivt = ivd(idust)
           endif 
-          rhoright  = qm(il,irhod(idust),idim)
-          rholeft   = qp(i,irhod(idust),idim)
-          vright    = qm(il,ivn,idim)
-          vleft     = qp(i,ivn,idim)
+          !Dust density
+          qright(irhod(idust))  = qm(il,irhod(idust),idim)
+          qleft(irhod(idust))   = qp(i,irhod(idust),idim)
+
+          uright(irhod(idust))  = qm(il,irhod(idust),idim)
+          uleft(irhod(idust))   = qp(i,irhod(idust),idim)
+
+          flux_right(irhod(idust))=qm(il,irhod(idust),idim) * qm(il,ivn,idim)
+          flux_left(irhod(idust)) =qp(i,irhod(idust),idim)  * qp(i,ivn,idim)
+
+          !Dust momentum
+          qright(ivn)    = qm(il,ivn,idim)
+          qleft(ivn)     = qp(i,ivn,idim)
+
+          uright(ivn)    = qm(il,irhod(idust),idim) * qm(il,ivn,idim)
+          uleft(ivn)     = qp(i,irhod(idust),idim)  * qp(i,ivn,idim)
+
+          flux_right(ivn)= qm(il,irhod(idust),idim) * qm(il,ivn,idim)**2
+          flux_left(ivn) = qp(i,irhod(idust),idim)  * qp(i,ivn,idim)**2
+
+
           if(ndim==2) then
-            vtright   = qm(il,ivt,idim)
-            vtleft    = qp(i,ivt,idim)
-          endif
-          flux(i,irhod(idust),idim)  = half  * (rholeft*vleft+rhoright*vright) &
-          & - half*lambda_llf(il,idim)* (rhoright-rholeft)
-          flux(i,ivn,idim)   = half  * (rholeft*vleft**2+rhoright*vright**2)&
-          & - half*lambda_llf(il,idim)* (rhoright*vright-rholeft*vleft)
-          if(ndim==2) then
-            flux(i,ivt,idim)   = half  * (rholeft*vleft*vtleft+rhoright*vright*vtright)&
-            & - half*lambda_llf(il,idim)* (rhoright*vtright-rholeft*vtleft)
+          !Dust transverse momentum
+            qright(ivt)    = qm(il,ivt,idim)
+            qleft(ivt)     = qp(i,ivt,idim)
+
+            uright(ivt)    = qm(il,ivt,idim)* qm(il,irhod(idust),idim)
+            uleft(ivt)     = qp(i,ivt,idim) * qp(i,irhod(idust),idim)
+
+            flux_right(ivt)= qm(il,irhod(idust),idim)*qm(il,ivn,idim)*qm(il,ivt,idim)
+            flux_left(ivt) = qp(i,irhod(idust),idim)*qp(i,ivn,idim)*qp(i,ivt,idim)
           endif
         end do
 #endif
+        if(solver==0) then ! LLF
+        ivn = iv
+        ivt = ivy
+        if(idim==2) then
+          ivn = ivy
+          ivt = iv
+        endif 
+          lambda_llf = max(abs(qleft(ivn))+sqrt(gamma*qleft(iP)/qleft(irho)),abs(qright(ivn))+sqrt(gamma*qright(iP)/qright(irho)))
+#if NDUST>0
+          do idust=1,ndust
+            ivn = ivd(idust)
+            if(idim==2) then
+              ivn = ivdy(idust)
+            endif 
+            lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
+            lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
+            if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
+          end do
+#endif  
+        do ivar=1,nvar
+              flux(i,ivar,idim)  = half  * (flux_left(ivar)+flux_right(ivar))-half*lambda_llf(ivar)* (uright(ivar)-uleft(ivar))
+        end do
+
+        elseif(solver==1) then ! HLL
+          ivn = iv
+          ivt = ivy
+          if(idim==2) then
+            ivn = ivy
+            ivt = iv
+          endif 
+          S_left  = min(min(qleft(ivn),qright(ivn))-max(sqrt(gamma*qleft(iP)/qleft(irho)),sqrt(gamma*qright(iP)/qright(irho))),0.0d0)
+          S_right = max(max(qleft(ivn),qright(ivn))+max(sqrt(gamma*qleft(iP)/qleft(irho)),sqrt(gamma*qright(iP)/qright(irho))),0.0d0)
+#if NDUST>0
+          do idust=1,ndust
+            ivn = ivd(idust)
+            if(idim==2) then
+              ivn = ivdy(idust)
+            endif 
+            lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
+            lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
+            if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))            
+          end do
+#endif  
+          do ivar = 1,iP
+              flux(i,ivar,idim)  = (S_right*flux_left(ivar)-S_left*flux_right(ivar)+S_right*S_left*(uright(ivar)-uleft(ivar)))/(S_right-S_left)
+          end do
+
+#if NDUST>0
+          do idust=1,ndust
+            flux(i,irhod(idust),idim)  = half  * (flux_left(irhod(idust))+flux_right(irhod(idust)))-half*lambda_llf(irhod(idust))* (uright(irhod(idust))-uleft(irhod(idust)))
+            flux(i,ivd(idust),idim)    = half  * (flux_left(ivd(idust))+flux_right(ivd(idust)))-half*lambda_llf(ivd(idust))* (uright(ivd(idust))-uleft(ivd(idust)))
+            if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+        enddo
+#endif            
+
+        elseif(solver==2) then ! Hllc, largely inspired from the RAMSES solver
+          ivn = iv
+          ivt = ivy
+          if(idim==2) then
+            ivn = ivy
+            ivt = iv
+          endif 
+          S_left  = min(min(qleft(ivn),qright(ivn))-max(sqrt(gamma*qleft(iP)/qleft(irho)),sqrt(gamma*qright(iP)/qright(irho))),0.0d0)
+          S_right = max(max(qleft(ivn),qright(ivn))+max(sqrt(gamma*qleft(iP)/qleft(irho)),sqrt(gamma*qright(iP)/qright(irho))),0.0d0) 
+
+          ! Compute lagrangian sound speed
+          hllc_l = qleft(irho)*(qleft(ivn)-S_left)
+          hllc_r = qright(irho)*(S_right-qright(ivn))
+
+          qstar(ivn) = (hllc_r*qright(ivn)   +hllc_l*qleft(ivn)   +  (qleft(iP)-qright(iP)))/(hllc_r+hllc_l)
+          qstar(iP)  = (hllc_r*qleft(iP)+hllc_l*qright(iP)+hllc_l*hllc_r*(qleft(ivn)-qright(ivn)))/(hllc_r+hllc_l)
+          ! Left star region variables
+          qstarleft(irho)=qleft(irho)*(S_left-qleft(ivn))/(S_left-qstar(ivn))
+          qstarleft(iP)=((S_left-qleft(ivn))*uleft(iP)-qleft(iP)*qleft(ivn)+qstar(iP)*qstar(ivn))/(S_left-qstar(ivn))
+          ! Right star region variables
+          qstarright(irho)=qright(irho)*(S_right-qright(ivn))/(S_right-qstar(ivn))
+          qstarright(iP)=((S_right-qright(ivn))*uright(iP)-qright(iP)*qright(ivn)+qstar(iP)*qstar(ivn))/(S_right-qstar(ivn))
+
+        ! Sample the solution at x/t=0
+        if(S_left>0.0d0)then
+          r_o=qleft(irho)
+          u_o=qleft(ivn)
+          P_o=qleft(iP)
+          e_o=uleft(iP)
+        else if(qstar(ivn)>0.0d0)then
+          r_o=qstarleft(irho)
+          u_o=qstar(ivn)
+          P_o=qstar(iP)
+          e_o=qstarleft(iP)
+        else if (S_right>0d0)then
+          r_o=qstarright(irho)
+          u_o=qstar(ivn)
+          P_o=qstar(iP)
+          e_o=qstarright(iP)
+        else
+          r_o=qright(irho)
+          u_o=qright(ivn)
+          P_o=qright(iP)
+          e_o=uright(iP)
+          !eo=er
+        end if
+        flux(i,irho,idim) = r_o*u_o
+        flux(i,ivn,idim)  = r_o*u_o*u_o+P_o
+        flux(i,iP,idim)   = (e_o+P_o)*u_o
+        if(ndim==2) then
+          if(qstar(ivn)>0.0d0) then
+            flux(i,ivt,idim)  = r_o*u_o*qleft(ivt)
+          else
+            flux(i,ivt,idim)  = r_o*u_o*qright(ivt)
+          endif
+        endif
+#if NDUST>0
+          do idust=1,ndust
+            ivn = ivd(idust)
+            if(idim==2) then
+              ivn = ivdy(idust)
+            endif 
+            lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
+            lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
+            if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))            
+          end do
+          do idust=1,ndust
+            flux(i,irhod(idust),idim)  = half  * (flux_left(irhod(idust))+flux_right(irhod(idust)))- half*lambda_llf(irhod(idust))* (uright(irhod(idust))-uleft(irhod(idust)))
+            flux(i,ivd(idust),idim)    = half  * (flux_left(ivd(idust))+flux_right(ivd(idust)))    - half*lambda_llf(ivd(idust))* (uright(ivd(idust))-uleft(ivd(idust)))
+            if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+        enddo
+#endif 
+        endif
+
+
       end do
     end do
   end do
@@ -255,7 +419,7 @@ subroutine add_delta_u
   !Update state vector 
   unew=unew+delta_U
 
-  deallocate(lambda_llf)
+
   deallocate(delta_U)
   deallocate(flux)
 end subroutine add_delta_u

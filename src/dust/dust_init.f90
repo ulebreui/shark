@@ -117,19 +117,9 @@ subroutine allocate_dust
   allocate(mplus(1:ndust))
   allocate(mminus(1:ndust))
   allocate(epsilondust(1:ncells,1:ndust))
-  allocate(gamma_d(1:ncells,1:ndust))
   allocate(sdust(1:ncells,1:ndust))
   allocate(mdust(1:ncells,1:ndust))
-  allocate(eta_a(1:ncells))
-  allocate(eta_h(1:ncells))
-  allocate(eta_o(1:ncells))
-  allocate(sigma_o(1:ncells))
-  allocate(sigma_p(1:ncells))
-  allocate(sigma_h(1:ncells))
-  allocate(ni(1:ncells))
-  allocate(ne(1:ncells))
-  allocate(zd(1:ncells,1:ndust))
-  allocate(psi_old(1:ncells))
+
   allocate(irhod(1:ndust))
   allocate(ivd(1:ndust))
   allocate(ivdy(1:ndust))
@@ -147,17 +137,6 @@ subroutine allocate_dust
   epsilondust=0.0d0
   sdust=0.0d0
   mdust=0.0d0
-  eta_a=0.0d0
-  eta_h=0.0d0
-  eta_o=0.0d0
-  sigma_o=0.0d0
-  sigma_p=0.0d0
-  sigma_h=0.0d0
-  ni=0.0d0
-  ne=0.0d0
-  zd=0.0d0
-  psi_old=0.0d0
-  gamma_d=0.0d0
 
   
 end subroutine allocate_dust

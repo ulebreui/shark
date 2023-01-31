@@ -19,14 +19,20 @@ subroutine allocate_init
   dx   = 0.d0
   Surf = 0.d0
   position = 0.0d0
-
+#if GEOM==1
+  allocate(polar_radii(1:ncells))
+  polar_radii=0.0d0 
+  allocate(theta(1:ncells))
+  theta=0.0d0 
+#endif
   ! Variable related quantities
   allocate(unew(1:ncells,1:nvar))
   allocate(uold(1:ncells,1:nvar))
   allocate(q(1:ncells,1:nvar))
   allocate(qm(1:ncells,1:nvar,1:ndim))
   allocate(qp(1:ncells,1:nvar,1:ndim))
-
+  allocate(unit_var(1:nvar))
+  unit_var = 1.0d0
   ! Force on the gas
   allocate(force(1:ncells,1:ndim))
   allocate(cs(1:ncells))

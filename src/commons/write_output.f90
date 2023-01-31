@@ -4,77 +4,81 @@ subroutine output(iout)
   use commons
   use units
   implicit none
-  integer :: i,idust,jdust,iout
+  integer :: i,idust,jdust,iout,ilun=50
   real(dp):: sum_dust,barotrop,B_field
+  real(dp), dimension(1: nx*ny) :: xdp
   character(LEN = 5) :: nchar
-  character(len=80)  :: path, makedirectory
+  character(len=80)  :: path, makedirectory,format_out
 
   path='output_'
-
+  format_out=trim("unformatted")
+  ilun=20
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)
   ! Generic info file
-  open(14,file=trim(path) // trim(nchar)//trim('/info.dat'))
-  write(14,*) ncells-nghost*2
-  call write_setup_info(14)
-  close(14)
-  open(14,file=trim(path) // trim(nchar)//trim('/x.dat'))
+  open(ilun,file=trim(path) // trim(nchar)//trim('/info.dat'))
+  write(ilun,*) nvar
+  write(ilun,*) ncells-nghost*2
+  call write_setup_info(ilun)
+  close(ilun)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(14,*) position(i,1)
+   if(active_cell(i)==1) write(ilun) position(i,1)
   end do
-  close(14)
+  !xdp
+  close(ilun)
 
-  open(14,file=trim(path) // trim(nchar)//trim('/rho.dat'))
+  open(ilun,file=trim(path) // trim(nchar)//trim('/rho'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(14,*) q(i,irho)*unit_d
+   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
   end do
-  close(14)  
-  open(14,file=trim(path) // trim(nchar)//trim('/v.dat'))
+  close(ilun)  
+  open(ilun,file=trim(path) // trim(nchar)//trim('/v'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(14,*) q(i,iv)*unit_v
+   if(active_cell(i)==1) write(ilun) q(i,iv)*unit_v
   end do
-  close(14)
+  close(ilun)
    if(ndim==2) then
-   open(14,file=trim(path) // trim(nchar)//trim('/y.dat'))
+   open(ilun,file=trim(path) // trim(nchar)//trim('/y'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(14,*) position(i,2)
+      if(active_cell(i)==1) write(ilun) position(i,2)
    end do
-   close(14)
-   open(14,file=trim(path) // trim(nchar)//trim('/vy.dat'))
+   close(ilun)
+   open(ilun,file=trim(path) // trim(nchar)//trim('/vy'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(14,*) q(i,ivy)*unit_v
+      if(active_cell(i)==1) write(ilun) q(i,ivy)*unit_v
    end do
-   close(14)
+   close(ilun)
    endif
-  open(14,file=trim(path) // trim(nchar)//trim('/P.dat'))
+  open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(14,*) q(i,iP)*unit_P
+   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
   end do
-  close(14)
+  close(ilun)
 
 #if NDUST>0
-  open(14,file=trim(path) // trim(nchar)//trim('/rhod.dat'))
+  open(ilun,file=trim(path) // trim(nchar)//trim('/rhod'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(14,*) q(i,irhod(idust))*unit_d
+      if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_d
    end do
   end do
-  close(14)
-  open(14,file=trim(path) // trim(nchar)//trim('/vd.dat'))
+  close(ilun)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/vd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(14,*) q(i,ivd(idust))*unit_d
+      if(active_cell(i)==1) write(ilun) q(i,ivd(idust))*unit_v
    end do
   end do
-  close(14)
-  open(14,file=trim(path) // trim(nchar)//trim('/vdy.dat'))
+  close(ilun)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/vdy'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(14,*) q(i,ivdy(idust))*unit_d
+      if(active_cell(i)==1) write(ilun) q(i,ivdy(idust))*unit_v
    end do
   end do
-  close(14)
+  close(ilun)
 #endif
  end subroutine output
 

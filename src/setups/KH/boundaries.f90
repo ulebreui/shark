@@ -22,15 +22,15 @@ subroutine apply_boundaries(who_app,uu,nn,nn2)
    end do
   else
   !icount=0
-  do ix = first_active,last_active ! Zero gradient along y
+  do ix = first_active,last_active 
    do iy = 1,nghost
       !icount=icount+1
-      !uu(icell(ix,iy),:)          = uu(icell(ix,first_active_y),:)
+      !uu(icell(ix,iy),:)          = uu(icell(ix,first_active_y),:) ! Zero gradient along y
       !uu(icell(ix,ny_max+1-iy),:) = uu(icell(ix,last_active_y),:)
       !print *, iy, last_active_y-nghost+iy, ny_max ,'first bound'
       !print *, ny_max+1-iy, first_active_y+nghost-iy, ny_max, '2nd bound'
 
-      uu(icell(ix,iy),:)          = uu(icell(ix,last_active_y-nghost+iy),:)
+      uu(icell(ix,iy),:)          = uu(icell(ix,last_active_y-nghost+iy),:) ! Periodic along y
       uu(icell(ix,ny_max+1-iy),:) = uu(icell(ix,first_active_y+nghost-iy),:)
 
    end do

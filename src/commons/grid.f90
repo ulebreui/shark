@@ -41,22 +41,22 @@ end subroutine get_active_cells
 
 
 !Grid initialisation routine
-subroutine gridinit(rmax)
+subroutine gridinit(rmax_x,rmax_y)
   use parameters
   use commons
   use units
   implicit none
 
-  real(dp):: rmax
+  real(dp):: rmax_x,rmax_y
   integer :: i, ix, iy,icell
 
-  print *,'You are using a linear cartesian grid.'
   print *, 'Number of cells        =', Ncells
   print *, 'Number of active cells =', Ncells_active
-
+#if GEOM==0
+  print *,'You are using a linear cartesian grid.'
   if(ndim==1) then
     do ix = 1, ncells
-      dx (ix,1)  = rmax/float(nx)
+      dx (ix,1)  = rmax_x/float(nx)
       vol(ix)    = dx(ix,1)
       surf(ix,1) = 1
       if(active_cell(ix)==1) position(ix,1)=position(ix-1,1)+dx (ix,1)
@@ -64,16 +64,39 @@ subroutine gridinit(rmax)
   else
       do ix = 1, nx_max
         do iy = 1, ny_max
-          dx  (icell(ix,iy),1) = rmax/float(nx)
-          dx  (icell(ix,iy),2) = rmax/float(ny)
+          dx  (icell(ix,iy),1) = rmax_x/float(nx)
+          dx  (icell(ix,iy),2) = rmax_y/float(ny)
 
           surf(icell(ix,iy),1) = dx(icell(ix,iy),1)
           surf(icell(ix,iy),2) = dx(icell(ix,iy),2)
 
           vol (icell(ix,iy))   = dx(icell(ix,iy),1)*dx(icell(ix,iy),2)
-          position(icell(ix,iy),1)= float(ix-first_active+1) * rmax/float(nx)
-          position(icell(ix,iy),2)= float(iy-first_active_y+1) * rmax/float(ny)
+          position(icell(ix,iy),1)= (float(ix-first_active)+0.5d0) * rmax_x/float(nx)
+          position(icell(ix,iy),2)= (float(iy-first_active_y)+0.5d0) * rmax_y/float(ny)
       end do
     end do
   endif
+#endif
+
+#if GEOM==1 
+! Polar geometry. Only in 2D
+      do ix = 1, nx_max
+        do iy = 1, ny_max
+          dx  (icell(ix,iy),1) = rmax_x/float(nx)
+          dx  (icell(ix,iy),2) = rmax_y/float(ny) ! This becomes theta
+
+          polar_radii(icell(ix,iy)) = (float(ix-first_active)+0.5d0)   * rmax_x/float(nx) ! R 
+          theta(icell(ix,iy))       = (float(iy-first_active_y)+0.5d0) * rmax_y/float(ny! Theta
+
+          surf(icell(ix,iy),1) = dx(icell(ix,iy),1)
+          surf(icell(ix,iy),2) = dx(icell(ix,iy),2)
+
+          vol (icell(ix,iy))   = dx(icell(ix,iy),1)*dx(icell(ix,iy),2)
+
+
+          position(icell(ix,iy),1) =  polar_radii(icell(ix,iy))*cos(theta(icell(ix,iy)))! x
+          position(icell(ix,iy),2) =  polar_radii(icell(ix,iy))*sin(theta(icell(ix,iy)))! y
+      end do
+    end do
+#endif
 end subroutine gridinit

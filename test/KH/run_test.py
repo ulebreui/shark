@@ -7,7 +7,8 @@ import matplotlib as mpl
 import glob
 import lic
 import matplotlib
-
+from scipy.io import FortranFile
+import struct
 def get_lic(x, y, l=30):
     lic_res = lic.lic(data_x=x, data_y=y, contrast=False, length=l)
     #amplify contrast on lic
@@ -19,13 +20,32 @@ def get_lic(x, y, l=30):
     lic_data_rgba[...,3] = lic_data_clip_rescale * 1
     return lic_data_rgba
 
-execute=True
-num_threads=8
+def get_binary_data(fmt="",ninteg=0,nlines=0,nfloat=0,nstrin=0,nquadr=0,nlongi=0,content=None,correction=0):
+    offset = 4*ninteg + 8*(nlines+nfloat+nlongi) + nstrin + nquadr*16 + 4 + correction
+    byte_size = {"i":4,"d":8,"q":8}
+    if len(fmt) == 1:
+        mult = 1
+    else:
+        mult = eval(fmt[0:len(fmt)-1])
+    pack_size = mult*byte_size[fmt[-1]]
+    return struct.unpack(fmt, content[offset:offset+pack_size])
 
 resolution=1024
 NX=resolution
 NY=resolution
-flags="SETUP=KH NDUST=0 SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=1 DEBUG=0"
+
+def read_var(filename,varname,size):
+    f=open(filename+"/"+varname, "rb")
+    dat = np.fromfile(f, dtype=np.float, count=size, sep='')
+    #dat = np.loadtxt(filename+"/"+varname)#
+    return dat
+execute=True
+num_threads=8
+
+
+NDUST=1
+flags="SETUP=KH NDUST="+str(NDUST)+" SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=1 DEBUG=0"
+print (flags)
 #os.system("rm *png *pdf" )
 table=' /Users/ul264359/Documents/codes/dev/shark_master/tables/ormel_brown_no_frag_nh1d5_T10K_100bins.dat'
 if(execute):
@@ -42,13 +62,17 @@ filelist = sorted(glob.glob("output*"))
 number = filelist[-1].split("_")[-1]
 filename= "output_"+ str(number).zfill(5)
 
-x    = np.loadtxt(filename+"/x.dat")
-y    = np.loadtxt(filename+"/y.dat")
 
-rho  = np.loadtxt(filename+"/rho.dat")
-v    = np.loadtxt(filename+"/v.dat")
-vy   = np.loadtxt(filename+"/vy.dat")
-P    = np.loadtxt(filename+"/P.dat")
+x   = read_var(filename,'x',NX*NY)
+y   = read_var(filename,'y',NX*NY)
+v   = read_var(filename,'v',NX*NY)
+vy  = read_var(filename,'vy',NX*NY)
+P   = read_var(filename,'P',NX*NY)
+rho = read_var(filename,'rho',NX*NY)
+if(NDUST>0):
+    rhod  = read_var(filename,'rhod',NX*NY*NDUST)
+    vd    = read_var(filename,'vd',NX*NY*NDUST)
+    vdy   = read_var(filename,'vdy',NX*NY*NDUST)
 
 rho_2D = np.reshape(rho,(NY,NX),order = "C").T
 
@@ -61,7 +85,16 @@ plt.xlabel("x")
 plt.ylabel("y")
 
 plt.show()
+if(NDUST>0):
+    eps_2D = np.reshape(rhod,(NDUST,NY,NX),order = "C").T
+    plt.contourf(xx,yy,eps_2D[:,:,0]/rho_2D,levels=100)
+    plt.colorbar(label='Dust-to-gas ratio')
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.show()
 
+
+"""
 VX = np.reshape(v,(NY,NX),order = "C").T
 VY = np.reshape(vy,(NY,NX),order = "C").T
 
@@ -74,8 +107,5 @@ fig.colorbar(im, label='Density [code unit]')
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 plt.show()
+"""
 
-
-#plt.legend()
-#plt.savefig("density.png")
-#plt.close("all")

@@ -4,32 +4,31 @@ subroutine setup
   use units
   implicit none
 
-  real(dp) :: rho_cloud,r_cloud,mcloud,perturbation
+  real(dp) :: rho_cloud,r_cloud,mcloud,perturbation,cs_eos
   real(dp) :: rmax,vol_tot,xx,yy
   real(dp) :: B_field
 
   integer :: i,idust,imax,ix,iy,icell
 
-
+  tend = tend * 3.15576e13/unit_t ! Convert tend from Myr to time unit
+  print *, 'tend = ', tend
   call allocate_init
-  call gridinit(box_l)
+  call gridinit(box_l,box_l_y)
   q=0.0d0
   do iy = 1,ny_max
     do ix = 1,nx_max
-      !print*, icell(ix,iy)
-      !print*, active_cell(icell(ix,iy)),ix,iy
-      xx=position(icell(ix,iy),1)-half*box_l
-      yy=position(icell(ix,iy),2)-half*box_l
-      q(icell(ix,iy),irho)  = rho_dense
-      q(icell(ix,iy),iv)    = v_dense
-      call get_vxturb(vy0,perturbation)
-      !print *, perturbation
-      q(icell(ix,iy),ivy)   = vy0*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l) + perturbation
-      q(icell(ix,iy),iP)    = P_dense   
-      if((abs(yy)>box_l/4.0d0)) then
-          q(icell(ix,iy),irho) = rho_diffuse
-          q(icell(ix,iy),iv)   = v_diffuse
-          q(icell(ix,iy),iP)   = P_diffuse
+      xx=position(icell(ix,iy),1)-half*box_l  ! Boxlen already in pc
+      yy=position(icell(ix,iy),2)-half*box_l_y
+
+      q(icell(ix,iy),irho)  = rho_dense/unit_d
+      q(icell(ix,iy),iv)    = cs_eos(T_dense)*Mach/unit_v
+      call get_vxturb(vy0*cs_eos(T_dense)*Mach,perturbation)
+      q(icell(ix,iy),ivy)   = (vy0*cs_eos(T_dense)*Mach*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l))/unit_v
+      q(icell(ix,iy),iP)    = rho_dense*cs_eos(T_dense)**2/unit_P  
+      if(((yy/box_l_y)<0.d0)) then
+          q(icell(ix,iy),irho) = rho_diffuse/unit_d
+          q(icell(ix,iy),iv)   = 0.d0
+          q(icell(ix,iy),iP)   = rho_dense*cs_eos(T_dense)**2/unit_P !rho_diffuse*cs_eos(T_diffuse)**2/unit_P 
       endif
     end do
   end do
@@ -37,9 +36,9 @@ subroutine setup
   call distribution_dust(.true.)
   do i=1,ncells
      do idust=1,ndust
-        epsilondust(i,idust) = 0.01 
+        if(ndust==1)  epsilondust(i,idust) = 0.01 
         q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
-        sdust(i,idust) = 1.0d0
+        if(ndust==1)  sdust(i,idust) = scut/unit_l ! 1 micron
      end do
   end do
 #endif
@@ -103,7 +102,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_dense,rho_diffuse,P_dense,P_diffuse,v_dense,v_diffuse,vy0,kx
+  namelist/setup_params/box_l,box_l_y,rho_dense,rho_diffuse,P_dense,P_diffuse,v_dense,v_diffuse,vy0,kx,Mach,T_dense,T_diffuse
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

@@ -169,9 +169,10 @@ subroutine ctoprim
         q(i,ivdy(idust))  = uold(i,ivdy(idust))/uold(i,irhod(idust))
      end do
   end do
+
+#endif  
   !$OMP END DO
   !$OMP END PARALLEL
-#endif  
 #if NDUST>0  
   call distribution_dust(.false.)
 #endif

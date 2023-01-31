@@ -3,7 +3,7 @@ MODULE real_precisions
 IMPLICIT NONE
 ! les differentes variantes de reels disponibles (g95/gfortran)
 INTEGER, PARAMETER :: sp =SELECTED_REAL_KIND(p=6)  ! simple precision 32 bits
-INTEGER, PARAMETER :: dop=SELECTED_REAL_KIND(p=15) ! double precision 64 bits
+INTEGER, PARAMETER :: dop=kind(1.0D0) ! real*8 ! double precision 64 bits
 INTEGER, PARAMETER :: edp=SELECTED_REAL_KIND(p=18) ! extra double precision 80
 END MODULE real_precisions
 

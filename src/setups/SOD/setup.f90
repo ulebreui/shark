@@ -12,7 +12,8 @@ subroutine setup
 
 
   call allocate_init
-  call gridinit(box_l)
+  call gridinit(box_l,box_l_y)
+  tend = tend * 3.15576e13/unit_t ! Convert tend from Myr to time unit
   q=0.d0
   do iy = 1,ny_max
     do ix = 1,nx_max
