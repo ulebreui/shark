@@ -43,6 +43,17 @@ function iyy(i)
 
 end function iyy
 
+!Get the x index of a cell according to position /!\ Works only for regular grid
+function x_to_ix(xx)
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer   :: x_to_ix
+  real(dp)  :: xx
+  x_to_ix = 1 + floor(xx/dx(1,1))
+end function x_to_ix
+
 subroutine get_active_cells
   use parameters
   use commons

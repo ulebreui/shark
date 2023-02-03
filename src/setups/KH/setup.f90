@@ -21,13 +21,13 @@ subroutine setup
       yy=position(icell(ix,iy),2)-half*box_l_y
 
       q(icell(ix,iy),irho)  = rho_dense/unit_d
-      q(icell(ix,iy),iv)    = cs_eos(T_dense)*Mach/unit_v
+      q(icell(ix,iy),iv)    = cs_eos(T_dense)*Mach/unit_v*half
       !call get_vxturb(vy0*cs_eos(T_dense)*Mach,perturbation)
-      q(icell(ix,iy),ivy)   = (vy0*cs_eos(T_dense)*Mach*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l))/unit_v*half
+      q(icell(ix,iy),ivy)   = (vy0*cs_eos(T_dense)*Mach*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l))/unit_v
       q(icell(ix,iy),iP)    = rho_dense*cs_eos(T_dense)**2/unit_P  
       if((abs(yy/box_l_y)<0.25d0)) then
           q(icell(ix,iy),irho) = rho_diffuse/unit_d
-          q(icell(ix,iy),iv)   = -(vy0*cs_eos(T_dense)*Mach*cos(xx*2.0d0*kx*acos(-1.0d0)/box_l))/unit_v*half
+          q(icell(ix,iy),iv)   = -cs_eos(T_dense)*Mach/unit_v*half
           q(icell(ix,iy),iP)   = rho_dense*cs_eos(T_dense)**2/unit_P !rho_diffuse*cs_eos(T_diffuse)**2/unit_P 
       endif
     end do

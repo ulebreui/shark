@@ -13,7 +13,6 @@ subroutine setup
 
   call allocate_init
   call gridinit(box_l,box_l_y)
-  tend = tend * 3.15576e13/unit_t ! Convert tend from Myr to time unit
   q=0.d0
   do iy = 1,ny_max
     do ix = 1,nx_max
@@ -64,7 +63,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_l,rho_r,P_l,P_r,v_l,v_r
+  namelist/setup_params/box_l,box_l_y,rho_l,rho_r,P_l,P_r,v_l,v_r
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
