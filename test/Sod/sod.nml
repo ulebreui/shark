@@ -1,7 +1,7 @@
 !This is a namelist for the SHARK code
 
 &GRID_PARAMS
-freq_out=300
+freq_out=3
 CFL=0.5
 tend=0.245
 gamma=1.66667d0

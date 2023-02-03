@@ -7,7 +7,7 @@ subroutine read_params
   character(len=70):: nmlfile,infile
   integer :: io
   logical::nml_ok
-  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma,solver
+  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"

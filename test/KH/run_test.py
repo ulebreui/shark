@@ -30,7 +30,7 @@ def get_binary_data(fmt="",ninteg=0,nlines=0,nfloat=0,nstrin=0,nquadr=0,nlongi=0
     pack_size = mult*byte_size[fmt[-1]]
     return struct.unpack(fmt, content[offset:offset+pack_size])
 
-resolution=1024
+resolution=128
 NX=resolution
 NY=resolution
 
@@ -43,8 +43,8 @@ execute=True
 num_threads=8
 
 
-NDUST=1
-flags="SETUP=KH NDUST="+str(NDUST)+" SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=1 DEBUG=0"
+NDUST=50
+flags="SETUP=KH NDUST="+str(NDUST)+" SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=1 DEBUG=0 SOLVER=2"
 print (flags)
 #os.system("rm *png *pdf" )
 table=' /Users/ul264359/Documents/codes/dev/shark_master/tables/ormel_brown_no_frag_nh1d5_T10K_100bins.dat'

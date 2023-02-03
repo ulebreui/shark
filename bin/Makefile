@@ -11,6 +11,8 @@ NGHOST=2
 NDUST=0
 #Geometry (0 == Cartesian,1 == disk - mid plane)
 GEOM=0
+#Solver 
+SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
 #Number of zones
 NX=128 # In X direction
 NY=1   # In Y direction
@@ -21,8 +23,8 @@ OPENMP=0
 #Debug option
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
-SETUP = collapse_spher
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DNGHOST=$(NGHOST)
+SETUP = 
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DNGHOST=$(NGHOST)
 
 #############################################################################
 # Fortran compiler options and directives

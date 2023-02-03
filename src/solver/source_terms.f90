@@ -17,12 +17,12 @@ subroutine Source_terms
   !$OMP DO
   do i=1,ncells
     if(active_cell(i)==1) then
-    if(dust_back_reaction) then
-      do idust=1,ndust
-        ts  = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
-        S_U(i,iP) = S_U(i,iP)+dt*(q(i,iv)*(q(i,iv)-q(i,ivd(idust))))/ts
-        if(ndim==2) S_U(i,iP) = S_U(i,iP)+dt*(q(i,ivy)*(q(i,ivy)-q(i,ivdy(idust))))/ts
-      end do
+      if(dust_back_reaction) then
+        do idust = 1,ndust
+          ts  = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
+          S_U(i,iP) = S_U(i,iP)+dt*(q(i,iv)*(q(i,iv)-q(i,ivd(idust))))/ts
+          if(ndim==2) S_U(i,iP) = S_U(i,iP)+dt*(q(i,ivy)*(q(i,ivy)-q(i,ivdy(idust))))/ts
+        end do
       endif
     endif
   end do

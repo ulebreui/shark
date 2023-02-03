@@ -15,7 +15,6 @@ module hydro_commons
   real(dp) :: Omega_shear =  1.0d0
   real(dp) :: q_shear     =  3.0d0/2.0d0
 
-  integer :: solver = 0 ! 0 = lff, 1 = hll
   integer :: irho
   integer :: iv
   integer :: ivy

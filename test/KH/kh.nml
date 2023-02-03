@@ -1,23 +1,22 @@
 !This is a namelist for the SHARK code
 
 &GRID_PARAMS
-freq_out=1000
+freq_out=100
 CFL=0.5
-tend=0.005d0
+tend=1d-3 ! in Myr
 gamma=1.66667d0
-solver=2
 /
 
 &SETUP_PARAMS
-box_l   = 1d-4
-box_l_y = 1d-4
+box_l   = 4.8481e-6 ! 1 au
+box_l_y = 4.8481e-6 ! 1 au
 rho_dense    = 1.0d-18
 rho_diffuse  = 1.0d-18
 T_dense      = 10.0d0
 T_diffuse    = 10.0d0
 Mach      = 0.25
 vy0       = 1d-1
-kx  = 1.0d0
+kx  = 4.0d0
 /
 
 &DUST_PARAMS
@@ -29,6 +28,7 @@ smax     = 0.10d0
 rhograin = 2.3d0
 dust2gas = 0.01d0
 mrn      = 3.5d0
+dust_back_reaction=.true.
 /
 
 

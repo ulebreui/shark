@@ -6,6 +6,7 @@ subroutine predictor
   use OMP_LIB
   implicit none
   integer :: i,ix,iy,icell,ivv,iuu,iymin,iymax,idust
+  integer :: ixx,iyy
   integer :: ivar,idim,ix0,iy0
   real(dp) :: slope_left,slope_right,slope_lim
   real(dp), dimension(:,:,:),allocatable :: dq
@@ -38,24 +39,25 @@ subroutine predictor
 
 
   !$OMP DO
-  do ix = 2, nx_max-1
-    do iy = iymin,iymax
-        do ivar = 1,nvar
-            slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-1,iy),ivar))/(dx(icell(ix,iy),1)+dx(icell(ix-1,iy),1))
-            slope_right = 2.0d0*(q(icell(ix+1,iy),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+1,iy),1)+dx(icell(ix,iy),1))
-            dq(icell(ix,iy),ivar,1) = slope_left
-            if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,1) = slope_right
-            if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,1) = 0.0d0
+  do i=1,ncells
+    if(active_cell_predictor(i)==1) then
+      ix=ixx(i)
+      iy=iyy(i)
+      do ivar = 1,nvar
+        slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-1,iy),ivar))/(dx(icell(ix,iy),1)+dx(icell(ix-1,iy),1))
+        slope_right = 2.0d0*(q(icell(ix+1,iy),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+1,iy),1)+dx(icell(ix,iy),1))
+        dq(icell(ix,iy),ivar,1) = slope_left
+        if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,1) = slope_right
+        if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,1) = 0.0d0
 #if NY>1
-            slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix,iy-1),ivar))/(dx(icell(ix,iy),2)+dx(icell(ix,iy-1),2))
-            slope_right = 2.0d0*(q(icell(ix,iy+1),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix,iy+1),2)+dx(icell(ix,iy),2))
-            dq(icell(ix,iy),ivar,2) = slope_left
-            if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,2) = slope_right
-            if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,2) = 0.0d0
+        slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix,iy-1),ivar))/(dx(icell(ix,iy),2)+dx(icell(ix,iy-1),2))
+        slope_right = 2.0d0*(q(icell(ix,iy+1),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix,iy+1),2)+dx(icell(ix,iy),2))
+        dq(icell(ix,iy),ivar,2) = slope_left
+        if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,2) = slope_right
+        if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,2) = 0.0d0
 #endif            
-        end do
-      i=icell(ix,iy)
-      !print*, ix,iy
+      end do
+
       !First, we take care of the 1D terms
       qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,1)*q(i,iv)-dq(i,iv,1)*q(i,irho))
       qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,1)*q(i,iv)-dq(i,iP,1)/q(i,irho))
@@ -74,13 +76,13 @@ subroutine predictor
         qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
         qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivd(idust)))
 #if NY>1
-          qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
-          qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
-          qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
+        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
+        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
+        qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
 #endif          
       end do
 #endif
-    end do
+    end if
   end do
   !$OMP END DO
 
@@ -88,14 +90,14 @@ subroutine predictor
 
   !$OMP DO
       do i=1,ncells
-           do ivar = 1,nvar
-            qm(i,ivar,1)=qpred(i,ivar)-half*dq(i,ivar,1)*dx(i,1)
-            qp(i,ivar,1)=qpred(i,ivar)+half*dq(i,ivar,1)*dx(i,1)
+        do ivar = 1,nvar
+          qm(i,ivar,1)=qpred(i,ivar)-half*dq(i,ivar,1)*dx(i,1)
+          qp(i,ivar,1)=qpred(i,ivar)+half*dq(i,ivar,1)*dx(i,1)
 #if NY>1    
-            qm(i,ivar,2)=qpred(i,ivar)-half*dq(i,ivar,2)*dx(i,2)        
-            qp(i,ivar,2)=qpred(i,ivar)+half*dq(i,ivar,2)*dx(i,2)
+          qm(i,ivar,2)=qpred(i,ivar)-half*dq(i,ivar,2)*dx(i,2)        
+          qp(i,ivar,2)=qpred(i,ivar)+half*dq(i,ivar,2)*dx(i,2)
 #endif          
-        end do
+      end do
     end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -112,6 +114,7 @@ subroutine add_delta_u
 
   implicit none
   integer :: i,idust,ivar,ix,iy,il,ily,icell,idim,ivn,ivt
+  integer :: ixx,iyy
 
   real(dp), dimension(:,:)  , allocatable  :: delta_U
   real(dp), dimension(:,:,:), allocatable  :: flux
@@ -135,11 +138,12 @@ subroutine add_delta_u
   !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,ivn,ivt,lambda_llf,flux_left,flux_right,uleft,uright,qleft,qright,S_right,S_left,hllc_r,hllc_l,qstarleft,qstarright,r_o,u_o,P_o,e_o,qstar)
 
   !$OMP DO
-  do ix = 2,nx_max-1 
-    do iy = 2,ny_max-1
+  do i = 1, ncells
+    if(active_cell_predictor(i)==1) then
+      ix=ixx(i)
+      iy=iyy(i)
       do idim = 1,ndim 
         il = icell(ix+1,iy)
-        i  = icell(ix,iy)
         ivn = iv
         ivt = ivy
         if(idim==2) then
@@ -157,12 +161,11 @@ subroutine add_delta_u
         lambda_llf = 0.0d0
         S_right    = 0.0d0
         S_left     = 0.0d0
-
-        if(solver==2) then
+#if SOLVER==2
           qstar      = 0.0d0
           qstarleft  = 0.0d0
           qstarright = 0.0d0
-        endif
+#endif
         
         !Density
         qright(irho)  = qm(il,irho,idim) !rho
@@ -238,8 +241,6 @@ subroutine add_delta_u
 
           flux_right(ivn)= qm(il,irhod(idust),idim) * qm(il,ivn,idim)**2
           flux_left(ivn) = qp(i,irhod(idust),idim)  * qp(i,ivn,idim)**2
-
-
 #if NY>1
           !Dust transverse momentum
             qright(ivt)    = qm(il,ivt,idim)
@@ -253,7 +254,9 @@ subroutine add_delta_u
 #endif
         end do
 #endif
-        if(solver==0) then ! LLF
+
+!LLF
+#if SOLVER==0 
         ivn = iv
         ivt = ivy
         if(idim==2) then
@@ -275,8 +278,10 @@ subroutine add_delta_u
         do ivar=1,nvar
               flux(i,ivar,idim)  = half  * (flux_left(ivar)+flux_right(ivar))-half*lambda_llf(ivar)* (uright(ivar)-uleft(ivar))
         end do
+#endif
 
-        elseif(solver==1) then ! HLL
+!HLL
+#if SOLVER==1
           ivn = iv
           ivt = ivy
           if(idim==2) then
@@ -307,8 +312,10 @@ subroutine add_delta_u
             if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
         enddo
 #endif            
+#endif
 
-        elseif(solver==2) then ! Hllc, largely inspired from the RAMSES solver
+!HLLC
+#if SOLVER==2
           ivn = iv
           ivt = ivy
           if(idim==2) then
@@ -380,31 +387,31 @@ subroutine add_delta_u
             if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
         enddo
 #endif 
-        endif
-
+#endif
 
       end do
-    end do
+    end if
   end do
   !$OMP END DO
 
   !$OMP BARRIER
 
   !$OMP DO
-  do ix = first_active,last_active
-    do iy = first_active_y,last_active_y
+  do i=1,ncells
+    if(active_cell(i)==1) then
+        ix = ixx(i)
+        iy = iyy(i)
         do ivar = 1, nvar
-            i  = icell(ix,iy)
             il = icell(ix-1,iy)
             delta_U(i,ivar)=(flux(il,ivar,1)*surf(il,1)-flux(i,ivar,1)*surf(i,1))/vol(i)*dt
             if(ndim==2) then
-              i  = icell(ix,iy)
               il = icell(ix,iy-1)
               delta_U(i,ivar)=delta_U(i,ivar)+(flux(il,ivar,2)*surf(il,2)-flux(i,ivar,2)*surf(i,2))/vol(i)*dt
             endif
         end do
-      end do
-  end do
+      endif
+    end do
+  !end do
   !$OMP END DO
   !$OMP END PARALLEL
   !Update state vector 

@@ -30,7 +30,7 @@ execute=True
 num_threads=8
 NX=128
 NY=128
-flags="SETUP=SOD NDUST=0 SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=0 DEBUG=1"
+flags="SETUP=SOD NDUST=0 SPHERE=0 NX="+str(NX)+" NY="+str(NY)+" NGHOST=2 OPENMP=0 DEBUG=1 SOLVER=2"
 #os.system("rm *png *pdf" )
 table=' /Users/ul264359/Documents/codes/dev/shark_master/tables/ormel_brown_no_frag_nh1d5_T10K_100bins.dat'
 if(execute):

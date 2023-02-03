@@ -39,8 +39,7 @@ function iyy(i)
   integer  :: i
   integer  :: iyy
 
-  iyy (i-1)/nx_max+1
-#endif
+  iyy=(i-1)/nx_max+1
 
 end function iyy
 
@@ -51,23 +50,33 @@ subroutine get_active_cells
   implicit none
   integer  :: ix,iy,icell,ii,icount,ixx,iyy
   allocate(active_cell(1:ncells))
+  allocate(active_cell_predictor(1:ncells))
+
   active_cell=0
+  active_cell_predictor=0
   if(ndim==1) then
   	do ix=1,nx_max
   		if(ix.ge.first_active.and.ix.le.last_active) active_cell(ix)=1
+      if(ix.ge.1 .and.ix.le.nx_max-1) active_cell(ix)=1
+
   	end do
   else
     icount=0
   	do ix=1,nx_max
   		do iy=1,ny_max
   		ii=icell(ix,iy)
-      print *, ii, ix, iy,ixx(ii),iyy(ii)
+      !print *, ii, ix, iy,ixx(ii),iyy(ii)
   		if(ix.ge.first_active.and.ix.le.last_active) then
   			if(iy.ge.first_active_y.and.iy.le.last_active_y) then
   		 	  active_cell(ii)=1
           icount=icount+1
   		 	endif
   		  endif
+        if(ix.ge.1 .and.ix.le.nx_max-1) then
+          if(iy.ge.1 .and.iy.le.ny_max-1) then
+            active_cell_predictor(ii)=1
+          endif
+        endif
   		end do
   	end do	
   endif

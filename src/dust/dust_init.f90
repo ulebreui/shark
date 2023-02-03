@@ -151,8 +151,7 @@ subroutine mrn_distri
   logical  ::initi
   real(dp) :: zeta,eta,m_min,sum_dust,m_sum,massmin,mono1,mono2,normalise
   integer  :: idust,i,jdust,kdust,icutmin,icutmax
-  !real(dp), dimension(1:ndust) :: si,ndi
-  !character(len=200):: tabfile
+
 
   zeta = (smax/smin)**(1.0d0/ndust)
   eta  = zeta**3.
@@ -161,11 +160,7 @@ subroutine mrn_distri
   mono2  = 4./3.*pi*rhograin*scut**3./unit_m
   icutmin = max(1,floor(dlog(mono1/massmin)/log(eta)+1))
   icutmax = min(floor(dlog(mono2/massmin)/log(eta)+1),ndust)
-  !CALL getarg(2,tabfile)
-  !open(11,FILE=trim(tabfile))
-  !do idust=1,ndust
-  !   read(11,*) si(idust),ndi(idust)
-  !end do
+
   do i=1,ncells
      normalise=0.0d0
      do idust=icutmin,icutmax
@@ -173,8 +168,7 @@ subroutine mrn_distri
         epsilondust(i,idust)=(aplus(idust)**(4.0-mrn)-aminus(idust)**(4.0-mrn))
      end do
      epsilondust(i,:)=dust2gas*epsilondust(i,:)/normalise
-     !sdust(i,:)=si/unit_l
-     !epsilondust(i,:)=ndi*4./3.*pi*rhograin*(si)**3./1d-4
+
   end do
 
   epsilondust=max(epsilondust,dust_ratio_min)
