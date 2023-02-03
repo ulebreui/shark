@@ -65,17 +65,18 @@ subroutine dust_drag
      do idust = 1,ndust
         uold(i,ivdy(idust)) = q(i,irhod(idust))*(q(i,ivdy(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
      end do 
-     uold(i,ivy) = pn/rhon*uold(i,irho)    
+     if(dust_back_reaction)uold(i,ivy) = pn/rhon*uold(i,irho)    
      end if
   end do
   !$OMP END DO
   !$OMP END PARALLEL
 
   ! Regularisation to avoid negative dust densities
+  do i=1,ncells
   do idust=1,ndust
-     uold(:,irhod(idust)) = max(uold(:,irho)*dust_ratio_min, uold(:,irhod(idust)))
+     uold(i,irhod(idust)) = max(uold(i,irho)*dust_ratio_min, uold(i,irhod(idust)))
   enddo
-  
+  end do
   
 end subroutine dust_drag
 

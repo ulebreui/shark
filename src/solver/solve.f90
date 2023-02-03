@@ -148,34 +148,22 @@ subroutine ctoprim
   do i = 1,ncells
      q(i,irho) = uold(i,irho)
      q(i,iv)   = uold(i,iv)/uold(i,irho)
-     if(ndim==2)q(i,ivy)   = uold(i,ivy)/uold(i,irho)
      if(ndim==1)q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0)
-     if(ndim==2)q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
+     if(ndim==2) then 
+      q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
+      q(i,ivy)   = uold(i,ivy)/uold(i,irho)
+     endif
      cs(i)     = sqrt(gamma*q(i,iP)/q(i,irho))
-  end do
-  !!$OMP END DO
-  !!$OMP END PARALLEL
-
 #if NDUST>0
-  ! Dust related primitive quantities
-  !!$OMP PARALLEL &
-  !!$OMP DEFAULT(SHARED)&
-  !!$OMP PRIVATE(i,idust)
-  !$OMP DO
-  do i  = 1,ncells
     do idust = 1,ndust
         q(i,irhod(idust)) = uold(i,irhod(idust))
         q(i,ivd(idust))   = uold(i,ivd(idust))/uold(i,irhod(idust))
-        q(i,ivdy(idust))  = uold(i,ivdy(idust))/uold(i,irhod(idust))
+        if(ndim==2)q(i,ivdy(idust))  = uold(i,ivdy(idust))/uold(i,irhod(idust))
      end do
+#endif
   end do
-
-#endif  
   !$OMP END DO
   !$OMP END PARALLEL
-#if NDUST>0  
-  call distribution_dust(.false.)
-#endif
 
 end subroutine ctoprim
 

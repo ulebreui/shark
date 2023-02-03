@@ -34,33 +34,26 @@ subroutine predictor
   qpred = q
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,ivar,ix,iy,idim,ix0,iy0,slope_left,slope_right,slope_lim,ivv,iuu,idust)
-  !$OMP DO
-    do ix = 2, nx_max-1
-    do iy = iymin, iymax
-      do ivar = 1,nvar
-        do idim=1,ndim
-          ix0=0
-          iy0=0
-          if(idim==1) ix0=1
-          if(idim==2) iy0=1
-          slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-ix0,iy-iy0),ivar))/(dx(icell(ix,iy),idim)+dx(icell(ix-ix0,iy-iy0),idim))
-          slope_right = 2.0d0*(q(icell(ix+ix0,iy+iy0),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+ix0,iy+iy0),idim)+dx(icell(ix,iy),idim))
-          slope_lim = slope_left
-          if(abs(slope_right)<abs(slope_left)) slope_lim = slope_right
-          if(slope_right*slope_left<0.0d0) slope_lim = 0.0d0
-          dq(icell(ix,iy),ivar,idim)=slope_lim  
-        end do
-      end do 
-    end do
-  end do
-  !$OMP END DO
-  
-  !$OMP BARRIER 
+  !$OMP PRIVATE(i,ivar,ix,iy,idim,ix0,iy0,slope_left,slope_right,ivv,iuu,idust)
+
 
   !$OMP DO
   do ix = 2, nx_max-1
     do iy = iymin,iymax
+        do ivar = 1,nvar
+            slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-1,iy),ivar))/(dx(icell(ix,iy),1)+dx(icell(ix-1,iy),1))
+            slope_right = 2.0d0*(q(icell(ix+1,iy),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+1,iy),1)+dx(icell(ix,iy),1))
+            dq(icell(ix,iy),ivar,1) = slope_left
+            if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,1) = slope_right
+            if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,1) = 0.0d0
+#if NY>1
+            slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix,iy-1),ivar))/(dx(icell(ix,iy),2)+dx(icell(ix,iy-1),2))
+            slope_right = 2.0d0*(q(icell(ix,iy+1),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix,iy+1),2)+dx(icell(ix,iy),2))
+            dq(icell(ix,iy),ivar,2) = slope_left
+            if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,2) = slope_right
+            if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,2) = 0.0d0
+#endif            
+        end do
       i=icell(ix,iy)
       !print*, ix,iy
       !First, we take care of the 1D terms
@@ -69,22 +62,22 @@ subroutine predictor
       qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,iv)*dq(i,iP,1)-gamma*q(i,iP)*dq(i,iv,1))
 
       !We now add the terms that are specific to 2D problems
-      if(ndim==2) then
+#if NY>1
         qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,2)*q(i,ivy)-dq(i,ivy,2)*q(i,irho))
         qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,2)*q(i,ivy))
         qpred(i,ivy)  = qpred(i,ivy)  + half*dt*(-dq(i,ivy,2)*q(i,ivy)-dq(i,ivy,1)*q(i,iv)-dq(i,iP,2)/q(i,irho))
         qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,ivy)*dq(i,iP,2)-gamma*q(i,iP)*dq(i,ivy,2))
-      endif
+#endif        
       !Dust terms
 #if NDUST>0
       do idust=1,ndust
         qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
         qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivd(idust)))
-        if(ndim==2) then
+#if NY>1
           qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
           qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
           qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
-        endif
+#endif          
       end do
 #endif
     end do
@@ -94,17 +87,16 @@ subroutine predictor
   !$OMP BARRIER
 
   !$OMP DO
-      do ix=1,nx_max
-        do iy=1,ny_max
-          do idim =1,ndim
-           do ivar =1,nvar
-            i = icell(ix,iy)
-            qm(i,ivar,idim)=qpred(i,ivar)-half*dq(i,ivar,idim)*dx(i,idim)
-            qp(i,ivar,idim)=qpred(i,ivar)+half*dq(i,ivar,idim)*dx(i,idim)
+      do i=1,ncells
+           do ivar = 1,nvar
+            qm(i,ivar,1)=qpred(i,ivar)-half*dq(i,ivar,1)*dx(i,1)
+            qp(i,ivar,1)=qpred(i,ivar)+half*dq(i,ivar,1)*dx(i,1)
+#if NY>1    
+            qm(i,ivar,2)=qpred(i,ivar)-half*dq(i,ivar,2)*dx(i,2)        
+            qp(i,ivar,2)=qpred(i,ivar)+half*dq(i,ivar,2)*dx(i,2)
+#endif          
         end do
-      end do
     end do
-  end do
   !$OMP END DO
   !$OMP END PARALLEL
   deallocate(dq)
@@ -126,6 +118,7 @@ subroutine add_delta_u
   real(dp), dimension(1:nvar) :: flux_left,qleft,flux_right,qright,uleft,uright,lambda_llf,ustar,qstar,fstar,qstarleft,qstarright
 
   real(dp) :: S_left,S_right,hllc_l,hllc_r,r_o,u_o,P_o,e_o
+  
   if(static) return
 
   !Initialisation of the flux,lambda_llf and delta U: they must be allocatable for 2D simus with h-res
@@ -192,7 +185,7 @@ subroutine add_delta_u
         flux_left(ivn)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivn,idim)  + qp(i,iP,idim)
 
 
-        if(ndim==2) then
+#if NY>1
           !Transverse momentum
           qright(ivt)     = qm(il,ivt,idim) ! v
           qleft(ivt)      = qp(i,ivt,idim)
@@ -202,7 +195,7 @@ subroutine add_delta_u
         
           flux_right(ivt) = qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivt,idim) ! rho u v
           flux_left(ivt)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivt,idim) 
-        endif
+#endif
 
         !Energy
 
@@ -211,12 +204,10 @@ subroutine add_delta_u
 
         uright(iP)    = qm(il,iP,idim)/(gamma-1.d0) + half * qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivn,idim)! E
         uleft(iP)     = qp(i,iP,idim) /(gamma-1.d0) + half * qp(i,irho,idim)  * qp(i,ivn,idim)  *  qp(i,ivn,idim)
-
-        if(ndim==2) then
-          uright(iP)   = uright(iP)  + half * qm(il,irho,idim) * qm(il,ivt,idim) * qm(il,ivt,idim)
-          uleft(iP)    = uleft(iP)   + half * qp(i,irho,idim)  * qp(i,ivt,idim)  * qp(i,ivt,idim)
-        endif
-
+#if NY>1
+        uright(iP)   = uright(iP)  + half * qm(il,irho,idim) * qm(il,ivt,idim) * qm(il,ivt,idim)
+        uleft(iP)    = uleft(iP)   + half * qp(i,irho,idim)  * qp(i,ivt,idim)  * qp(i,ivt,idim)
+#endif
         flux_right(iP) = (uright(iP)+qright(iP)) * qright(ivn) ! (E+P) v
         flux_left(iP)  = (uleft(iP) +qleft(iP))  * qleft(ivn)
 
@@ -249,7 +240,7 @@ subroutine add_delta_u
           flux_left(ivn) = qp(i,irhod(idust),idim)  * qp(i,ivn,idim)**2
 
 
-          if(ndim==2) then
+#if NY>1
           !Dust transverse momentum
             qright(ivt)    = qm(il,ivt,idim)
             qleft(ivt)     = qp(i,ivt,idim)
@@ -259,7 +250,7 @@ subroutine add_delta_u
 
             flux_right(ivt)= qm(il,irhod(idust),idim)*qm(il,ivn,idim)*qm(il,ivt,idim)
             flux_left(ivt) = qp(i,irhod(idust),idim)*qp(i,ivn,idim)*qp(i,ivt,idim)
-          endif
+#endif
         end do
 #endif
         if(solver==0) then ! LLF

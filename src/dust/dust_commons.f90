@@ -13,6 +13,8 @@ module dust_parameters
   logical             ::  brownian_in_growth  = .false.     ! Brownian velocity included in growth
   logical             ::  ambipolar_in_growth = .false.     ! Ambipolar velocity included in growth
   logical             ::  lorentz_dust        = .false.     ! Add the lorentz force on the dust
+  logical             ::  dust_back_reaction  = .true.     ! Add the dust back-reaction
+
   real(dp)            ::  dtcontrol_growth=-1.0d0
   real(dp)            ::  delta_vambi=1.0
   character (len=60)  :: dust_distribution='mrn'

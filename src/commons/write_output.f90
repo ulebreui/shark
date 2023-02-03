@@ -20,8 +20,12 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/info.dat'))
   write(ilun,*) nvar
   write(ilun,*) ncells-nghost*2
+#if NDUST>0
+  write(ilun,*) ndust
+#endif
   call write_setup_info(ilun)
   close(ilun)
+  
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
    if(active_cell(i)==1) write(ilun) position(i,1)
@@ -34,23 +38,28 @@ subroutine output(iout)
    if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
   end do
   close(ilun)  
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/v'), form=format_out,access='stream')
   do i = 1,ncells
    if(active_cell(i)==1) write(ilun) q(i,iv)*unit_v
   end do
   close(ilun)
+
    if(ndim==2) then
+
    open(ilun,file=trim(path) // trim(nchar)//trim('/y'), form=format_out,access='stream')
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) position(i,2)
    end do
    close(ilun)
+
    open(ilun,file=trim(path) // trim(nchar)//trim('/vy'), form=format_out,access='stream')
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) q(i,ivy)*unit_v
    end do
    close(ilun)
    endif
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
   do i = 1,ncells
    if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
@@ -58,6 +67,7 @@ subroutine output(iout)
   close(ilun)
 
 #if NDUST>0
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
@@ -65,6 +75,7 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/vd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
@@ -72,6 +83,7 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/vdy'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
@@ -79,6 +91,7 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+
 #endif
  end subroutine output
 

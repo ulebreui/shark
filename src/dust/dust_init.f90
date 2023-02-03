@@ -78,11 +78,11 @@ subroutine distribution_dust(initi)
      endif
 
   else
-
+  do i=1,ncells
      do idust=1,ndust
-        epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
+        epsilondust(i,idust)=q(i,irhod(idust))/q(i,irho)
      end do
- 
+   end do
   end if
   if(restarting>0.and.initi) then
      do idust=1,ndust
@@ -337,7 +337,7 @@ subroutine read_dust_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/dust_params/smin,smax,scut,scutmin,mrn,rhograin,dust2gas,growth,fragmentation,charging,charging_all_the_time,eps_threshold,eps_threshold_frag, CFL_growth,coupled_dust,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi, &
+  namelist/dust_params/dust_back_reaction,smin,smax,scut,scutmin,mrn,rhograin,dust2gas,growth,fragmentation,charging,charging_all_the_time,eps_threshold,eps_threshold_frag, CFL_growth,coupled_dust,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi, &
 
  & dtcontrol_growth
   print *, "########################################################################################################################################"

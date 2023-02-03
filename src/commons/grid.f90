@@ -6,16 +6,50 @@ function icell(ix,iy)
   implicit none
   integer  :: ix,iy
   integer  :: icell
-  if(ndim==1) icell = ix
-  if(ndim==2) icell = 1+(ix-1)+(iy-1)*nx_max
+#if NY==1
+  icell = ix
+#else
+  icell = 1+(ix-1)+(iy-1)*nx_max
+#endif
 end function icell
+
+!Get the x index of a cell according to i
+function ixx(i)
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i
+  integer  :: ixx
+#if NY==1
+  ixx = i
+#else
+  ixx = mod(i-1,nx_max)+1
+#endif
+
+end function ixx
+
+
+!Get the x index of a cell according to i
+function iyy(i)
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i
+  integer  :: iyy
+
+  iyy (i-1)/nx_max+1
+#endif
+
+end function iyy
 
 subroutine get_active_cells
   use parameters
   use commons
   use units
   implicit none
-  integer  :: ix,iy,icell,ii,icount
+  integer  :: ix,iy,icell,ii,icount,ixx,iyy
   allocate(active_cell(1:ncells))
   active_cell=0
   if(ndim==1) then
@@ -27,6 +61,7 @@ subroutine get_active_cells
   	do ix=1,nx_max
   		do iy=1,ny_max
   		ii=icell(ix,iy)
+      print *, ii, ix, iy,ixx(ii),iyy(ii)
   		if(ix.ge.first_active.and.ix.le.last_active) then
   			if(iy.ge.first_active_y.and.iy.le.last_active_y) then
   		 	  active_cell(ii)=1
