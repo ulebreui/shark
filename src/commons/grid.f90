@@ -104,7 +104,9 @@ subroutine gridinit(rmax_x,rmax_y)
 
   real(dp):: rmax_x,rmax_y
   integer :: i, ix, iy,icell
-
+#if GEOM==1
+  real(dp):: r_plus,r_min,theta_plus,theta_min
+#endif
   print *, 'Number of cells        =', Ncells
   print *, 'Number of active cells =', Ncells_active
 #if GEOM==0
@@ -137,20 +139,29 @@ subroutine gridinit(rmax_x,rmax_y)
 ! Polar geometry. Only in 2D
       do ix = 1, nx_max
         do iy = 1, ny_max
+
           dx  (icell(ix,iy),1) = rmax_x/float(nx)
           dx  (icell(ix,iy),2) = rmax_y/float(ny) ! This becomes theta
 
-          polar_radii(icell(ix,iy)) = (float(ix-first_active)+0.5d0)   * rmax_x/float(nx) ! R 
-          theta(icell(ix,iy))       = (float(iy-first_active_y)+0.5d0) * rmax_y/float(ny! Theta
+          polar_radii(icell(ix,iy)) = (float(ix-first_active)  + 0.5d0)   * rmax_x/float(nx) ! R 
+          r_plus= polar_radii(icell(ix,iy))  + dx  (icell(ix,iy),1)*half
+          r_minus= polar_radii(icell(ix,iy)) - dx  (icell(ix,iy),1)*half
 
-          surf(icell(ix,iy),1) = dx(icell(ix,iy),1)
-          surf(icell(ix,iy),2) = dx(icell(ix,iy),2)
+          theta(icell(ix,iy))       = (float(iy-first_active_y)+ 0.5d0)   * rmax_y/float(ny)! Theta
+          theta_plus = theta(icell(ix,iy))  + dx  (icell(ix,iy),2)*half
+          theta_minus= theta(icell(ix,iy))  - dx  (icell(ix,iy),2)*half
 
-          vol (icell(ix,iy))   = dx(icell(ix,iy),1)*dx(icell(ix,iy),2)
-
+          if(active_cell_predictor(icell(ix,iy))==1) then
+            surf(icell(ix,iy),1) = dx(icell(ix,iy),1)
+            surf(icell(ix,iy),2) = polar_radii(icell(ix,iy)) * dx(icell(ix,iy),2) ! r dtheta
+          endif
+          if(active_cell(icell(ix,iy))==1)  then
+            vol (icell(ix,iy))  = surf(icell(ix,iy),1)*surf(icell(ix,iy),2) 
+          endif
 
           position(icell(ix,iy),1) =  polar_radii(icell(ix,iy))*cos(theta(icell(ix,iy)))! x
           position(icell(ix,iy),2) =  polar_radii(icell(ix,iy))*sin(theta(icell(ix,iy)))! y
+
       end do
     end do
 #endif

@@ -140,20 +140,21 @@ subroutine ctoprim
 
   implicit none
   integer :: i,idust
+
   ! Gas related primitive quantities
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i = 1,ncells
-     q(i,irho) = uold(i,irho)
-     q(i,iv)   = uold(i,iv)/uold(i,irho)
+     q(i,irho)             = uold(i,irho)
+     q(i,iv)               = uold(i,iv)/uold(i,irho)
      if(ndim==1)q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0)
      if(ndim==2) then 
-      q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
-      q(i,ivy)   = uold(i,ivy)/uold(i,irho)
+      q(i,iP)              = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
+      q(i,ivy)             = uold(i,ivy)/uold(i,irho)
      endif
-     cs(i)     = sqrt(gamma*q(i,iP)/q(i,irho))
+     cs(i)                 = sqrt(gamma*q(i,iP)/q(i,irho))
 #if NDUST>0
     do idust = 1,ndust
         q(i,irhod(idust)) = uold(i,irhod(idust))
@@ -164,6 +165,7 @@ subroutine ctoprim
   end do
   !$OMP END DO
   !$OMP END PARALLEL
+
 
 end subroutine ctoprim
 
@@ -182,16 +184,17 @@ subroutine primtoc
   use units
   implicit none
   integer :: i,idust
+
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i = 1 ,ncells
-     uold(i,irho) = q(i,irho)
-     uold(i,iv)   = q(i,irho)*q(i,iv)
+     uold(i,irho)             = q(i,irho)
+     uold(i,iv)               = q(i,irho)*q(i,iv)
      if(ndim==2)uold(i,ivy)   = q(i,irho)*q(i,ivy)
-     uold(i,iP)    = q(i,iP)/(gamma-1.0d0)     +half* q(i,irho)*q(i,iv)**2.
-     if(ndim==2) uold(i,iP)  =  uold(i,iP)    + half* q(i,irho)*q(i,ivy)**2.
+     uold(i,iP)               = q(i,iP)/(gamma-1.0d0)     +half* q(i,irho)*q(i,iv)**2.
+     if(ndim==2) uold(i,iP)   =  uold(i,iP)    + half* q(i,irho)*q(i,ivy)**2.
 #if NDUST>0     
      do idust = 1,ndust
         uold(i,irhod(idust)) = q(i,irhod(idust))
@@ -202,6 +205,8 @@ subroutine primtoc
   end do
   !$OMP END DO
   !$OMP END PARALLEL
+
+
 end subroutine primtoc
 
 

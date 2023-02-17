@@ -10,6 +10,7 @@ subroutine Source_terms
   if(static) return
   allocate(S_U(1:ncells,1:nvar))
   S_U=0.0d0
+
 #if NDUST>0
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
@@ -45,10 +46,17 @@ subroutine kick
   use units
   implicit none
   integer :: i,idust
+#if TURB==1
+  call turbulent_force
+#endif
   do i=1,ncells
     if(active_cell(i)==1) then
       unew(i,iv)=unew(i,iv) + q(i,irho)*dt*force(i,1)
       if(ndim==2) unew(i,ivy)=unew(i,ivy) + q(i,irho)*dt*force(i,2)
+#if TURB==1
+      unew(i,iv)=unew(i,iv) + q(i,irho)*dt*f_turb(i,1)
+      if(ndim==2) unew(i,ivy)=unew(i,ivy) + q(i,irho)*dt*f_turb(i,2)
+#endif
     endif
   end do
 end subroutine kick

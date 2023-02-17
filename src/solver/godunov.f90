@@ -44,7 +44,7 @@ subroutine predictor
       ix=ixx(i)
       iy=iyy(i)
       do ivar = 1,nvar
-        slope_left  = 2.0d0*(q(icell(ix,iy),ivar) - q(icell(ix-1,iy),ivar))/(dx(icell(ix,iy),1)+dx(icell(ix-1,iy),1))
+        slope_left  = 2.0d0*(q(icell(ix,iy),ivar)   - q(icell(ix-1,iy),ivar))/(dx(icell(ix,iy),1)+dx(icell(ix-1,iy),1))
         slope_right = 2.0d0*(q(icell(ix+1,iy),ivar) - q(icell(ix,iy),ivar))/(dx(icell(ix+1,iy),1)+dx(icell(ix,iy),1))
         dq(icell(ix,iy),ivar,1) = slope_left
         if(abs(slope_right)<abs(slope_left)) dq(icell(ix,iy),ivar,1) = slope_right
@@ -57,7 +57,9 @@ subroutine predictor
         if(slope_right*slope_left<0.0d0) dq(icell(ix,iy),ivar,2) = 0.0d0
 #endif            
       end do
-
+      
+! Cartesian geometry
+#if GEOM==0
       !First, we take care of the 1D terms
       qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,1)*q(i,iv)-dq(i,iv,1)*q(i,irho))
       qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,1)*q(i,iv)-dq(i,iP,1)/q(i,irho))
@@ -83,6 +85,37 @@ subroutine predictor
       end do
 #endif
     end if
+#endif
+
+! Polar geometry
+#if GEOM==1
+      !First, we take care of the 1D terms
+      qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,1)*q(i,iv)-dq(i,iv,1)*q(i,irho))
+      qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,1)*q(i,iv)-dq(i,iP,1)/q(i,irho))
+      qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,iv)*dq(i,iP,1)-gamma*q(i,iP)*dq(i,iv,1))
+
+      !We now add the terms that are specific to 2D problems
+#if NY>1
+        qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,2)*q(i,ivy)-dq(i,ivy,2)*q(i,irho))
+        qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,2)*q(i,ivy))
+        qpred(i,ivy)  = qpred(i,ivy)  + half*dt*(-dq(i,ivy,2)*q(i,ivy)-dq(i,ivy,1)*q(i,iv)-dq(i,iP,2)/q(i,irho))
+        qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,ivy)*dq(i,iP,2)-gamma*q(i,iP)*dq(i,ivy,2))
+#endif        
+      !Dust terms
+#if NDUST>0
+      do idust=1,ndust
+        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
+        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivd(idust)))
+#if NY>1
+        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
+        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
+        qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
+#endif          
+      end do
+#endif
+    end if
+#endif
+
   end do
   !$OMP END DO
 

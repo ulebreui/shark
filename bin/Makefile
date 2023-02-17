@@ -11,11 +11,14 @@ NGHOST=2
 NDUST=0
 #Geometry (0 == Cartesian,1 == disk - mid plane)
 GEOM=0
+TURB=0
+
 #Solver 
 SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
 #Number of zones
 NX=128 # In X direction
 NY=1   # In Y direction
+IVZ=0  # Add z velocity component
 NHBINS=128
 # Compiles with open MP
 OPENMP=0
@@ -24,7 +27,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DNGHOST=$(NGHOST)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DNGHOST=$(NGHOST) -DTURB=$(TURB)
 
 #############################################################################
 # Fortran compiler options and directives
@@ -55,19 +58,24 @@ endif
 #############################################################################m
 # Sources directories are searched in this exact order
 BINDIR = .
-VPATH =../src:../src/commons:../src/solver:../src/setups/$(SETUP):../src/hydro:../src/:../src/dust
+VPATH =../src:../src/commons:../src/turb:../src/solver:../src/setups/$(SETUP):../src/hydro:../src/:../src/dust
 #############################################################################
 # All objects
 MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o random.o
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
+ifeq ($(TURB),1)
+	MODOBJ+=turb_commons.o
+endif
 MODOBJ+= commons.o parameters.o units.o allocate_init.o grid.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust.o 
 endif
 OBJS= solve.o read_params.o
-
+ifeq ($(TURB),1)
+	MODOBJ+= turb_params.o turb_force.o
+endif
 #############################################################################
 all:
 	for file in $(MODOBJ); do unset MAKELEVEL ; $(MAKE) $$file; done

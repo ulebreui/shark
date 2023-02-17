@@ -35,6 +35,12 @@ subroutine allocate_init
   unit_var = 1.0d0
   ! Force on the gas
   allocate(force(1:ncells,1:ndim))
+#if TURB==1
+  allocate(f_turb(1:ncells,1:ndim))
+  f_turb=0.0d0
+  allocate(f_turb_old(1:ncells,1:ndim))
+  f_turb_old=0.0d0
+#endif
   allocate(cs(1:ncells))
 
 #if NDUST>0

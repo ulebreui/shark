@@ -4,6 +4,9 @@ module commons
 #if NDUST>0
   use dust_commons
 #endif
+#if TURB==1
+  use turb_commons
+#endif
   implicit none
 
   !Grid
@@ -12,7 +15,6 @@ module commons
 #if GEOM==1
   real(dp), dimension(:), allocatable   :: polar_radii
   real(dp), dimension(:), allocatable   :: theta
-
 #endif
   real(dp), dimension(:,:), allocatable :: Surf
   real(dp), dimension(:), allocatable   :: vol
