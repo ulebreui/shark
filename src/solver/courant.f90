@@ -15,28 +15,78 @@ subroutine courant
   implicit none
 
   integer :: i,idust
-  real(dp) :: vmax,dxx
+  real(dp) :: vmax,dxx,force_max
   if(static)then
      return
   endif
   dt=2d44
 
+
   do i = 1,ncells
-   if(active_cell(i)==1) then
-      if(ndim==1)vmax = abs(q(i,iv))
-      if(ndim==2)vmax = sqrt(q(i,iv)**2+q(i,ivy)**2)
-      dxx=dx(i,1)
-      if(ndim==2)dxx = min(dx(i,1),dx(i,2))
-      dt = min(dt,CFL*dxx/(sqrt(gamma*q(i,iP)/q(i,irho))+abs(vmax)))    
+   if(active_cell(i)==1) then   
+   !Cas 1D   
+#if NY==1
+   vmax= abs(q(i,iv))
+   dxx = dx(i,1)
+#endif
+
+!Cas 2D/2.5D
+#if NY>1
+   dxx = min(dx(i,1),dx(i,2))
+#if IVZ==1
+   vmax=  sqrt(q(i,iv)**2+q(i,ivy)**2+q(i,ivz)**2)
+#else
+   vmax= sqrt(q(i,iv)**2+q(i,ivy)**2)
+#endif
+#endif
+
+dt = min(dt,CFL*dxx/(sqrt(gamma*q(i,iP)/q(i,irho))+abs(vmax)))    
+
 #if NDUST>0     
      do idust=1,ndust
-         if(ndim==1)vmax = abs(q(i,ivd(idust)))
-         if(ndim==2)vmax = sqrt(q(i,ivd(idust))**2+q(i,ivdy(idust))**2)
-         dxx=dx(i,1)
-         if(ndim==2)dxx = min(dx(i,1),dx(i,2))
+#if NY==1
+         vmax= abs(q(i,ivd(idust)))
+#endif
+#if NY>1
+#if IVZ==1
+         vmax=  sqrt(q(i,ivd(idust))**2+q(i,ivdy(idust))**2+q(i,ivdz(idust))**2)
+#else
+         vmax= sqrt(q(i,ivd(idust))**2+q(i,ivdy(idust))**2)
+#endif
+
+#endif
          dt = min(dt,CFL*dxx/abs(vmax))
-     end do
-#endif     
+      enddo
+#endif
+if(force_kick) then
+#if NY==1
+   force_max = abs(force(i,1))
+#endif
+#if NY>1
+#if IVZ==1
+   force_max= sqrt(force(i,1)**2+force(i,2)**2+force(i,3)**2)
+#else
+   force_max= sqrt(force(i,1)**2+force(i,2)**2)
+#endif
+#endif
+
+#if NDUST>0     
+   do idust=1,ndust
+#if NY==1
+      force_max= max(force_max,sqrt(force_dust(i,1,idust)**2))
+#endif
+#if NY>1
+#if IVZ==1
+      force_max= max(force_max,sqrt(force_dust(i,1,idust)**2+force_dust(i,2,idust)**2+force_dust(i,3,idust)**2))
+#else
+      force_max= max(force_max,sqrt(force_dust(i,1,idust)**2+force_dust(i,2,idust)**2))
+#endif
+#endif
+   end do
+#endif 
+
+   if(force_max>0.d0)dt = min(dt,CFL*sqrt(dxx/force_max))
+endif
    endif
   end do
 

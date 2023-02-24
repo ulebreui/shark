@@ -12,7 +12,8 @@ subroutine apply_boundaries
   use commons
   use units
   implicit none
-  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount
+  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  real(dp) :: total_energy,ekin_old,ekin_new,pm
 
   if(ndim==1) then
    do ix = 1,nghost
@@ -21,26 +22,42 @@ subroutine apply_boundaries
    end do
   else
   !icount=0
-  do ix = first_active,last_active
+  do ix = first_active,last_active  
    do iy = 1,nghost
-      !icount=icount+1
-      u_prim(icell(ix,iy),:)          = u_prim(icell(ix,first_active_y),:)
-      u_prim(icell(ix,ny_max+1-iy),:) = u_prim(icell(ix,last_active_y),:)
+      ibound_left   = icell(ix,iy)
+      ibound_right  = icell(ix,ny_max+1-iy)
+      !i_active_left = icell(ix,last_active_y-nghost+iy)
+      !i_active_right= icell(ix,first_active_y+nghost-iy)
+
+      i_active_left = first_active_y
+      i_active_right= last_active_y      
+      do ivar =1,nvar
+         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic along y
+         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+      end do
    end do
    !stop
   end do
-   do ix=1,nghost
+   do ix=1,nghost 
      do iy=1,ny_max
-         !icount=icount+1
-         !print *, ix,ny_max+1-ix, first_active,last_active_y
-         u_prim(icell(ix,iy),:)          = u_prim(icell(first_active,iy),:)
-         u_prim(icell(nx_max+1-ix,iy),:) = u_prim(icell(last_active,iy),:)
+         ibound_left    = icell(ix,iy)
+         ibound_right   = icell(nx_max+1-ix,iy)
+         !i_active_left  = icell(last_active-nghost+ix,iy)
+         !i_active_right = icell(first_active+nghost-ix,iy)
+         i_active_left = first_active!
+         i_active_right= last_active!    
+         do ivar =1,nvar
+         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic conditions along x
+         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+         end do     
+
       end do
       !stop
   end do
   endif
-  !print *, icount, ' ghost cells have been counted'
 
 end subroutine apply_boundaries
+
+
 
 

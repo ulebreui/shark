@@ -83,8 +83,8 @@ subroutine get_active_cells
           icount=icount+1
   		 	endif
   		  endif
-        if(ix.ge.1 .and.ix.le.nx_max-1) then
-          if(iy.ge.1 .and.iy.le.ny_max-1) then
+        if(ix.ge.2 .and.ix.le.nx_max-1) then
+          if(iy.ge.2 .and.iy.le.ny_max-1) then
             active_cell_predictor(ii)=1
           endif
         endif

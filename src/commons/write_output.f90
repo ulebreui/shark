@@ -59,7 +59,13 @@ subroutine output(iout)
    end do
    close(ilun)
    endif
-
+#if IVZ==1
+   open(ilun,file=trim(path) // trim(nchar)//trim('/vz'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) q(i,ivz)*unit_v
+   end do
+   close(ilun)
+#endif
   open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
   do i = 1,ncells
    if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
@@ -91,7 +97,15 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
-
+#if IVZ==1
+  open(ilun,file=trim(path) // trim(nchar)//trim('/vdz'), form=format_out,access='stream')
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) q(i,ivdz(idust))*unit_v
+   end do
+  end do
+  close(ilun)
+#endif
 #endif
  end subroutine output
 

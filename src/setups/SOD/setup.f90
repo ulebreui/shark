@@ -110,9 +110,9 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
-     if(outputing) print *, "Total mass is", sum(uold(:,irho))
-     if(outputing) print *, "Total momentum is", sum(uold(:,iv))
-     if(outputing) print *, "Total energy is", sum(uold(:,iP))
+     if(outputing) print *, "Total mass is", sum(u_prim(:,irho))
+     if(outputing) print *, "Total momentum is", sum(u_prim(:,iv))
+     if(outputing) print *, "Total energy is", sum(u_prim(:,iP))
 
      outputing=.false.
 
@@ -134,3 +134,45 @@ subroutine setup_inloop
    !call output(1)
    return
 end subroutine setup_inloop
+
+ subroutine update_force_setup
+   use parameters
+   use commons
+   use units
+   implicit none
+  
+end subroutine update_force_setup
+
+#if NDUST>0
+! Dust stopping time
+subroutine compute_tstop
+  
+  use parameters
+  use commons
+  use units
+  use OMP_LIB
+
+  implicit none
+  integer :: i,idust
+  real(dp):: pn,rhon
+  !Re-calc distribution
+
+
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
+  do i=1,ncells
+   if(active_cell(i)==1) then
+     do idust=1,ndust
+        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
+     end do
+     end if
+  end do
+  !$OMP END DO
+  !$OMP END PARALLEL
+
+
+end subroutine compute_tstop
+#endif
+

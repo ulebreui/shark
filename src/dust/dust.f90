@@ -6,12 +6,8 @@ subroutine dust(verbose,outputing)
   implicit none
   logical :: verbose,outputing
 
-  !We re-compute the primitive variables to compute the dust source terms
-  call apply_boundaries(1,uold,ncells,nvar) 
-  call ctoprim
   !We account for the gas-dust drag
   call dust_drag
-  call apply_boundaries(1,uold,ncells,nvar) 
   
 end subroutine dust
 
@@ -31,7 +27,7 @@ subroutine dust_drag
   if(static) return
   !Re-calc distribution
   call distribution_dust(.false.)
-
+  call compute_tstop
   ! Here we apply the Krapp et al. implict scheme to compute the dust drag source terms
 
   !$OMP PARALLEL &
@@ -41,42 +37,50 @@ subroutine dust_drag
   do i=1,ncells
    if(active_cell(i)==1) then
      ! Direction - x
-     pn   = uold(i,iv)
-     rhon = uold(i,irho)
+     pn   = u_prim(i,iv)
+     rhon = u_prim(i,irho)
      do idust=1,ndust
-        ! alpha = 1/ts
-        alphak(idust) = 1.0d0/(sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i)))
+        alphak(idust) = 1.0d0/tstop(i,idust)
         pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivd(idust))
-        rhon = rhon+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))
      end do
      do idust = 1,ndust
-        uold(i,ivd(idust)) = q(i,irhod(idust))*(q(i,ivd(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
+        u_prim(i,ivd(idust)) = q(i,irhod(idust))*(q(i,ivd(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
      end do 
-     uold(i,iv) = pn/rhon*uold(i,irho)
-      ! Direction - y
-     pn   = uold(i,ivy)
-     rhon = uold(i,irho)
+     if(dust_back_reaction)u_prim(i,iv) = pn/rhon*u_prim(i,irho)
+     ! Direction - y
+     pn   = u_prim(i,ivy)
+     do idust=1,ndust
+        pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivdy(idust))
+     end do
+     do idust = 1,ndust
+        u_prim(i,ivdy(idust)) = q(i,irhod(idust))*(q(i,ivdy(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
+     end do 
+     if(dust_back_reaction)u_prim(i,ivy) = pn/rhon*u_prim(i,irho)   
+#if IVZ==1
+     !Direction - z
+     pn   = u_prim(i,ivz)
      do idust=1,ndust
         ! alpha = 1/ts
-        alphak(idust) = 1.0d0/(sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i)))
-        pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivdy(idust))
-        rhon = rhon+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))
+        pn   = pn+(alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*q(i,irhod(idust))*q(i,ivdz(idust))
      end do
      do idust = 1,ndust
-        uold(i,ivdy(idust)) = q(i,irhod(idust))*(q(i,ivdy(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
+        u_prim(i,ivdz(idust)) = q(i,irhod(idust))*(q(i,ivdz(idust))/(1.0d0+alphak(idust)*dt)+ (alphak(idust)*dt/(1.0d0+alphak(idust)*dt))*pn/rhon)
      end do 
-     if(dust_back_reaction)uold(i,ivy) = pn/rhon*uold(i,irho)    
+     if(dust_back_reaction) u_prim(i,ivz) = pn/rhon*u_prim(i,irho) 
+#endif      
      end if
   end do
-  !$OMP END DO
-  !$OMP END PARALLEL
-
+   !$OMP END DO
+   !$OMP BARRIER
+   !$OMP DO
   ! Regularisation to avoid negative dust densities
   do i=1,ncells
-  do idust=1,ndust
-     uold(i,irhod(idust)) = max(uold(i,irho)*dust_ratio_min, uold(i,irhod(idust)))
-  enddo
+  if(active_cell(i)==1) then
+      do idust=1,ndust
+         u_prim(i,irhod(idust)) = max(u_prim(i,irho)*dust_ratio_min, u_prim(i,irhod(idust)))
+      enddo
+  endif
   end do
-  
+  !$OMP END PARALLEL 
 end subroutine dust_drag
 

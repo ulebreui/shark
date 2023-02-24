@@ -119,11 +119,16 @@ subroutine allocate_dust
   allocate(epsilondust(1:ncells,1:ndust))
   allocate(sdust(1:ncells,1:ndust))
   allocate(mdust(1:ncells,1:ndust))
+  allocate(tstop(1:ncells,1:ndust))
+
+  allocate(force_dust(1:ncells,1:ndim+nivz,1:ndust))
 
   allocate(irhod(1:ndust))
   allocate(ivd(1:ndust))
   allocate(ivdy(1:ndust))
-
+#if IVZ==1
+  allocate(ivdz(1:ndust))
+#endif
 
 
   !Size : bin edges
@@ -138,7 +143,9 @@ subroutine allocate_dust
   sdust=0.0d0
   mdust=0.0d0
 
-  
+  tstop = 0.0d0
+
+  force_dust=0.0d0
 end subroutine allocate_dust
 
 

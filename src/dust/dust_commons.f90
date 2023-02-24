@@ -76,6 +76,8 @@ module dust_commons
   real(dp), dimension(:,:), allocatable    :: epsilondust
   real(dp), dimension(:,:), allocatable    :: sdust
   real(dp), dimension(:,:), allocatable    :: mdust
+  real(dp), dimension(:,:,:), allocatable  :: force_dust
+  real(dp), dimension(:,:), allocatable    :: tstop
 
   real(dp), dimension(:), allocatable      :: eta_a
   real(dp), dimension(:), allocatable      :: eta_o
@@ -96,7 +98,9 @@ module dust_commons
 #if NY>0
   integer,  dimension(:),  allocatable     :: ivdy
 #endif
-
+#if IVZ==1
+  integer,  dimension(:),  allocatable     :: ivdz ! Z - velocity component
+#endif
   real(dp) :: dt_cfl_dust=1d140
 
 

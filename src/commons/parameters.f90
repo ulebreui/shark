@@ -40,11 +40,17 @@ module parameters
 
   ! Variables
   integer,parameter   ::  Ndust       = NDUST  !Number of dust species
-  integer,parameter   ::  nvar        = 2 + ndim + Ndust * 3 !Number of variables
+#if IVZ==0
+  integer,parameter   ::  nivz       = 0
+#else
+  integer,parameter   ::  nivz       = 1
+#endif
+  integer,parameter   ::  nvar       = 2 + ndim +nivz + Ndust * (3+nivz) !Number of variables
 
   real(dp),parameter            :: half = 0.5d0
 
   logical             ::  static            = .false.
+  logical             ::  force_kick       = .false.
   integer             ::  freq_out          = 1000    ! Output frequency
   real(dp)            ::  rin = 1.0d0  ! Inner radius boundary
   real(dp)            ::  CFL = half  ! CFL constant

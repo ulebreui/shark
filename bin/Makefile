@@ -27,7 +27,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DNGHOST=$(NGHOST) -DTURB=$(TURB)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DIVZ=$(IVZ) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DNGHOST=$(NGHOST) -DTURB=$(TURB)
 
 #############################################################################
 # Fortran compiler options and directives

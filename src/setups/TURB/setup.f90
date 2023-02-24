@@ -153,9 +153,9 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
-     if(outputing) print *, "Total mass is", sum(uold(:,irho))
-     if(outputing) print *, "Total momentum is", sum(uold(:,iv))
-     if(outputing) print *, "Total energy is", sum(uold(:,iP))
+     if(outputing) print *, "Total mass is", sum(u_prim(:,irho))
+     if(outputing) print *, "Total momentum is", sum(u_prim(:,iv))
+     if(outputing) print *, "Total energy is", sum(u_prim(:,iP))
 
      outputing=.false.
 
@@ -177,3 +177,11 @@ subroutine setup_inloop
    !call output(1)
    return
 end subroutine setup_inloop
+
+ subroutine update_force_setup
+   use parameters
+   use commons
+   use units
+   implicit none
+  
+end subroutine update_force_setup

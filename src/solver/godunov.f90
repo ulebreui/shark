@@ -28,7 +28,7 @@ subroutine predictor
   qp    = 0.0d0
   qm    = 0.0d0
 
-  call apply_boundaries(1,uold,ncells,nvar)
+  call apply_boundaries(1,u_prim,ncells,nvar)
 
   ! Computes primitive variables
   call ctoprim
@@ -64,15 +64,19 @@ subroutine predictor
       qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,1)*q(i,iv)-dq(i,iv,1)*q(i,irho))
       qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,1)*q(i,iv)-dq(i,iP,1)/q(i,irho))
       qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,iv)*dq(i,iP,1)-gamma*q(i,iP)*dq(i,iv,1))
-
       !We now add the terms that are specific to 2D problems
 #if NY>1
         qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,2)*q(i,ivy)-dq(i,ivy,2)*q(i,irho))
         qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,2)*q(i,ivy))
         qpred(i,ivy)  = qpred(i,ivy)  + half*dt*(-dq(i,ivy,2)*q(i,ivy)-dq(i,ivy,1)*q(i,iv)-dq(i,iP,2)/q(i,irho))
         qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,ivy)*dq(i,iP,2)-gamma*q(i,iP)*dq(i,ivy,2))
-#endif        
-      !Dust terms
+#if IVZ==1
+        qpred(i,ivz)   = qpred(i,ivz)   + half*dt*(-dq(i,iv,1)*q(i,ivz)-dq(i,ivz,1)*q(i,iv))
+        qpred(i,ivz)   = qpred(i,ivz)   + half*dt*(-dq(i,ivy,2)*q(i,ivz)-dq(i,ivz,2)*q(i,ivy))
+#endif 
+#endif 
+    if(iso_cs>1.0) qpred(i,iP) = qpred(i,irho)*cs(i)**2
+    !Dust terms
 #if NDUST>0
       do idust=1,ndust
         qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
@@ -81,41 +85,15 @@ subroutine predictor
         qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
         qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
         qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
+#if IVZ==1
+      qpred(i,ivdz(idust))   = qpred(i,ivdz(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivdz(idust))-dq(i,ivdz(idust),1)*q(i,ivd(idust)))
+      qpred(i,ivdz(idust))   = qpred(i,ivdz(idust))   + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdz(idust))-dq(i,ivdz(idust),2)*q(i,ivdy(idust)))
+#endif         
 #endif          
       end do
 #endif
-    end if
-#endif
-
-! Polar geometry
-#if GEOM==1
-      !First, we take care of the 1D terms
-      qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,1)*q(i,iv)-dq(i,iv,1)*q(i,irho))
-      qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,1)*q(i,iv)-dq(i,iP,1)/q(i,irho))
-      qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,iv)*dq(i,iP,1)-gamma*q(i,iP)*dq(i,iv,1))
-
-      !We now add the terms that are specific to 2D problems
-#if NY>1
-        qpred(i,irho) = qpred(i,irho) + half*dt*(-dq(i,irho,2)*q(i,ivy)-dq(i,ivy,2)*q(i,irho))
-        qpred(i,iv)   = qpred(i,iv)   + half*dt*(-dq(i,iv,2)*q(i,ivy))
-        qpred(i,ivy)  = qpred(i,ivy)  + half*dt*(-dq(i,ivy,2)*q(i,ivy)-dq(i,ivy,1)*q(i,iv)-dq(i,iP,2)/q(i,irho))
-        qpred(i,iP)   = qpred(i,iP)   + half*dt*(-q(i,ivy)*dq(i,iP,2)-gamma*q(i,iP)*dq(i,ivy,2))
-#endif        
-      !Dust terms
-#if NDUST>0
-      do idust=1,ndust
-        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),1)*q(i,ivd(idust))-dq(i,ivd(idust),1)*q(i,irhod(idust)))
-        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),1)*q(i,ivd(idust)))
-#if NY>1
-        qpred(i,irhod(idust)) = qpred(i,irhod(idust)) + half*dt*(-dq(i,irhod(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),2)*q(i,irhod(idust)))
-        qpred(i,ivd(idust))   = qpred(i,ivd(idust))   + half*dt*(-dq(i,ivd(idust),2)*q(i,ivdy(idust)))
-        qpred(i,ivdy(idust))  = qpred(i,ivdy(idust))  + half*dt*(-dq(i,ivdy(idust),2)*q(i,ivdy(idust))-dq(i,ivdy(idust),1)*q(i,ivd(idust)))
-#endif          
-      end do
 #endif
     end if
-#endif
-
   end do
   !$OMP END DO
 
@@ -131,6 +109,7 @@ subroutine predictor
           qp(i,ivar,2)=qpred(i,ivar)+half*dq(i,ivar,2)*dx(i,2)
 #endif          
       end do
+
     end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -231,6 +210,17 @@ subroutine add_delta_u
         
           flux_right(ivt) = qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivt,idim) ! rho u v
           flux_left(ivt)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivt,idim) 
+#if IVZ==1
+          !Second transverse momentum
+          qright(ivz)     = qm(il,ivz,idim) ! v
+          qleft(ivz)      = qp(i,ivz,idim)
+
+          uright(ivz)     = qm(il,irho,idim) * qm(il,ivz,idim) ! rho w
+          uleft(ivz)      = qp(i,irho,idim)  * qp(i,ivz,idim) 
+        
+          flux_right(ivz) = qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivz,idim) ! rho u w
+          flux_left(ivz)  = qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivz,idim) 
+#endif          
 #endif
 
         !Energy
@@ -239,10 +229,14 @@ subroutine add_delta_u
         qleft(iP)     = qp(i,iP,idim)
 
         uright(iP)    = qm(il,iP,idim)/(gamma-1.d0) + half * qm(il,irho,idim) * qm(il,ivn,idim) * qm(il,ivn,idim)! E
-        uleft(iP)     = qp(i,iP,idim) /(gamma-1.d0) + half * qp(i,irho,idim)  * qp(i,ivn,idim)  *  qp(i,ivn,idim)
+        uleft(iP)     = qp(i,iP,idim) /(gamma-1.d0) + half * qp(i,irho,idim)  * qp(i,ivn,idim)  * qp(i,ivn,idim)
 #if NY>1
         uright(iP)   = uright(iP)  + half * qm(il,irho,idim) * qm(il,ivt,idim) * qm(il,ivt,idim)
         uleft(iP)    = uleft(iP)   + half * qp(i,irho,idim)  * qp(i,ivt,idim)  * qp(i,ivt,idim)
+#if IVZ==1
+        uright(iP)   = uright(iP)  + half * qm(il,irho,idim) * qm(il,ivz,idim) * qm(il,ivz,idim) ! kinetic energy of z component
+        uleft(iP)    = uleft(iP)   + half * qp(i,irho,idim)  * qp(i,ivz,idim)  * qp(i,ivz,idim)
+#endif        
 #endif
         flux_right(iP) = (uright(iP)+qright(iP)) * qright(ivn) ! (E+P) v
         flux_left(iP)  = (uleft(iP) +qleft(iP))  * qleft(ivn)
@@ -284,6 +278,17 @@ subroutine add_delta_u
 
             flux_right(ivt)= qm(il,irhod(idust),idim)*qm(il,ivn,idim)*qm(il,ivt,idim)
             flux_left(ivt) = qp(i,irhod(idust),idim)*qp(i,ivn,idim)*qp(i,ivt,idim)
+#if IVZ==1
+          !Dust second transverse momentum
+          qright(ivdz(idust))    = qm(il,ivdz(idust),idim)
+          qleft(ivdz(idust))     = qp(i,ivdz(idust),idim)
+
+          qright(ivdz(idust))    = qm(il,ivdz(idust),idim)* qm(il,irhod(idust),idim)
+          uleft(ivdz(idust))     = qp(i,ivdz(idust),idim) * qp(i,irhod(idust),idim)
+
+          flux_right(ivdz(idust))= qm(il,irhod(idust),idim)*qm(il,ivn,idim)*qm(il,ivdz(idust),idim)
+          flux_left(ivdz(idust)) = qp(i,irhod(idust),idim)*qp(i,ivn,idim)*qp(i,ivdz(idust),idim)
+#endif            
 #endif
         end do
 #endif
@@ -306,6 +311,9 @@ subroutine add_delta_u
             lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
             lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
             if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
+#if IVZ==1
+            lambda_llf(ivdz(idust)) = max(abs(qleft(ivn)),abs(qright(ivn))) 
+#endif              
           end do
 #endif  
         do ivar=1,nvar
@@ -331,7 +339,12 @@ subroutine add_delta_u
             endif 
             lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
             lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
-            if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))            
+#if NY>1            
+            lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn))) 
+#if IVZ==1
+            lambda_llf(ivdz(idust)) = max(abs(qleft(ivn)),abs(qright(ivn))) 
+#endif   
+#endif                 
           end do
 #endif  
           do ivar = 1,iP
@@ -342,7 +355,12 @@ subroutine add_delta_u
           do idust=1,ndust
             flux(i,irhod(idust),idim)  = half  * (flux_left(irhod(idust))+flux_right(irhod(idust)))-half*lambda_llf(irhod(idust))* (uright(irhod(idust))-uleft(irhod(idust)))
             flux(i,ivd(idust),idim)    = half  * (flux_left(ivd(idust))+flux_right(ivd(idust)))-half*lambda_llf(ivd(idust))* (uright(ivd(idust))-uleft(ivd(idust)))
-            if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+#if NY>1            
+            flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+#if IVZ==1
+            flux(i,ivdz(idust),idim)   = half  * (flux_left(ivdz(idust))+flux_right(ivdz(idust)))-half*lambda_llf(ivdz(idust))* (uright(ivdz(idust))-uleft(ivdz(idust)))
+#endif            
+#endif            
         enddo
 #endif            
 #endif
@@ -400,8 +418,14 @@ subroutine add_delta_u
         if(ndim==2) then
           if(qstar(ivn)>0.0d0) then
             flux(i,ivt,idim)  = r_o*u_o*qleft(ivt)
+#if IVZ==1
+            flux(i,ivz,idim)  = r_o*u_o*qleft(ivz)
+#endif            
           else
             flux(i,ivt,idim)  = r_o*u_o*qright(ivt)
+#if IVZ==1
+            flux(i,ivz,idim)  = r_o*u_o*qright(ivz)
+#endif              
           endif
         endif
 #if NDUST>0
@@ -412,12 +436,22 @@ subroutine add_delta_u
             endif 
             lambda_llf(irhod(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))
             lambda_llf(ivd(idust))   = max(abs(qleft(ivn)),abs(qright(ivn)))
-            if(ndim==2)lambda_llf(ivdy(idust)) = max(abs(qleft(ivn)),abs(qright(ivn)))            
+#if NY>1            
+            lambda_llf(ivdy(idust))  = max(abs(qleft(ivn)),abs(qright(ivn))) 
+#if IVZ==1
+            lambda_llf(ivdz(idust))  = max(abs(qleft(ivn)),abs(qright(ivn))) 
+#endif   
+#endif 
           end do
           do idust=1,ndust
             flux(i,irhod(idust),idim)  = half  * (flux_left(irhod(idust))+flux_right(irhod(idust)))- half*lambda_llf(irhod(idust))* (uright(irhod(idust))-uleft(irhod(idust)))
             flux(i,ivd(idust),idim)    = half  * (flux_left(ivd(idust))+flux_right(ivd(idust)))    - half*lambda_llf(ivd(idust))* (uright(ivd(idust))-uleft(ivd(idust)))
-            if(ndim==2)flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+#if NY>1            
+            flux(i,ivdy(idust),idim)   = half  * (flux_left(ivdy(idust))+flux_right(ivdy(idust)))-half*lambda_llf(ivdy(idust))* (uright(ivdy(idust))-uleft(ivdy(idust)))
+#if IVZ==1
+            flux(i,ivdz(idust),idim)   = half  * (flux_left(ivdz(idust))+flux_right(ivdz(idust)))-half*lambda_llf(ivdz(idust))* (uright(ivdz(idust))-uleft(ivdz(idust)))
+#endif 
+#endif
         enddo
 #endif 
 #endif
@@ -448,7 +482,7 @@ subroutine add_delta_u
   !$OMP END DO
   !$OMP END PARALLEL
   !Update state vector 
-  unew=unew+delta_U
+  u_prim=u_prim+delta_U
 
 
   deallocate(delta_U)

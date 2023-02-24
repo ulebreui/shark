@@ -17,38 +17,48 @@ subroutine solve(verbose,outputing)
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
  
+  call apply_boundaries !Boundaries are applied here. There is no need to redo it
+
+  call ctoprim
   ! We compute the stability timestep
-  
   call courant
+  !Source terms are computed and added to u_prim 
+  call source_terms
+  call ctoprim
+
   call system_clock ( t2, clock_rate, clock_max )
 
   !Predictor step. Variables are estimated at cell interfaces and half dt
-  
-  call set_unew
   call predictor
   call system_clock ( t3, clock_rate, clock_max )
 
-  !Flux are computed
-  
+  !Flux are computed and added to u_prim
   call add_delta_u
   call system_clock ( t4, clock_rate, clock_max )
 
-  !Source terms are computed
-  
-  call source_terms
+  call set_u_prim
+  call ctoprim
+
   call system_clock ( t5, clock_rate, clock_max )
-    
-  call set_uold
-  call system_clock ( t6, clock_rate, clock_max )
   
+  !Source terms are computed and added to u_prim
+  call source_terms
+  call ctoprim
+
+  call system_clock ( t6, clock_rate, clock_max )
+
   
 #if NDUST>0
   !Dust step (dynamics, growth, charging)
   call dust(verbose,outputing)
+  call ctoprim
   call system_clock ( t7, clock_rate, clock_max )
 #else
   t7=t6
 #endif
+
+  !Setup related modifs
+  call setup_inloop
 
   t21=t21+real ( t2- t1 ) / real ( clock_rate )
   t32=t32+real ( t3- t2 ) / real ( clock_rate )
@@ -72,55 +82,36 @@ subroutine solve(verbose,outputing)
   
 end subroutine solve
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This routine sets unew and computes the new primitive variables
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine set_unew
-  use parameters
-  use commons
-  use units
-  implicit none
-  call apply_boundaries(1,uold,ncells,nvar) !Boundaries are applied to uold so it must be done as early as that
-  !Unew = Uold, Unew is the temporary state vector
-  unew = uold
-  !We compute the new primitive variables.
-  !Necessary for the Riemmann solver and for the predictor step
-  call ctoprim
-
-  
-end subroutine set_unew
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! This routine sets uold and does some regularisation for the density
+! This routine sets u_prim and does some regularisation for the density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine set_uold
+subroutine set_u_prim
   use parameters
   use commons
   use units
+  use OMP_LIB
   implicit none
   integer ::i
 
-  !We update the state vector (and impose a lower density to avoid negative values)
-  uold = unew
-  do i = 1,ncells
-     uold(i,irho) = max(uold(i,irho),1d-27/unit_d) !smallr
-  end do
-  call apply_boundaries(1,uold,ncells,nvar)
 
+   !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i)
+  !$OMP DO
+  do i = 1,ncells
+     u_prim(i,irho) = max(u_prim(i,irho),1d-27/unit_d) !smallr
+  end do
+  !$OMP END DO
+  !$OMP END PARALLEL
   
-end subroutine set_uold
+end subroutine set_u_prim
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -147,19 +138,28 @@ subroutine ctoprim
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i = 1,ncells
-     q(i,irho)             = uold(i,irho)
-     q(i,iv)               = uold(i,iv)/uold(i,irho)
-     if(ndim==1)q(i,iP)    = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0)
+     q(i,irho)             = u_prim(i,irho)
+     q(i,iv)               = u_prim(i,iv)/u_prim(i,irho)
+     if(ndim==1)q(i,iP)    = (gamma-1.0d0)*u_prim(i,iP)-half*u_prim(i,irho)*((u_prim(i,iv)/u_prim(i,irho))**2.0)
      if(ndim==2) then 
-      q(i,iP)              = (gamma-1.0d0)*uold(i,iP)-half*uold(i,irho)*((uold(i,iv)/uold(i,irho))**2.0+(uold(i,ivy)/uold(i,irho))**2.0)
-      q(i,ivy)             = uold(i,ivy)/uold(i,irho)
+#if IVZ==0    
+      q(i,iP)              = (gamma-1.0d0)*u_prim(i,iP)-half*u_prim(i,irho)*((u_prim(i,iv)/u_prim(i,irho))**2.0+(u_prim(i,ivy)/u_prim(i,irho))**2.0)
+#else
+      q(i,iP)              = (gamma-1.0d0)*u_prim(i,iP)-half*u_prim(i,irho)*((u_prim(i,iv)/u_prim(i,irho))**2.0+(u_prim(i,ivy)/u_prim(i,irho))**2.0+(u_prim(i,ivz)/u_prim(i,irho))**2.0)
+      q(i,ivz)             = u_prim(i,ivz)/u_prim(i,irho)
+#endif
+      q(i,ivy)             = u_prim(i,ivy)/u_prim(i,irho)
      endif
-     cs(i)                 = sqrt(gamma*q(i,iP)/q(i,irho))
+if(iso_cs<1.0d0) cs(i)                 = sqrt(gamma*q(i,iP)/q(i,irho))
+if(iso_cs>0.0d0) q(i,iP)  =  u_prim(i,irho)*cs(i)**2
 #if NDUST>0
     do idust = 1,ndust
-        q(i,irhod(idust)) = uold(i,irhod(idust))
-        q(i,ivd(idust))   = uold(i,ivd(idust))/uold(i,irhod(idust))
-        if(ndim==2)q(i,ivdy(idust))  = uold(i,ivdy(idust))/uold(i,irhod(idust))
+        q(i,irhod(idust)) = u_prim(i,irhod(idust))
+        q(i,ivd(idust))   = u_prim(i,ivd(idust))/u_prim(i,irhod(idust))
+        if(ndim==2)q(i,ivdy(idust))  = u_prim(i,ivdy(idust))/u_prim(i,irhod(idust))
+#if IVZ==1
+        if(ndim==2)q(i,ivdz(idust))  = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust))
+#endif         
      end do
 #endif
   end do
@@ -182,6 +182,8 @@ subroutine primtoc
   use parameters
   use commons
   use units
+  use OMP_LIB
+
   implicit none
   integer :: i,idust
 
@@ -190,16 +192,25 @@ subroutine primtoc
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i = 1 ,ncells
-     uold(i,irho)             = q(i,irho)
-     uold(i,iv)               = q(i,irho)*q(i,iv)
-     if(ndim==2)uold(i,ivy)   = q(i,irho)*q(i,ivy)
-     uold(i,iP)               = q(i,iP)/(gamma-1.0d0)     +half* q(i,irho)*q(i,iv)**2.
-     if(ndim==2) uold(i,iP)   =  uold(i,iP)    + half* q(i,irho)*q(i,ivy)**2.
+     u_prim(i,irho)             = q(i,irho)
+     u_prim(i,iv)               = q(i,irho)*q(i,iv)
+     if(ndim==2)u_prim(i,ivy)   = q(i,irho)*q(i,ivy)
+#if IVZ==1
+     if(ndim==2)u_prim(i,ivz)               = q(i,irho)*q(i,ivz)
+#endif   
+     u_prim(i,iP)               = q(i,iP)/(gamma-1.0d0)     +half* q(i,irho)*q(i,iv)**2.
+     if(ndim==2) u_prim(i,iP)   =  u_prim(i,iP)    + half* q(i,irho)*q(i,ivy)**2.
+#if IVZ==1
+     if(ndim==2) u_prim(i,iP)   =  u_prim(i,iP)    + half* q(i,irho)*q(i,ivz)**2.
+#endif
 #if NDUST>0     
      do idust = 1,ndust
-        uold(i,irhod(idust)) = q(i,irhod(idust))
-        uold(i,ivd(idust))   = q(i,irhod(idust))*q(i,ivd(idust))
-        uold(i,ivdy(idust))  = q(i,irhod(idust))*q(i,ivdy(idust))
+        u_prim(i,irhod(idust)) = q(i,irhod(idust))
+        u_prim(i,ivd(idust))   = q(i,irhod(idust))*q(i,ivd(idust))
+        u_prim(i,ivdy(idust))  = q(i,irhod(idust))*q(i,ivdy(idust))
+#if IVZ==1
+        if(ndim==2)u_prim(i,ivdz(idust))  = q(i,irhod(idust))*q(i,ivdz(idust))
+#endif        
      end do
 #endif     
   end do

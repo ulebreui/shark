@@ -65,8 +65,6 @@ subroutine time_loop
      icount = icount+1
      istep  = istep+1
 
-     call setup_inloop
-     call set_unew
      call check_output(icount,iout,outputing,verbose)
 
      
