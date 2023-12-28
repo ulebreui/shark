@@ -1,0 +1,24 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+freq_out=1000
+CFL       = 0.8
+tend      = 0.245
+gamma     = 1.4d0
+slope_type=3
+/
+
+&SETUP_PARAMS
+/
+
+&DUST_PARAMS
+/
+
+&GRAVITY_PARAMS
+/
+
+&IONISATION_PARAMS
+charging=.false.
+/
+
+
