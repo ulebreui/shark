@@ -23,6 +23,8 @@ subroutine output(iout)
   write(ilun,'("NX        =",I11)')NX
   write(ilun,'("NY        =",I11)')NY
   write(ilun,'("MHD        =",I11)')MHD
+  write(ilun,'("GEOM        =",I11)')GEOM
+  write(ilun,'("GRIDSPACE       =",I11)')GRIDSPACE
   write(ilun,'("time        =",E23.15)')time
   write(ilun,'("unit_t        =",E23.15)')unit_t
   write(ilun,'("unit_d        =",E23.15)')unit_d
