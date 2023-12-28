@@ -1,0 +1,45 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+freq_out=100
+CFL=0.1
+tend=1d-3 ! in Myr
+gamma=1.666667d0
+slope_type=3
+force_kick=.false.
+/
+
+&SETUP_PARAMS
+box_l   = 4.8481e-6 ! 1 au
+box_l_y = 4.8481e-6 ! 1 au
+rho_dense    = 1.0d-18
+rho_diffuse  = 1.0d-18
+T_dense      = 10.0d0
+T_diffuse    = 10.0d0
+Mach         = 0.25d0
+vy0          = 1d-1
+kx           = 2.0d0
+/
+
+&DUST_PARAMS
+dust_distribution='mrn'
+smin     = 5d-7
+scutmin  = 1d-7
+scut     = 250d-7
+smax     = 0.10d0
+rhograin = 2.3d0
+dust2gas = 0.01d0
+mrn      = 3.5d0
+dust_back_reaction = .true.
+growth             = .false.
+drift_in_growth    = .true.
+brownian_in_growth =.true.
+/
+
+
+&GRAVITY_PARAMS
+/
+
+&IONISATION_PARAMS
+charging=.false.
+/

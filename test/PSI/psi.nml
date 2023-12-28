@@ -1,0 +1,36 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+freq_out=500
+CFL=0.5
+tend=500.0 
+gamma=1.666667d0
+force_kick=.true.
+slope_type=3
+/
+
+&SETUP_PARAMS
+box_l       = 40d0
+box_l_y     = 40d0
+rho_init    = 1.0d0
+omega_shear = 1.0d0
+hoverr      = 0.1
+Stokes_distrib = .true.
+Stokes_min     = 0.01d0
+Stokes_max     = 100.0d0
+Stokes_cut = 0.1d0
+/
+
+&DUST_PARAMS
+dust_back_reaction = .true.
+drag               = .true.
+dust2gas           = 0.1d0
+/
+
+&GRAVITY_PARAMS
+/
+
+&IONISATION_PARAMS
+charging=.false.
+/
+

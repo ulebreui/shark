@@ -1,0 +1,41 @@
+!This is a namelist for the SHARK code
+
+&GRID_PARAMS
+freq_out=2000
+CFL  = 0.8
+tend = 7.0 ! orbit at 100 au
+gamma=1.666667d0
+force_kick =.true.
+viscosity  =.false.
+slope_type = 1
+/
+
+&SETUP_PARAMS
+box_l        = 400d0
+R_out_disk   = 40d0  
+smooth_r     = 1d0
+sigma_R0     = 1700.0d0
+decrease_density=1.0
+Mplanet = 0.0d0
+Rplanet = 1.0d0
+hoverr=0.1
+alpha_visc   = 1d-1
+accretion=.true.
+/
+
+&DUST_PARAMS
+dust_distribution='mrn'
+scut     = 1.0d0
+dust2gas = 0.01d0
+dust_back_reaction=.true.
+drag=.true.
+/
+
+
+&GRAVITY_PARAMS
+/
+
+&IONISATION_PARAMS
+charging=.false.
+/
+
