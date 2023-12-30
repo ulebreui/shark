@@ -24,7 +24,7 @@ subroutine solve(verbose,outputing)
   if(force_kick) call update_force_setup
 
 #if NDUST>0
-  !Re-calc distribution
+  ! Re-calc distribution
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
@@ -34,21 +34,21 @@ subroutine solve(verbose,outputing)
 
   call system_clock ( t2, clock_rate, clock_max )
   
-  !Predictor step. Variables are estimated at cell interfaces and half dt
+  ! Predictor step. Variables are estimated at cell interfaces and half dt
   call predictor
   call system_clock ( t3, clock_rate, clock_max )
 
-  !Flux are computed and added to u_prim
+  ! Flux are computed and added to u_prim
   call add_delta_u
 
 
-  !Source terms are computed and added to u_prim
+  ! Source terms are computed and added to u_prim
   call source_terms
 
   call system_clock ( t4, clock_rate, clock_max )
 
 #if NDUST>0
-  !Dust step (dynamics, growth, charging)
+  ! Dust step (dynamics, growth, charging)
   if(drag)   call dust_drag(1.0d0) ! Second half kick
   if(growth) call dust_growth(verbose)
 #endif
@@ -56,26 +56,26 @@ subroutine solve(verbose,outputing)
 
   if(charging)   call charge
   if(force_kick) call kick(1.0d0)
-  !Setup related modifs
+  ! Setup related modifs
   call setup_inloop
   call system_clock ( t6,  clock_rate, clock_max )
   
-  t21=t21+real ( t2- t1 ) / real ( clock_rate )
-  t32=t32+real ( t3- t2 ) / real ( clock_rate )
-  t43=t43+real ( t4- t3 ) / real ( clock_rate )
-  t54=t54+real ( t5- t4 ) / real ( clock_rate )
-  t65=t65+real ( t6- t5 ) / real ( clock_rate )
-  
+  t21 = t21 + real ( t2 - t1 ) / real ( clock_rate )
+  t32 = t32 + real ( t3 - t2 ) / real ( clock_rate )
+  t43 = t43 + real ( t4 - t3 ) / real ( clock_rate )
+  t54 = t54 + real ( t5 - t4 ) / real ( clock_rate )
+  t65 = t65 + real ( t6 - t5 ) / real ( clock_rate )
+
   if(verbose) then
      write(*,*) "Time spent in each routines: cumulative percentage & real time of current timestep & real time cumulative  "
-     tall= t21+t32+t43+t54
-     write ( *, * ) 'Courant      ',t21/tall*100. ,'(%) &',real ( t2- t1 ) / real ( clock_rate )*1e6," (mus)", t21,"(s)"
-     write ( *, * ) 'Predictor    ',t32/tall*100. ,'(%) &',real ( t3- t2 ) / real ( clock_rate )*1e6," (mus)",t32," (s)"
-     write ( *, * ) 'Delta U  + Source    ',t43/tall*100. ,'(%) &',real ( t4- t3 ) / real ( clock_rate )*1e6," (mus)",t43," (s)"
+     tall = t21 + t32 + t43 + t54
+     write ( *, * ) 'Courant      ', t21/tall*100. ,'(%) &',real ( t2- t1 ) / real ( clock_rate )*1e6," (mus)", t21,"(s)"
+     write ( *, * ) 'Predictor    ', t32/tall*100. ,'(%) &',real ( t3- t2 ) / real ( clock_rate )*1e6," (mus)", t32," (s)"
+     write ( *, * ) 'Delta U  + Source    ', t43/tall*100. ,'(%) &',real ( t4- t3 ) / real ( clock_rate )*1e6," (mus)", t43," (s)"
 #if NDUST>0     
-     write ( *, * ) 'Dust         ',t54/tall*100. ,'(%) &',real ( t5- t4 ) / real ( clock_rate )*1e6," (mus)",t54," (s)"
+     write ( *, * ) 'Dust         ', t54/tall*100. ,'(%) &',real ( t5- t4 ) / real ( clock_rate )*1e6," (mus)", t54," (s)"
 #endif
-     write ( *, * ) 'Others       ',t65/tall*100. ,'(%) &',real ( t6- t5 ) / real ( clock_rate )*1e6," (mus)",t65," (s)"
+     write ( *, * ) 'Others       ', t65/tall*100. ,'(%) &',real ( t6- t5 ) / real ( clock_rate )*1e6," (mus)", t65," (s)"
 
   endif
   

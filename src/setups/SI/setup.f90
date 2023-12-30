@@ -19,8 +19,8 @@ subroutine setup
 
 
   eta_stream = 0.05*HoverR
-  box_l   = box_l  *eta_stream*rad0
-  box_l_y = box_l_y*eta_stream*rad0
+  box_l      = box_l  *eta_stream*rad0
+  box_l_y    = box_l_y*eta_stream*rad0
 
   vkep    = rad0*Omega_shear
   cs0     = (hoverR)*vkep
@@ -41,7 +41,7 @@ subroutine setup
 
     do idust=1,ndust
         dust2gas_species(idust) = epsilondust(1,idust)
-        stokes_species(idust) = sdust(1,idust)/(rho_init*cs0/rhograin/omega_shear)
+        stokes_species(idust)   = sdust(1,idust)/(rho_init*cs0/rhograin/omega_shear)
     end do
 
   endif
@@ -80,10 +80,8 @@ subroutine setup
         call get_rhoturb(2d-2*cs0,perturbation)
 
         q(i,ivy)   = perturbation
-#if IVZ==1
         call get_rhoturb(2d-2*cs0,perturbation)
         q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-#endif 
         q(i,iP)    = q(i,irho)*cs0**2.0
 #if NDUST>0
      do idust=1,ndust
@@ -98,10 +96,8 @@ subroutine setup
         call get_rhoturb(2d-2*cs0,perturbation)
 
         q(i,ivdy(idust))     =  perturbation
-#if IVZ==1        
         call get_rhoturb(2d-2*cs0,perturbation)
         q(i,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
-#endif
      end do
 #endif
   end do
@@ -280,9 +276,9 @@ end subroutine setup_inloop
    integer :: i,idust
 
    !return
-#if NDUST>0
-    call compute_tstop
-#endif
+! #if NDUST>0
+!     call compute_tstop
+! #endif
 
 
    do i=1,ncells

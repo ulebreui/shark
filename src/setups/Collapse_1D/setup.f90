@@ -24,7 +24,7 @@ subroutine setup
   do iy = 1,ny_max
     do ix = 1,nx_max
       q(icell(ix,iy),irho) = rho_cloud
-      q(icell(ix,iy),ivx)   = 0.0d0
+      q(icell(ix,iy),ivx)  = 0.0d0
       q(icell(ix,iy),iP)   = rho_cloud*cs_eos(barotrop(rho_cloud))**2
     end do
   end do
@@ -33,10 +33,10 @@ subroutine setup
   call distribution_dust(.true.)
   do i=1,ncells
      do idust=1,ndust
-        q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+        q(i,irhod(idust))   = epsilondust(i,idust)*q(i,irho)
         if(single_size) then
-          sdust(i,idust)   = smax/unit_l
-          q(i,irhod(idust))= 0.01*q(i,irho)
+          sdust(i,idust)    = smax/unit_l
+          q(i,irhod(idust)) = 0.01*q(i,irho)
         endif
      end do
   end do

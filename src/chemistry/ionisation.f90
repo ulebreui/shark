@@ -148,7 +148,7 @@ subroutine charge
 
      sigmav_dust(:)=pi*(l_grain_loc(:))**2.*dsqrt(8.0*kB*T/(pi*2.0d0*mH))*(1.0d0+dsqrt(pi/(2.*tau_k(:))))
 
-     t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs(i))
+     t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs_eos(T))
 
      mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
      mu_e=2.0d0*mH*m_el/(m_el+2.0d0*mH)

@@ -36,27 +36,28 @@ subroutine predictor
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,ivar,ix,iy,idim,ix0,iy0,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz)
   
-  drx  = 0.0d0 
-  dpx  = 0.0d0  
-  dry  = 0.0d0 
-  dpy  = 0.0d0
-  duy  = 0.0d0
-  dvx  = 0.0d0
-  dvy  = 0.0d0
-  dwx  = 0.0d0
-  dwy  = 0.0d0
-  u    = 0.0d0
-  v    = 0.0d0
-  w    = 0.0d0
-  dBx_x=0.0d0
-  dBy_x=0.0d0
-  dBz_x=0.0d0
-  Bx   =0.0d0
-  By   =0.0d0
-  Bz   =0.0d0
-  sBx  =0.0d0
-  sBy  =0.0d0
-  sBz  =0.0d0
+  drx   = 0.0d0 
+  dpx   = 0.0d0  
+  dry   = 0.0d0 
+  dpy   = 0.0d0
+  duy   = 0.0d0
+  dvx   = 0.0d0
+  dvy   = 0.0d0
+  dwx   = 0.0d0
+  dwy   = 0.0d0
+  u     = 0.0d0
+  v     = 0.0d0
+  w     = 0.0d0
+  dBx_x = 0.0d0
+  dBy_x = 0.0d0
+  dBz_x = 0.0d0
+  Bx    = 0.0d0
+  By    = 0.0d0
+  Bz    = 0.0d0
+  sBx   = 0.0d0
+  sBy   = 0.0d0
+  sBz   = 0.0d0
+
   !$OMP DO
   do i=1,ncells
     if(active_cell_predictor(i)==1) then
@@ -192,16 +193,16 @@ subroutine predictor
             ddxp=radius_polar*dx(i,idim)
         endif 
 #endif
-        qm(i,irho,idim)   = max(q(i,irho)    + half*dt*sr0 + half*dq(i,irho,idim)   *ddxm,smallr)
-        qm(i,ivx,idim)    = q(i,ivx)         + half*dt*su0 + half*dq(i,ivx,idim)    *ddxm
-        qm(i,iP,idim)     = max(q(i,iP)      + half*dt*sP0 + half*dq(i,iP,idim)     *ddxm,smallP)
-        qm(i,ivy,idim)    = q(i,ivy)         + half*dt*sv0 + half*dq(i,ivy,idim)    *ddxm
-        qm(i,ivz,idim)    = q(i,ivz)         + half*dt*sw0 + half* dq(i,ivz,idim)    *ddxm 
-        qp(i,irho,idim)   = max(q(i,irho)    + half*dt*sr0  - half*dq(i,irho,idim)  *ddxp,smallr)
-        qp(i,ivx,idim)    = q(i,ivx)         + half*dt*su0  - half*dq(i,ivx,idim)   *ddxp
-        qp(i,iP,idim)     = max(q(i,iP)      + half*dt*sP0  - half*dq(i,iP,idim)    *ddxp,smallP)
-        qp(i,ivy,idim)    = q(i,ivy)         + half*dt*sv0  - half*dq(i,ivy,idim)   *ddxp
-        qp(i,ivz,idim)    = q(i,ivz)         + half*dt*sw0  -half* dq(i,ivz,idim)   *ddxp
+        qm(i,irho,idim)   = max(q(i,irho)    + half*dt*sr0  + half*dq(i,irho,idim)   *ddxm,smallr)
+        qm(i,ivx,idim)    = q(i,ivx)         + half*dt*su0  + half*dq(i,ivx,idim)    *ddxm
+        qm(i,iP,idim)     = max(q(i,iP)      + half*dt*sP0  + half*dq(i,iP,idim)     *ddxm,smallP)
+        qm(i,ivy,idim)    = q(i,ivy)         + half*dt*sv0  + half*dq(i,ivy,idim)    *ddxm
+        qm(i,ivz,idim)    = q(i,ivz)         + half*dt*sw0  + half* dq(i,ivz,idim)   *ddxm 
+        qp(i,irho,idim)   = max(q(i,irho)    + half*dt*sr0  - half*dq(i,irho,idim)   *ddxp,smallr)
+        qp(i,ivx,idim)    = q(i,ivx)         + half*dt*su0  - half*dq(i,ivx,idim)    *ddxp
+        qp(i,iP,idim)     = max(q(i,iP)      + half*dt*sP0  - half*dq(i,iP,idim)     *ddxp,smallP)
+        qp(i,ivy,idim)    = q(i,ivy)         + half*dt*sv0  - half*dq(i,ivy,idim)    *ddxp
+        qp(i,ivz,idim)    = q(i,ivz)         + half*dt*sw0  - half* dq(i,ivz,idim)   *ddxp
 
     end do
 
@@ -216,7 +217,6 @@ subroutine predictor
         dvx   = dq(i,ivdy(idust),1)
         w     = q(i,ivdz(idust))
         dwx   = dq(i,ivdz(idust),1)
-
 #if NY>1        
         dvy   = dq(i,ivdy(idust),2)
         duy   = dq(i,ivdx(idust),2)
@@ -228,9 +228,6 @@ subroutine predictor
         !Spherical geometry source term
         sr0=sr0-r_rho*u/radii_c(i)
 #endif         
-
-
-
 #if MHD==0
         su0    = -u*dux-v*duy       
         sv0    = -u*dvx-v*dvy 

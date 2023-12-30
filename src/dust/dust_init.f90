@@ -116,9 +116,7 @@ subroutine allocate_dust
   allocate(sdust(1:ncells,1:ndust))
   allocate(mdust(1:ncells,1:ndust))
   allocate(tstop(1:ncells,1:ndust))
-
   allocate(force_dust(1:ncells,1:3,1:ndust))
-
   allocate(irhod(1:ndust))
   allocate(ivdx(1:ndust))
   allocate(ivdy(1:ndust))
@@ -157,14 +155,14 @@ subroutine mrn_distri
   use units
   use OMP_LIB
   implicit none
-  logical  ::initi
+  logical  :: initi
   real(dp) :: zeta,eta,m_min,sum_dust,m_sum,massmin,mono1,mono2,normalise
   integer  :: idust,i,jdust,kdust,icutmin,icutmax
 
 
-  zeta = (smax/smin)**(1.0d0/ndust)
-  eta  = zeta**3.
-  massmin=mminus(1)
+  zeta    = (smax/smin)**(1.0d0/ndust)
+  eta     = zeta**3.
+  massmin = mminus(1)
   mono1   = 4./3.*pi*rhograin*scutmin**3./unit_m
   mono2   = 4./3.*pi*rhograin*scut**3./unit_m
   icutmin = max(1,floor(dlog(mono1/massmin)/log(eta)+1))
@@ -200,16 +198,15 @@ subroutine paruta_distri
   zeta = (smax/smin)**(1.0d0/ndust)
   eta  = zeta**3.
   massmin=mminus(1)
-  mono1  = 4./3.*pi*rhograin*scutmin**3./unit_m
-  mono2  = 4./3.*pi*rhograin*scut**3./unit_m
+  mono1   = 4./3.*pi*rhograin*scutmin**3./unit_m
+  mono2   = 4./3.*pi*rhograin*scut**3./unit_m
   icutmin = max(1,floor(dlog(mono1/massmin)/log(eta)+1))
   icutmax = min(floor(dlog(mono2/massmin)/log(eta)+1),ndust)
-  mdust=4./3.*pi*rhograin/unit_d*sdust**3.
-
-  do i=1,ncells
+  mdust   = 4./3.*pi*rhograin/unit_d*sdust**3.
+  do i = 1,ncells
      normalise=0.0d0
-     do idust=icutmin,icutmax
-        normalise=normalise+mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
+     do idust = icutmin,icutmax
+        normalise = normalise+mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
         epsilondust(i,idust)=mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
      end do
       epsilondust(i,:)=dust2gas*epsilondust(i,:)/normalise

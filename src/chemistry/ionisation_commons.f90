@@ -24,7 +24,7 @@
 
   real(dp) :: B_0_lee       = 3d-5   ! Value of the B field at 10^4
   real(dp) :: B_threshold   = 0.1d0  ! Value of the B field threshold
-  real(dp):: mu_ions        = 25.0d0 ! Mean ion mass (in units of mh)
+  real(dp)::  mu_ions       = 25.0d0 ! Mean ion mass (in units of mh)
   real(dp):: stickeff_el    = 0.5d0  ! Sticking coefficient of electrions
   real(dp):: epsilon_ionis  = 1d-6   ! Tolerance of the ionisation scheme
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations

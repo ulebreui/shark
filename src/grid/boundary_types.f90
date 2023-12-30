@@ -23,15 +23,15 @@ subroutine boundary_collapse_1D
         end do 
 
         u_prim(ibound_left,ivx)   = 0.0d0
-        u_prim(ibound_right,ivx)  = 0.0d0 
         u_prim(first_active,ivx)  = 0.0d0
-        u_prim(last_active,ivx)   = 0.0d0 
+        u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
+        u_prim(last_active,ivx)   = min(u_prim(last_active,ivx),0.0d0)
 #if NDUST>0
         do idust=1,ndust
             u_prim(ibound_left ,ivdx(idust))   = 0.0d0
-            u_prim(ibound_right,ivdx(idust))   = 0.0d0 
             u_prim(first_active,ivdx(idust))   = 0.0d0
-            u_prim(last_active ,ivdx(idust))   = 0.0d0 
+            u_prim(ibound_right,ivdx(idust))   = min(u_prim(ibound_right,ivdx(idust)),0.0d0)
+            u_prim(last_active ,ivdx(idust))   = min(u_prim(last_active ,ivdx(idust)),0.0d0)
         end do
 #endif
 
