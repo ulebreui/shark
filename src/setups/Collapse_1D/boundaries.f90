@@ -10,8 +10,9 @@
 subroutine apply_boundaries
     use boundary_types
     implicit none
+#if NX>1
     call boundary_collapse_1D
-
+#endif
 end subroutine apply_boundaries
 
 

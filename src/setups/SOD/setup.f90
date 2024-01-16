@@ -28,15 +28,15 @@ subroutine setup
       ! endif
       if(direction_shock==0) then
       if(position(icell(ix,iy),1)>half) then
-          q(icell(ix,iy),irho) = rho_r
+          q(icell(ix,iy),irho)  = rho_r
           q(icell(ix,iy),ivx)   = v_r
-          q(icell(ix,iy),iP)   = P_r
+          q(icell(ix,iy),iP)    = P_r
       endif
       else
       if(position(icell(ix,iy),2)>half) then
-          q(icell(ix,iy),irho) = rho_r
+          q(icell(ix,iy),irho)  = rho_r
           q(icell(ix,iy),ivx)   = v_r
-          q(icell(ix,iy),iP)   = P_r
+          q(icell(ix,iy),iP)    = P_r
       endif
       endif
     end do

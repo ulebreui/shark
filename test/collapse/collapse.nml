@@ -12,7 +12,7 @@ force_kick=.false.
 
 &SETUP_PARAMS
 M_cloud=1
-more_outputs=.false.
+more_outputs=.true.
 single_size=.false.
 /
 

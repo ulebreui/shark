@@ -158,27 +158,27 @@ subroutine output(iout)
 if(charging) then
   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_a
+      if(active_cell(i)==1) write(ilun) eta_a(i)
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_o
+      if(active_cell(i)==1) write(ilun) eta_o(i)
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_h
+      if(active_cell(i)==1) write(ilun) eta_h(i)
    end do
   close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/ni'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ni
+      if(active_cell(i)==1) write(ilun) ni(i)
    end do
   close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/ne'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ne
+      if(active_cell(i)==1) write(ilun) ne(i)
    end do
   close(ilun)
 endif

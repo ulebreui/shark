@@ -117,8 +117,8 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
   real(dp):: rmax_x,rmax_y,inner_r
   integer :: i, ix, iy,icell
 
-  print *, 'Number of cells        =', Ncells
-  print *, 'Number of active cells =', Ncells_active
+  print *, 'Number of cells        = ', Ncells
+  print *, 'Number of active cells = ', Ncells_active
 
 #if GEOM==0
   print *,'You are using a linear cartesian grid.'
@@ -265,7 +265,7 @@ subroutine gridinit_disk_log(rmax_x,inner_r)
 end subroutine gridinit_disk_log
 #endif
 
-
+#if NX>1
 #if GEOM==1
 !Grid initialisation routine
 subroutine gridinit_sphere1D(rmax)
@@ -379,47 +379,7 @@ subroutine gridinit_sphere1D(rmax)
 end subroutine gridinit_sphere1D
 
 #endif
-!Grid initialisation routine
-subroutine gridinit_sphere2D(rmax_x,rmax_y)
-  use parameters
-  use commons
-  use units
-  implicit none
-
-  real(dp):: rmax_x,rmax_y
-  integer :: i, ix, iy,icell
-
-  real(dp):: r_plus,r_min,theta_plus,theta_min,zeta_r
-
-!   print *, 'Number of cells        =', Ncells
-!   print *, 'Number of active cells =', Ncells_active
-
-! ! Polar geometry. Only in 2D
-!       do ix = 1, nx_max
-!         do iy = 1, ny_max
-
-!           dx  (icell(ix,iy),1) = rmax_x/float(nx)
-!           dx  (icell(ix,iy),2) = rmax_y/float(ny) ! This becomes theta
-
-!           radii(icell(ix,iy)) = min(rin+max((float(ix-first_active)  + 0.5d0)   * rmax_x/float(nx),rin),rmax_x) ! R 
-
-!           theta(icell(ix,iy))       = (float(iy-first_active_y) + 0.5d0)   * rmax_y/float(ny)! Theta
-
-!           if(active_cell_predictor(icell(ix,iy))==1) then
-!             surf(icell(ix,iy),1) = dx(icell(ix,iy),1)
-!             surf(icell(ix,iy),2) = radii(icell(ix,iy)) * dx(icell(ix,iy),2) ! r dtheta
-!           endif
-!           if(active_cell(icell(ix,iy))==1)  then
-!             vol (icell(ix,iy))  = surf(icell(ix,iy),1)*surf(icell(ix,iy),2) 
-!           endif
-
-!           position(icell(ix,iy),1) =  radii(icell(ix,iy))*cos(theta(icell(ix,iy)))! x
-!           position(icell(ix,iy),2) =  radii(icell(ix,iy))*sin(theta(icell(ix,iy)))! y
-
-!       end do
-!     end do
-
-end subroutine gridinit_sphere2D
+#endif
 
 
 

@@ -8,7 +8,7 @@ subroutine kick(coeffdt)
   integer :: i,idust
   real(dp) :: energy_old,energy_new,coeffdt
 
-  
+  if(static) return
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,idust,energy_old,energy_new)
@@ -30,8 +30,7 @@ subroutine kick(coeffdt)
   do idust=1,ndust
     u_prim(i,ivdx(idust))            = u_prim(i,ivdx(idust)) + u_prim(i,irhod(idust))*coeffdt*dt*force_dust(i,1,idust)
     u_prim(i,ivdy(idust))            = u_prim(i,ivdy(idust)) + u_prim(i,irhod(idust))*coeffdt*dt*force_dust(i,2,idust)
-    u_prim(i,ivdz(idust))            = u_prim(i,ivdz(idust)) + u_prim(i,irhod(idust))*coeffdt*dt*force_dust(i,3,idust)
-    
+    u_prim(i,ivdz(idust))            = u_prim(i,ivdz(idust)) + u_prim(i,irhod(idust))*coeffdt*dt*force_dust(i,3,idust)    
   end do
 #endif
   endif

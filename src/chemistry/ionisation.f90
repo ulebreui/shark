@@ -28,7 +28,7 @@ subroutine charge
   epsone     = 0.99999d0
 
   convergence_ionis = 1d4
-  niter_ionis=0
+  niter_ionis       = 0
 
   !Initial guess
   psi0      = -2.5d0
@@ -56,6 +56,7 @@ subroutine charge
   !$OMP PRIVATE(sigmas_ions,sigmas_dust,omegas_el,omegas_ions,omegas_dust,lowT,cross_sec)
   !$OMP DO
   do i=1,ncells
+     if(active_cell(i)==1) then
      ! Temperature
      T            = barotrop(u_prim(i,irho))
      ! Grain size in cm
@@ -144,11 +145,12 @@ subroutine charge
 
      ! Resistivity computation
 
-     B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
+     !B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
+     B_gauss = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field
 
      sigmav_dust(:)=pi*(l_grain_loc(:))**2.*dsqrt(8.0*kB*T/(pi*2.0d0*mH))*(1.0d0+dsqrt(pi/(2.*tau_k(:))))
 
-     t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs_eos(T))
+     t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs_eos(T)*unit_v)
 
      mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
      mu_e=2.0d0*mH*m_el/(m_el+2.0d0*mH)
@@ -167,7 +169,7 @@ subroutine charge
      sigmas_dust(:)= n_k(:)*(zd(i,:)*e_el_stat)**2.*t_sdust(:)/(mdust(i,:)*unit_m)
 
      omegas_el     = -e_el_stat*B_gauss/clight/m_el
-     omegas_ions   = e_el_stat*B_gauss/clight/(mu_ions*mH)
+     omegas_ions   = e_el_stat *B_gauss/clight/(mu_ions*mH)
      omegas_dust   = zd(i,:)*e_el_stat*B_gauss/clight/(mdust(i,:)*unit_m)
 
      ! Conductivities
@@ -179,11 +181,11 @@ subroutine charge
      eta_o(i)=1.0d0/sigma_o(i)
      eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
      eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
-
      !Hall factors
      do idust=1,ndust
         gamma_d(i,idust)=t_sdust(idust)*omegas_dust(idust)
      end do
+     endif
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -222,7 +224,7 @@ subroutine charge
   do i=1,ncells
   !if (active_cell(i)==1) then
      ! Temperature
-     T            = barotrop(u_prim(i,irho))
+     T            = barotrop(q(i,irho))
      ! Ion electron collisional cross-section
      sigmav_ie=(2d-7)/dsqrt(T/300.0d0)
      ! Reduced dust temperature
@@ -230,13 +232,13 @@ subroutine charge
      vi=dsqrt(8.0d0*kB*T/(pi*mu_ions*mH))
 
      ! Gas number density
-     nH_loc=u_prim(i,irho)*unit_nh
+     nH_loc=q(i,irho)*unit_nh
      ni(i)=sqrt(x*nH_loc/sigmav_ie)
      ne(i)=ni(i)
 
      ! Resistivity computation
 
-     B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
+     B_gauss = min(B_0_lee*sqrt(q(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
 
      mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
      mu_e=2.0d0*mH*m_el/(m_el+2.0d0*mH)

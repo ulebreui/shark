@@ -8,7 +8,7 @@ subroutine dust_drag(coeffdt)
 
   implicit none
   integer :: i,idust
-  real(dp),dimension(1:ndust):: alphak
+  real(dp), dimension(1:ndust):: alphak
   real(dp):: pnx,pny,pnz,rhon,coeffdt
   if(static) return
 
@@ -28,28 +28,28 @@ subroutine dust_drag(coeffdt)
 
      do idust=1,ndust
 
-        alphak(idust) = coeffdt*dt/tstop(i,idust) ! Half for half dt
+        alphak(idust) = coeffdt * dt / tstop(i,idust) ! Half for half dt
 
-        pnx   = pnx  + alphak(idust)/(1.0d0+alphak(idust))*u_prim(i,ivdx(idust))
-        pny   = pny  + alphak(idust)/(1.0d0+alphak(idust))*u_prim(i,ivdy(idust))
-        pnz   = pnz  + alphak(idust)/(1.0d0+alphak(idust))*u_prim(i,ivdz(idust))
-        rhon  = rhon + alphak(idust)/(1.0d0+alphak(idust))*u_prim(i,irhod(idust))
+        pnx   = pnx  + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(i,ivdx(idust))
+        pny   = pny  + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(i,ivdy(idust))
+        pnz   = pnz  + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(i,ivdz(idust))
+        rhon  = rhon + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(i,irhod(idust))
 
      end do
 
      do idust = 1,ndust
 
-        u_prim(i,ivdx(idust)) = u_prim(i,ivdx(idust))/(1.0d0+alphak(idust)) + (alphak(idust)/(1.0d0+alphak(idust)))*pnx/rhon*u_prim(i,irhod(idust))
-        u_prim(i,ivdy(idust)) = u_prim(i,ivdy(idust))/(1.0d0+alphak(idust)) + (alphak(idust)/(1.0d0+alphak(idust)))*pny/rhon*u_prim(i,irhod(idust))
-        u_prim(i,ivdz(idust)) = u_prim(i,ivdz(idust))/(1.0d0+alphak(idust)) + (alphak(idust)/(1.0d0+alphak(idust)))*pnz/rhon*u_prim(i,irhod(idust))
+        u_prim(i,ivdx(idust)) = u_prim(i,ivdx(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnx/rhon*u_prim(i,irhod(idust))
+        u_prim(i,ivdy(idust)) = u_prim(i,ivdy(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pny/rhon*u_prim(i,irhod(idust))
+        u_prim(i,ivdz(idust)) = u_prim(i,ivdz(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnz/rhon*u_prim(i,irhod(idust))
 
      end do 
 
      if(dust_back_reaction) then
 
-         u_prim(i,ivx)  = pnx/rhon*u_prim(i,irho) 
-         u_prim(i,ivy)  = pny/rhon*u_prim(i,irho)   
-         u_prim(i,ivz)  = pnz/rhon*u_prim(i,irho)      
+         u_prim(i,ivx)  = pnx/rhon * u_prim(i,irho) 
+         u_prim(i,ivy)  = pny/rhon * u_prim(i,irho)   
+         u_prim(i,ivz)  = pnz/rhon * u_prim(i,irho)      
 
       end if 
 
@@ -65,7 +65,7 @@ subroutine dust_drag(coeffdt)
 
       do idust=1,ndust
 
-         u_prim(i,irhod(idust)) = max(u_prim(i,irho)*dust_ratio_min, u_prim(i,irhod(idust)))
+         u_prim(i,irhod(idust)) = max(u_prim(i,irho) * dust_ratio_min, u_prim(i,irhod(idust)))
 
       enddo
 

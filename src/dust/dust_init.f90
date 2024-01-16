@@ -74,11 +74,11 @@ subroutine distribution_dust(initi)
      endif
 
   else !Else we use the updated dust distribution
-  do i=1,ncells
+  !do i=1,ncells
      do idust=1,ndust
-        epsilondust(i,idust)=q(i,irhod(idust))/q(i,irho)
+        epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
      end do
-   end do
+   !end do
   end if
   if(restarting>0.and.initi) then
      do idust=1,ndust
@@ -207,7 +207,7 @@ subroutine paruta_distri
      normalise=0.0d0
      do idust = icutmin,icutmax
         normalise = normalise+mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
-        epsilondust(i,idust)=mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
+        epsilondust(i,idust) = mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
      end do
       epsilondust(i,:)=dust2gas*epsilondust(i,:)/normalise
   end do

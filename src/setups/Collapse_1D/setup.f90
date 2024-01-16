@@ -6,11 +6,12 @@ subroutine setup
 
   real(dp) :: barotrop, cs_eos, tff0,mcloud,rcloud,rho_cloud,r_cloud
 
-  integer :: i,idust,imax,ix,iy,icell
+  integer :: i,idust,imax,ix,iy,icell,itimes_part
 
 
   call allocate_init
 
+#if NX>1
   mcloud      = M_cloud*Msun
   r_cloud     = 2.0d0/5.0d0*Grav*mcloud/(kB*T0_cloud)*mu_gas*mH*alpha_cloud
   rho_cloud   = mcloud/(4.0d0/3.0d0*pi*r_cloud**3.)/unit_d
@@ -49,7 +50,54 @@ subroutine setup
 #endif 
   if(charging) call charge
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
+#else
+  non_standard_eos=1
+  static=.true.
+  open(15,file=trim('single_zone_time.dat'))
+  open(16,file=trim('single_zone_density.dat'))
 
+  !read(15,*), ntimes_part
+  allocate(times_particles(1:ntimes_part))
+  allocate(rho_particles(1:ntimes_part))
+  ! Here we need to read the collapse table
+
+  do itimes_part=1,ntimes_part
+    read(15,*) times_particles(itimes_part)
+    read(16,*) rho_particles(itimes_part)
+  end do
+  close(15)
+  close(16)
+  times_particles=times_particles/unit_t
+  rho_particles  =rho_particles/(mu_gas*mH)
+
+  print *, times_particles
+  print *, rho_particles
+  !stop
+  !/!\ Carefull we will need the correct unit for this ! /!\  
+  tend = maxval(times_particles)
+  time = times_particles(1) ! Set the initial time
+  q=0.d0
+#if NDUST>0
+  call distribution_dust(.true.)
+#endif
+  do i=1,ncells
+        q(i,irho)= rho_particles(ilist)
+        q(i,ivx) = 0.0d0
+        q(i,ivy) = 0.0d0
+        q(i,ivx) = 0.0d0
+#if NDUST>0                
+     do idust=1,ndust
+        q(i,irhod(idust))= q(i,irho)*epsilondust(i,idust)
+        q(i,ivdx(idust)) = 0.0d0
+        q(i,ivdy(idust)) = 0.0d0
+        q(i,ivdx(idust)) = 0.0d0        
+     end do
+#endif     
+  end do
+  call primtoc
+  if(charging) call charge
+
+#endif
 end subroutine setup
 
 
@@ -84,7 +132,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/M_cloud,alpha_cloud,more_outputs,single_size
+  namelist/setup_params/M_cloud,alpha_cloud,more_outputs,single_size,ntimes_part
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
@@ -106,10 +154,23 @@ subroutine read_setup_params(ilun,nmlfile)
    use units
    implicit none
    logical :: continue_sim
+#if NX>1
    !Here you can add flags to kill the simulation
    !if(time>=tend) continue_sim=.false.
    if(maxval(u_prim(:,irho)*unit_d)>rho_max_sim) continue_sim=.false.
+#else
 
+   dt=(times_particles(ilist+1)-times_particles(ilist))
+
+   ilist=ilist+1
+
+   if(ilist>ntimes_part) then
+
+      continue_sim = .false.
+
+   endif
+
+#endif
  end subroutine flag_continue
 
  subroutine check_output(icount,iout,outputing,verbose)
@@ -120,9 +181,9 @@ subroutine read_setup_params(ilun,nmlfile)
    integer :: icount,iout
    logical :: outputing,verbose
 
+#if NX>1   
     !We make an output at a certain frequency rate of for specific values of the density. This can be tuned at will
      if(icount.eq.freq_out) then
-
         verbose=.true.
         if(maxval(u_prim(:,irho)*unit_d)>rho_max_sim) more_outputs=.true.
         if(more_outputs)outputing=.true.
@@ -132,13 +193,11 @@ subroutine read_setup_params(ilun,nmlfile)
         outputing=.true.
      endif
      if(time.eq.0) outputing=.true.
-#if NDUST>0     
-     !if(outputing.and.charging) call charge 
-#endif     
+    
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) then 
-      print *, "time =",time*unit_t/(365.*24.*3600.*1000.),' tend = ', tend*unit_t/(365.*24.*3600.*1000.), ' kyr'
+      print *, "time = ",time*unit_t/(365.*24.*3600.*1000.),' tend = ', tend*unit_t/(365.*24.*3600.*1000.), ' kyr'
       print *, "Max density = ",maxval(u_prim(:,irho)*unit_d)," g / cc"
       icount=0
       print *, 'Total gas mass is',M_tot*unit_m/2d33, 'Solar masses'
@@ -148,6 +207,13 @@ subroutine read_setup_params(ilun,nmlfile)
      print *, "Outputing data for Max density = ",maxval(u_prim(:,irho)*unit_d)," g / cc"
      endif
      outputing=.false.
+#else
+   outputing = .true.
+   verbose   = .true.
+   call output(iout)
+   !iout=2
+   iout=iout+1
+#endif
  end subroutine check_output
 
  subroutine setup_preloop
@@ -155,6 +221,7 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
+#if NX>1
     order_mag=1d-24
     ! The idea here is to dump an output each time the density gains an order of magnitude. Since we don't know the initial density of the cloud here we find
      ! the next order of magnitude iteratively
@@ -162,6 +229,7 @@ subroutine read_setup_params(ilun,nmlfile)
       order_mag=order_mag*10.
   end do
   print *, "max density", maxval(u_prim(:,irho)*unit_d), 'order mag' ,order_mag
+#endif
 end subroutine setup_preloop
 
 subroutine setup_inloop
@@ -170,7 +238,23 @@ subroutine setup_inloop
    use units
    implicit none
    !call output(1)
-   return
+   integer :: icells,idust,i
+
+#if NX==1
+    do i=1,ncells 
+#if NDUST>0     
+    do idust=1,ndust
+        epsilondust(i,idust) = u_prim(i,irhod(idust))/u_prim(i,irho)
+    end do
+#endif      
+    u_prim(i,irho) = rho_particles(ilist)
+#if NDUST>0
+    do idust=1,ndust
+        u_prim(i,irhod(idust)) = u_prim(i,irho)*epsilondust(i,idust)
+    end do
+#endif
+  end do
+#endif
 end subroutine setup_inloop
 
  subroutine update_force_setup
@@ -212,7 +296,7 @@ subroutine compute_tstop
 
   implicit none
   integer :: i,idust
-  real(dp):: pn,rhon
+  real(dp):: pn,rhon,cs_eos,barotrop
   !Re-calc distribution
 
 
@@ -223,7 +307,7 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
+        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs_eos(barotrop(q(i,irho))))
      end do
      end if
   end do

@@ -2,7 +2,7 @@ module setup_parameters
   use precision
   
   !Cloud & Gas properties
-  real(dp),parameter :: mu_gas      = 2.31d0    ! Mean molecular weight
+  real(dp), parameter :: mu_gas      = 2.31d0    ! Mean molecular weight
   real(dp) :: box_l   = 1.0d0
   real(dp) :: box_l_y = 1.0d0
 
@@ -13,7 +13,9 @@ module setup_parameters
   logical  :: more_outputs = .false.
   real(dp) :: order_mag
   logical  :: single_size  = .false.
-
-
+  integer  :: ntimes_part  = 1
+  integer  :: ilist=1
+  real(dp), dimension(:), allocatable   :: times_particles
+  real(dp), dimension(:), allocatable :: rho_particles
 
 end module setup_parameters

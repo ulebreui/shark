@@ -226,7 +226,7 @@ subroutine predictor
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
 #if GEOM==1
         !Spherical geometry source term
-        sr0=sr0-r_rho*u/radii_c(i)
+        sr0    = sr0-r_rho*u/radii_c(i)
 #endif         
 #if MHD==0
         su0    = -u*dux-v*duy       

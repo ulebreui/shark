@@ -17,7 +17,6 @@ subroutine solve(verbose,outputing)
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
 
-
   call apply_boundaries !Boundaries are applied here.
   call ctoprim
 
@@ -28,6 +27,7 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
+  if(charging)   call charge
  
   ! We compute the stability timestep
   call courant
@@ -54,7 +54,6 @@ subroutine solve(verbose,outputing)
 #endif
   call system_clock ( t5, clock_rate, clock_max )
 
-  if(charging)   call charge
   if(force_kick) call kick(1.0d0)
   ! Setup related modifs
   call setup_inloop
@@ -76,7 +75,6 @@ subroutine solve(verbose,outputing)
      write ( *, * ) 'Dust         ', t54/tall*100. ,'(%) &',real ( t5- t4 ) / real ( clock_rate )*1e6," (mus)", t54," (s)"
 #endif
      write ( *, * ) 'Others       ', t65/tall*100. ,'(%) &',real ( t6- t5 ) / real ( clock_rate )*1e6," (mus)", t65," (s)"
-
   endif
   
 end subroutine solve
@@ -167,16 +165,16 @@ subroutine primtoc
 
   do i = 1 ,ncells
      u_prim(i,irho)              = q(i,irho)
-     u_prim(i,ivx)               = q(i,irho)*q(i,ivx)
-     u_prim(i,ivy)               = q(i,irho)*q(i,ivy)
-     u_prim(i,ivz)               = q(i,irho)*q(i,ivz)
+     u_prim(i,ivx)               = q(i,irho) * q(i,ivx)
+     u_prim(i,ivy)               = q(i,irho) * q(i,ivy)
+     u_prim(i,ivz)               = q(i,irho) * q(i,ivz)
      u_prim(i,iP)                = q(i,iP)/(gamma-1.0d0)+half* q(i,irho)*q(i,ivx)**2 + half* q(i,irho)*q(i,ivy)**2 + half* q(i,irho)*q(i,ivz)**2
 #if NDUST>0     
      do idust = 1,ndust
         u_prim(i,irhod(idust))  = q(i,irhod(idust))
-        u_prim(i,ivdx(idust))   = q(i,irhod(idust))*q(i,ivdx(idust))
-        u_prim(i,ivdy(idust))   = q(i,irhod(idust))*q(i,ivdy(idust))
-        u_prim(i,ivdz(idust))   = q(i,irhod(idust))*q(i,ivdz(idust))
+        u_prim(i,ivdx(idust))   = q(i,irhod(idust)) * q(i,ivdx(idust))
+        u_prim(i,ivdy(idust))   = q(i,irhod(idust)) * q(i,ivdy(idust))
+        u_prim(i,ivdz(idust))   = q(i,irhod(idust)) * q(i,ivdz(idust))
      end do
 #endif    
 #if MHD==1

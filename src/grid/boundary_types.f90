@@ -26,6 +26,7 @@ subroutine boundary_collapse_1D
         u_prim(first_active,ivx)  = 0.0d0
         u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
         u_prim(last_active,ivx)   = min(u_prim(last_active,ivx),0.0d0)
+
 #if NDUST>0
         do idust=1,ndust
             u_prim(ibound_left ,ivdx(idust))   = 0.0d0
@@ -49,7 +50,7 @@ subroutine zero_gradients
   use commons
   use units
   implicit none
-  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer  :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
   real(dp) :: total_energy,ekin_old,ekin_new,pm
 
   if(ndim==1) then
@@ -150,7 +151,7 @@ subroutine periodic_boundaries
   use commons
   use units
   implicit none
-  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer  :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
   real(dp) :: total_energy,ekin_old,ekin_new,pm
 
   do ix = first_active,last_active  
@@ -207,12 +208,12 @@ subroutine shear_boundaries(vel_shear)
          u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
       end do
       ! We must apply the shear to the corner cells 
-      if(ix==first_active .or. ix==last_active) then
-         if(ix==first_active) pm = -1.0d0
-         if(ix==last_active)  pm = 1.0d0
+      if(ix == first_active .or. ix == last_active) then
+         if(ix == first_active) pm = -1.0d0
+         if(ix == last_active)  pm = 1.0d0
 
-         mom_new  = u_prim(i_active_left,ivz)  + pm * u_prim(i_active_left,irho)*vel_shear
-         mom_new  = u_prim(i_active_right,ivz) + pm * u_prim(i_active_right,irho)*vel_shear
+         mom_new  = u_prim(i_active_left,ivz)  + pm * u_prim(i_active_left,irho)  * vel_shear
+         mom_new  = u_prim(i_active_right,ivz) + pm * u_prim(i_active_right,irho) * vel_shear
 
       end if
    end do
@@ -232,8 +233,8 @@ subroutine shear_boundaries(vel_shear)
          
          ! Then, we compensate the shear in the z velocity
 
-         mom_new = u_prim(i_active_left,ivz) - u_prim(i_active_left,irho)*vel_shear
-         u_prim(ibound_left,ivz)        = mom_new
+         mom_new  = u_prim(i_active_left,ivz) - u_prim(i_active_left,irho)*vel_shear
+         u_prim(ibound_left,ivz)         = mom_new
          mom_new  =  u_prim(i_active_right,ivz) + u_prim(i_active_right,irho)*vel_shear
          u_prim(ibound_right,ivz)        = mom_new         
 #if NDUST>0         
