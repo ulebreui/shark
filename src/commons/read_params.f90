@@ -32,7 +32,6 @@ subroutine read_params
       stop
    end if
  
-
    if(static) then
       print*, 'Static gas'
    else
@@ -42,10 +41,6 @@ subroutine read_params
 #if NDUST>0
    print *, "Dust namelist reading  !"
    call read_dust_params(13,nmlfile)
-#endif
-#if TURB==1
-   print *, "Turb namelist reading  !"
-   call read_turb_params(13,nmlfile)
 #endif
    print *, "Gravity namelist reading  !"
    call read_gravity_params(13,nmlfile)

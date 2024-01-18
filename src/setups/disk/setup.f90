@@ -219,7 +219,7 @@ subroutine setup_inloop
   !$OMP DO
 !We reinitialise at the center
   do i= 1,ncells
-    if(active_cell(i)==1) then
+    if(active_cell(i)) then
       xx       = position(i,1)-half*box_l  ! Boxlen already in pc
       yy       = position(i,2)-half*box_l_y
       rr       = sqrt(xx**2+yy**2+smooth_r**2)
@@ -293,7 +293,7 @@ end subroutine setup_inloop
   !$OMP PRIVATE(i,idust,xx,yy,rr, xx_p, yy_p, rr_p,theta_p,r_cyl,x_soft,y_soft)
   !$OMP DO
    do i=1,ncells
-    if(active_cell(i)==1)then
+    if(active_cell(i))then
         xx    = position(i,1)-half*box_l  ! Boxlen already in pc
         yy    = position(i,2)-half*box_l_y
         rr = sqrt(xx**2+yy**2+smooth_r**2)
@@ -364,7 +364,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust,xx,yy,H,rr)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
         xx=position(i,1)-half*box_l  ! Boxlen already in pc
         yy=position(i,2)-half*box_l_y
         rr=sqrt(xx**2+yy**2+smooth_r**2)

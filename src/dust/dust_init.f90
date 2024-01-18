@@ -32,6 +32,7 @@ subroutine distribution_dust(initi)
         mminus(idust) = m_min * eta  ** (idust-1)
         mplus(idust)  = m_min * eta  ** (idust)
      enddo
+
      do idust=1,ndust
         do i=1,ncells
            sdust(i,idust)=sqrt(aminus(idust)*aplus(idust))
@@ -122,7 +123,6 @@ subroutine allocate_dust
   allocate(ivdy(1:ndust))
   allocate(ivdz(1:ndust))
 
-
   !Size : bin edges
   aplus  = 0.0d0
   aminus = 0.0d0
@@ -131,9 +131,9 @@ subroutine allocate_dust
   mplus  = 0.0d0
   mminus = 0.0d0
 
-  epsilondust=0.0d0
-  sdust=0.0d0
-  mdust=0.0d0
+  epsilondust = 0.0d0
+  sdust       = 0.0d0
+  mdust       = 0.0d0
 
   tstop = 0.0d0
 

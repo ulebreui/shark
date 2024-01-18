@@ -56,7 +56,7 @@ subroutine charge
   !$OMP PRIVATE(sigmas_ions,sigmas_dust,omegas_el,omegas_ions,omegas_dust,lowT,cross_sec)
   !$OMP DO
   do i=1,ncells
-     if(active_cell(i)==1) then
+     if(active_cell(i)) then
      ! Temperature
      T            = barotrop(u_prim(i,irho))
      ! Grain size in cm
@@ -222,7 +222,7 @@ subroutine charge
 
   !Now we compute the actual ionisation
   do i=1,ncells
-  !if (active_cell(i)==1) then
+  !if (active_cell(i)) then
      ! Temperature
      T            = barotrop(q(i,irho))
      ! Ion electron collisional cross-section

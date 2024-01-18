@@ -9,9 +9,12 @@ subroutine allocate_init
   integer :: idust,i
 
   call get_active_cells
+  allocate(dtcells(1:ncells))
+  dtcells=1e10
 
   ! Grid related quantities
   allocate(vol(1:ncells))
+
   allocate(dvol(1:ncells))
   allocate(dx(1:ncells,1:ndim))
   allocate(surf(1:ncells,1:ndim))
@@ -49,18 +52,15 @@ subroutine allocate_init
 #if GEOM==2
     allocate(phi(1:ncells))
     phi=1.0d0
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
-#endif
 #endif
   ! Variable related quantities
   allocate(u_prim(1:ncells,1:nvar))
   allocate(q(1:ncells,1:nvar))
   allocate(qm(1:ncells,1:nvar,1:ndim))
   allocate(qp(1:ncells,1:nvar,1:ndim))
+  allocate(dq(1:ncells,1:nvar,1:ndim))
+  allocate(flux(1:ncells,1:nvar,1:ndim))
+
   ! Force on the gas
   allocate(force(1:ncells,1:3))
 
@@ -69,12 +69,7 @@ subroutine allocate_init
   allocate(grad_phi_sg(1:ncells,1:2))
   phi_sg=0.0d0
   grad_phi_sg=0.0d0
-#if TURB==1
-  allocate(f_turb(1:ncells,1:3))
-  f_turb=0.0d0
-  allocate(f_turb_old(1:ncells,1:3))
-  f_turb_old=0.0d0
-#endif
+
   allocate(cs(1:ncells))
 
 #if NDUST>0
@@ -98,15 +93,15 @@ subroutine allocate_init
     allocate(ne(1:ncells))
     allocate(psi_old(1:ncells))
 
-    eta_a  =0.0d0
-    eta_h  =0.0d0
-    eta_o  =0.0d0
-    sigma_o=0.0d0
-    sigma_p=0.0d0
-    sigma_h=0.0d0
-    ni     =0.0d0
-    ne     =0.0d0
-    psi_old=0.0d0
+    eta_a   = 0.0d0
+    eta_h   = 0.0d0
+    eta_o   = 0.0d0
+    sigma_o = 0.0d0
+    sigma_p = 0.0d0
+    sigma_h = 0.0d0
+    ni      = 0.0d0
+    ne      = 0.0d0
+    psi_old = 0.0d0
 
   endif
 
@@ -114,15 +109,18 @@ subroutine allocate_init
   q      = 0.0d0
   qm     = 0.0d0
   qp     = 0.0d0
+  dq     = 0.0d0
+  flux   = 0.0d0
   force  = 0.0d0
   cs     = 0.0d0
   allocate(eta_visc(1:ncells))
   eta_visc=0.0d0
   !Indexation of variables /!\ Every index must be unique but the order does not matter
   irho = 1
-  ivx = 2
-  ivy = 3  
-  ivz = 4
+  ivx  = 2
+  ivy  = 3  
+  ivz  = 4
+
 #if MHD==1
   iBx=5
   iBy=6

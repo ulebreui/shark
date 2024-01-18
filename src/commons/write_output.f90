@@ -16,6 +16,7 @@ subroutine output(iout)
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)
+
   ! Generic info file
   open(ilun,file=trim(path) // trim(nchar)//trim('/info.dat'))
   write(ilun,'("nvar        =",I11)')nvar
@@ -36,13 +37,11 @@ subroutine output(iout)
   else
    write(ilun,'("charging       =",I11)')0
   endif 
-
-  !call write_setup_info(ilun)
   close(ilun)
   
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(ilun) position(i,1) !
+   if(active_cell(i)) write(ilun) position(i,1) !
   end do
   !xdp
   close(ilun)
@@ -50,17 +49,17 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/rho'), form=format_out,access='stream')
   do i = 1,ncells
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
+   if(active_cell(i)) write(ilun) q(i,irho)*unit_d
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_dcol
+   if(active_cell(i)) write(ilun) q(i,irho)*unit_dcol
 #endif
   end do
   close(ilun)  
 
   open(ilun,file=trim(path) // trim(nchar)//trim('/v'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(ilun) q(i,ivx)*unit_v !
+   if(active_cell(i)) write(ilun) q(i,ivx)*unit_v !
   end do
   close(ilun)
 
@@ -68,43 +67,43 @@ subroutine output(iout)
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/y'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) position(i,2)
+      if(active_cell(i)) write(ilun) position(i,2)
    end do
    close(ilun)
    endif
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/vy'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivy)*unit_v
+      if(active_cell(i)) write(ilun) q(i,ivy)*unit_v
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/vz'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivz)*unit_v
+      if(active_cell(i)) write(ilun) q(i,ivz)*unit_v
    end do
    close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
   do i = 1,ncells
-   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
+   if(active_cell(i)) write(ilun) q(i,iP)*unit_P
   end do
   close(ilun)
 #if MHD==1
   open(ilun,file=trim(path) // trim(nchar)//trim('/Bx'), form=format_out,access='stream')
    do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
-      if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B !
+      !if(active_cell(i)) write(ilun) q(i,iBx)*unit_B
+      if(active_cell(i)) write(ilun) q(i,iBx)*unit_B !
    end do
    close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/By'), form=format_out,access='stream')
    do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
-      if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
+      !if(active_cell(i)) write(ilun) q(i,iBy)*unit_B
+      if(active_cell(i)) write(ilun) q(i,iBy)*unit_B
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/Bz'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
-      !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
+      if(active_cell(i)) write(ilun) q(i,iBz)*unit_B
+      !if(active_cell(i)) write(ilun) q(i,iBz)*unit_B
 
    end do
    close(ilun)
@@ -116,10 +115,10 @@ subroutine output(iout)
   do idust=1,ndust
    do i = 1,ncells
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_d
+   if(active_cell(i)) write(ilun) q(i,irhod(idust))*unit_d
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_dcol
+   if(active_cell(i)) write(ilun) q(i,irhod(idust))*unit_dcol
 #endif
    end do
   end do
@@ -128,14 +127,14 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) sdust(i,idust)*unit_l 
+      if(active_cell(i)) write(ilun) sdust(i,idust)*unit_l 
    end do
   end do
   close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/vd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdx(idust))*unit_v
+      if(active_cell(i)) write(ilun) q(i,ivdx(idust))*unit_v
    end do
   end do
   close(ilun)
@@ -143,14 +142,14 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/vdy'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdy(idust))*unit_v
+      if(active_cell(i)) write(ilun) q(i,ivdy(idust))*unit_v
    end do
   end do
   close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/vdz'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdz(idust))*unit_v
+      if(active_cell(i)) write(ilun) q(i,ivdz(idust))*unit_v
    end do
   end do
   close(ilun)
@@ -158,27 +157,27 @@ subroutine output(iout)
 if(charging) then
   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_a(i)
+      if(active_cell(i)) write(ilun) eta_a(i)
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_o(i)
+      if(active_cell(i)) write(ilun) eta_o(i)
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_h(i)
+      if(active_cell(i)) write(ilun) eta_h(i)
    end do
   close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/ni'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ni(i)
+      if(active_cell(i)) write(ilun) ni(i)
    end do
   close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/ne'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ne(i)
+      if(active_cell(i)) write(ilun) ne(i)
    end do
   close(ilun)
 endif
@@ -229,7 +228,7 @@ end subroutine title
 !   real(dp), dimension(1: ncells) :: xdp
 !   open(ilun,file=trim(path) // trim(nchar)//trim(name_var), form=format_out,access='stream')
 !   do i = 1,ncells
-!    if(active_cell(i)==1) write(ilun) xdp(i)
+!    if(active_cell(i)) write(ilun) xdp(i)
 !   end do
 !   !xdp
 !   close(ilun)

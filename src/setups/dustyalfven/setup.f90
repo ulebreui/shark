@@ -251,7 +251,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
      do idust=1,ndust
         tstop(i,idust) = St_0(idust)*box_l*rho_0/cs(i)/q(i,irho)
      end do

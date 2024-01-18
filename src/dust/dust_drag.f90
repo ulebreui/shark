@@ -19,7 +19,7 @@ subroutine dust_drag(coeffdt)
   !$OMP PRIVATE(pnx,pny,pnz,rhon,alphak,i,idust)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
 
      rhon  = u_prim(i,irho)
      pnx   = u_prim(i,ivx)  
@@ -61,7 +61,7 @@ subroutine dust_drag(coeffdt)
    
   ! Regularisation to avoid negative dust densities
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
 
       do idust=1,ndust
 

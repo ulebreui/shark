@@ -10,16 +10,14 @@ subroutine Source_terms
   real(dp), dimension(:,:)  , allocatable :: S_U
   if(static) return
   allocate(S_U(1:ncells,1:nvar))
-  S_U=0.0d0
-! #if NDUST>0
-!   call compute_tstop
-! #endif
+  S_U = 0.0d0
+
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,ix,iy,idust,ts,lap_x_u,lap_y_u,lap_x_v,lap_y_v)
   !$OMP DO
   do i=1,ncells
-    if(active_cell(i)==1) then
+    if(active_cell(i)) then
 
 #if GEOM==1
       S_U(i,ivx) = S_U(i,ivx)-dt*(- 2.0d0*q(i,irho)*cs(i)**2./radii_c(i))

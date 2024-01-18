@@ -257,7 +257,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
      do idust=1,ndust
         tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/cs0
      end do

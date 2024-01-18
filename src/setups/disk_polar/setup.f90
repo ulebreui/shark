@@ -208,7 +208,7 @@ subroutine setup_inloop
   !$OMP PRIVATE(i,idust,t_rel,rho_init,vx_init,vy_init,rho_old,vx_old,vy_old,rho_new,vx_new,vy_new)
   !$OMP DO 
    do i=1,ncells
-    if(active_cell(i)==1) then
+    if(active_cell(i)) then
             if(radii_c(i)<3.0d0) then
                 t_rel=8.0d0*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3)) ! Relaxation timescale
                 rho_init= uprim_condinit(i,irho)
@@ -315,7 +315,7 @@ end subroutine setup_inloop
   !$OMP PRIVATE(i,rr,phi_loc,ix,iy,rr_p,phi_p)
   !$OMP DO
    do i=1,ncells
-       if(active_cell(i)==1)then
+       if(active_cell(i))then
             phi_sg(i)=0.0d0
             rr=radii_c(i)
             phi_loc=float(iyy(i))*dx(i,2)
@@ -333,7 +333,7 @@ end subroutine setup_inloop
     call apply_boundaries_phi
 
     do i=1,ncells
-        if(active_cell(i)==1)then
+        if(active_cell(i))then
             ix=ixx(i)
             iy=iyy(i)
             grad_phi_sg(i,1) = slope_limit(2.0d0*(phi_sg(i) - phi_sg(icell(ix-1,iy)))/(dx(i,1)+dx(icell(ix-1,iy),1)),2.0d0*(phi_sg(icell(ix+1,iy)) - phi_sg(i))/(dx(icell(ix+1,iy),1)+dx(i,1)))
@@ -347,7 +347,7 @@ end subroutine setup_inloop
   !$OMP PRIVATE(i,idust,xx,yy,rr, xx_p, yy_p, rr_p,theta_p,r_cyl,x_soft,y_soft,px,py,p_r,p_theta)
   !$OMP DO
    do i=1,ncells
-    if(active_cell(i)==1)then
+    if(active_cell(i))then
         force(i,1)  = - Mstar/radii_c(i)**2
         force(i,2)  = 0.0d0
         force(i,3)  = 0.0d0
@@ -429,7 +429,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust,H,rr)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
         rr       = radii_c(i)
         H=HoverR*rr
         do idust=1,ndust

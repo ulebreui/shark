@@ -242,7 +242,7 @@ subroutine setup_inloop
    return
 
     do i=1,ncells
-    if(active_cell(i)==1)then
+    if(active_cell(i))then
     !Crank nicholson scheme
         u = u_prim(i,ivz)/u_prim(i,irho) 
         v = u_prim(i,ivx)/u_prim(i,irho) 
@@ -282,7 +282,7 @@ end subroutine setup_inloop
 
 
    do i=1,ncells
-    if(active_cell(i)==1)then
+    if(active_cell(i))then
         force(i,1)  = 2.0d0*q_shear*Omega_shear**2.*(position(i,1)-half*box_l) -2.0d0*Omega_shear*q(i,ivz) -  2.0d0*rad0*Omega_shear*eta_stream
         force(i,2)  = 0.0d0
         force(i,3)  = 2.0d0*Omega_shear*q(i,ivx)
@@ -327,7 +327,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
      do idust=1,ndust
         tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/(rad0*Omega_shear*hoverr)
      end do

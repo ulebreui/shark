@@ -196,7 +196,7 @@ end subroutine setup_inloop
 
 
    do i=1,ncells
-    if(active_cell(i)==1)then
+    if(active_cell(i))then
 #if NDUST>0
         do idust=1,ndust
          if(.not. drag) then
@@ -233,7 +233,7 @@ subroutine compute_tstop
   !$OMP PRIVATE(i,idust)
   !$OMP DO
   do i=1,ncells
-   if(active_cell(i)==1) then
+   if(active_cell(i)) then
      do idust=1,ndust
         tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
      end do

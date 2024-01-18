@@ -69,8 +69,8 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim)
     w_lft   = qleft(ivz)
 
 
-    P_rgt       = qright(iP)
-    P_lft     = qleft(iP)
+    P_rgt   = qright(iP)
+    P_lft   = qleft(iP)
 
     !Conservative variables
 
@@ -123,11 +123,11 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim)
     flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
     flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
 
-    flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-    flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
+    flx_mom_v_rgt  = flx_mom_v_rgt + mag_tension_y_rgt
+    flx_mom_v_lft  = flx_mom_v_lft + mag_tension_y_lft
        
-    flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-    flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
+    flx_mom_w_rgt  = flx_mom_w_rgt + mag_tension_z_rgt
+    flx_mom_w_lft  = flx_mom_w_lft + mag_tension_z_lft
 
     E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
     E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
@@ -161,7 +161,7 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
     real(dp) :: csl,csr
-    integer  :: idim,idust
+    integer  :: idim,idust,i_vn,i_vt
 
     real(dp) :: ustar, Estarleft,Estarright,Pstar,rhostarleft,rhostarright
     real(dp) :: S_lft,S_rgt,hllc_l,hllc_r,r_o,u_o,P_o,e_o,lambda_llf_d
@@ -176,6 +176,8 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
     real(dp) :: magnetosonic_fast_rgt,magnetosonic_fast_lft
     real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt
 
+    i_vn = index_vn(idim)
+    i_vt = index_vt(idim)
 #if MHD==1 
 #if NDUST==0 
     !Without dust, B is coupled to the gas
@@ -208,12 +210,12 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
     rho_lft   = qleft(irho)
 
     !Velocity
-    u_rgt   = qright(index_vn(idim)) ! u
-    u_lft   = qleft(index_vn(idim))
+    u_rgt   = qright(i_vn) ! u
+    u_lft   = qleft(i_vn)
 
     !Transverse velocity
-    v_rgt   = qright(index_vt(idim)) ! v
-    v_lft   = qleft(index_vt(idim))
+    v_rgt   = qright(i_vt) ! v
+    v_lft   = qleft(i_vt)
     w_rgt   = qright(ivz)! w
     w_lft   = qleft(ivz)
 
@@ -226,21 +228,18 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
     mom_u_rgt    = rho_rgt * u_rgt   ! rho u
     mom_u_lft    = rho_lft * u_lft   
 
-    !Energy
-    E_rgt     = P_rgt  /(gamma-1.d0)   + half * rho_rgt * u_rgt **2
-    E_lft     = P_lft  /(gamma-1.d0)   + half * rho_lft * u_lft **2
 
     mom_v_rgt     = rho_rgt  * v_rgt ! rho v
     mom_v_lft     = rho_lft  * v_lft  ! rho v
 
-    E_rgt   = E_rgt   + half * rho_rgt   * v_rgt **2
-    E_lft   = E_lft   + half * rho_lft   * v_lft **2
+
     !Second transverse momentum
     mom_w_rgt      = rho_rgt * w_rgt ! rho w
     mom_w_lft      = rho_lft  * w_lft
 
-    E_rgt    = E_rgt   + half * rho_rgt  * w_rgt   **2 ! kinetic energy of z component
-    E_lft    = E_lft   + half * rho_lft  * w_lft  **2
+    !Energy
+    E_rgt     = P_rgt  /(gamma-1.d0)   + half * rho_rgt * u_rgt **2 + half * rho_rgt   * v_rgt **2  + half * rho_rgt  * w_rgt   **2 
+    E_lft     = P_lft  /(gamma-1.d0)   + half * rho_lft * u_lft **2 + half * rho_lft   * v_lft **2  + half * rho_lft  * w_lft  **2
 
 
     !Fluxs
@@ -293,12 +292,11 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
 #endif
 #endif
 
-    flx(irho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
-    flx(index_vn(idim))  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
-    flx(index_vt(idim))  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
-    flx(ivz)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
-
-    flx(iP)  = (S_rgt*flx_P_lft-S_lft*flx_P_rgt+S_rgt*S_lft*(E_rgt-E_lft))/(S_rgt-S_lft)           
+    flx(irho)  = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
+    flx(i_vn)  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
+    flx(i_vt)  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
+    flx(ivz)   = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
+    flx(iP)    = (S_rgt*flx_P_lft-S_lft*flx_P_rgt+S_rgt*S_lft*(E_rgt-E_lft))/(S_rgt-S_lft)           
 
 
 end subroutine solver_hll
@@ -755,15 +753,15 @@ subroutine solver_dust_llf(qleft,qright,flx,idim)
 
 #endif
 
-    flx(i_rho)  =  0.d0
-    flx(i_u)    =  0.d0
-    flx(i_v)    =  0.d0
-    flx(i_w)    =  0.d0
+    ! flx(i_rho)  =  0.d0
+    ! flx(i_u)    =  0.d0
+    ! flx(i_v)    =  0.d0
+    ! flx(i_w)    =  0.d0
 
     flx(i_rho) = half*(flx_rho_lft   + flx_rho_rgt)    - half*lambda_llf_d*(rho_rgt - rho_lft)
-    flx(i_u)  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
-    flx(i_v)  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
-    flx(i_w)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
+    flx(i_u)   = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
+    flx(i_v)   = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
+    flx(i_w)   = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
 
 end do
 end subroutine solver_dust_llf
