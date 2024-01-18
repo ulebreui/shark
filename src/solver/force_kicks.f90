@@ -14,7 +14,7 @@ subroutine kick(coeffdt)
   !$OMP PRIVATE(i,idust,energy_old,energy_new)
   !$OMP DO
   do i=1,ncells
-    if(active_cell(i)) then
+    if(active_cell(i)==1) then
       if(iso_cs.ne.1 .or. non_standard_eos .ne. 1) then
         energy_old     = half*u_prim(i,ivx)**2/u_prim(i,irho) +  half*u_prim(i,ivy)**2/u_prim(i,irho)  + half*u_prim(i,ivz)**2/u_prim(i,irho)
       endif

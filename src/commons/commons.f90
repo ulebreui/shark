@@ -23,18 +23,24 @@ module commons
   real(dp), dimension(:), allocatable :: dx_l
   real(dp), dimension(:), allocatable :: dx_r
   real(dp), dimension(:), allocatable :: dx_c
+  real(dp), dimension(:), allocatable :: dx_r_cell
+  real(dp), dimension(:), allocatable :: dx_l_cell
 #endif
 
 #if GEOM==2
   ! Disk face-on geometry
   real(dp), dimension(:), allocatable :: phi
+#if GRIDSPACE ==1
+  real(dp), dimension(:), allocatable :: dx_r_cell
+  real(dp), dimension(:), allocatable :: dx_l_cell
+#endif
 #endif
 
   real(dp), dimension(:,:), allocatable :: Surf
   real(dp), dimension(:), allocatable   :: dvol
   real(dp), dimension(:), allocatable   :: vol
-  logical, dimension(:), allocatable    :: active_cell
-  logical, dimension(:), allocatable    :: active_cell_predictor
+  real(dp), dimension(:), allocatable   :: active_cell
+  real(dp), dimension(:), allocatable   :: active_cell_predictor
   
   
   real(dp):: time 

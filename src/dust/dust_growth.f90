@@ -64,7 +64,7 @@ subroutine dust_growth(verbose)
   
   !$OMP DO 
   do i=1,ncells
-  if (active_cell(i)) then
+  if (active_cell(i)==1) then
 
      ! Cell by cell-cycling
      time_growth  = 0.0d0
@@ -107,7 +107,6 @@ subroutine dust_growth(verbose)
            if(browgrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_brow**2.)
            if(driftgrow==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_hydro**2.)
            if(ambigrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_ad**2.)
-           
         end do
      end do
 

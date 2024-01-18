@@ -63,16 +63,16 @@ subroutine get_active_cells
   allocate(active_cell(1:ncells))
   allocate(active_cell_predictor(1:ncells))
 
-  active_cell=.false.
-  active_cell_predictor=.false.
+  active_cell=0
+  active_cell_predictor=0
   if(ndim==1) then
     icount=0
   	do ix=1,nx_max
   		if(ix.ge.first_active.and.ix.le.last_active) then 
-      active_cell(ix)=.true.
+      active_cell(ix)=1
       icount=icount+1
       endif
-      if(ix.ge.2 .and.ix.le.nx_max-1) active_cell_predictor(ix)=.true.
+      if(ix.ge.2 .and.ix.le.nx_max-1) active_cell_predictor(ix)=1
 
   	end do
   else
@@ -83,13 +83,13 @@ subroutine get_active_cells
       !print *, ii, ix, iy,ixx(ii),iyy(ii)
   		if(ix.ge.first_active.and.ix.le.last_active) then
   			if(iy.ge.first_active_y.and.iy.le.last_active_y) then
-  		 	  active_cell(ii)=.true.
+  		 	  active_cell(ii)=1
           icount=icount+1
   		 	endif
   		  endif
         if(ix.ge.2 .and.ix.le.nx_max-1) then
           if(iy.ge.2 .and.iy.le.ny_max-1) then
-            active_cell_predictor(ii)=.true.
+            active_cell_predictor(ii)=1
           endif
         endif
   		end do
@@ -128,7 +128,7 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
       dx (ix,1)  = rmax_x/float(nx)
       vol(ix)    = dx(ix,1)
       surf(ix,1) = 1
-      if(active_cell(ix).eqv.true.) position(ix,1)=position(ix-1,1)+dx (ix,1)
+      if(active_cell(ix)==1) position(ix,1)=position(ix-1,1)+dx (ix,1)
     end do
   else
       do ix = 1, nx_max
@@ -140,7 +140,7 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
           surf(icell(ix,iy),2) = dx(icell(ix,iy),2)
 
           vol (icell(ix,iy))       = dx(icell(ix,iy),1)*dx(icell(ix,iy),2)
-          position(icell(ix,iy),1) = (float(ix-first_active)  +half)   * rmax_x/float(nx)
+          position(icell(ix,iy),1) = (float(ix-first_active)+half)   * rmax_x/float(nx)
           position(icell(ix,iy),2) = (float(iy-first_active_y)+half) * rmax_y/float(ny)
       end do
     end do

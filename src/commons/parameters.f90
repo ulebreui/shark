@@ -55,10 +55,7 @@ module parameters
   real(dp)            ::  t54 = 0.0d0
   real(dp)            ::  t65 = 0.0d0
   real(dp)            ::  t76 = 0.0d0
-  real(dp)            ::  t87 = 0.0d0
-  real(dp)            ::  t98 = 0.0d0
-  real(dp)            ::  t109 = 0.0d0
-  real(dp)            ::  t1110 = 0.0d0
+
   integer :: nrestart   = 0 ! For restart
   integer :: restarting = 0 !
  end module parameters
