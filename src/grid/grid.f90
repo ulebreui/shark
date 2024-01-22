@@ -128,7 +128,7 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
       dx (ix,1)  = rmax_x/float(nx)
       vol(ix)    = dx(ix,1)
       surf(ix,1) = 1
-      if(active_cell(ix).eqv.true.) position(ix,1)=position(ix-1,1)+dx (ix,1)
+      if(active_cell(ix)) position(ix,1)=position(ix-1,1)+dx (ix,1)
     end do
   else
       do ix = 1, nx_max
