@@ -49,13 +49,16 @@ module parameters
   integer             ::  freq_out          = 1000    ! Output frequency
   real(dp)            ::  rin = 0.0d0  ! Inner radius boundary for cylindrical geometry
   real(dp)            ::  CFL = half  ! CFL constant
-  real(dp)            ::  t21 = 0.0d0
-  real(dp)            ::  t32 = 0.0d0
-  real(dp)            ::  t43 = 0.0d0
-  real(dp)            ::  t54 = 0.0d0
-  real(dp)            ::  t65 = 0.0d0
-  real(dp)            ::  t76 = 0.0d0
-
+  real(dp)            ::  t21   = 0.0d0
+  real(dp)            ::  t32   = 0.0d0
+  real(dp)            ::  t43   = 0.0d0
+  real(dp)            ::  t54   = 0.0d0
+  real(dp)            ::  t65   = 0.0d0
+  real(dp)            ::  t76   = 0.0d0
+  real(dp)            ::  t87   = 0.0d0
+  real(dp)            ::  t98   = 0.0d0
+  real(dp)            ::  t109  = 0.0d0
+  real(dp)            ::  t1110 = 0.0d0
   integer :: nrestart   = 0 ! For restart
   integer :: restarting = 0 !
  end module parameters

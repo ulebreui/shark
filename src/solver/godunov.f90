@@ -211,10 +211,10 @@ subroutine predictor
         dvx   = dq(i,ivy_spe,1)
         w     = q(i,ivz_spe)
         dwx   = dq(i,ivz_spe,1)
-#if NY>1        
+#if NY>1   
+        dry   = dq(i,irho_spe,2)   
+        duy   = dq(i,ivx_spe,2)  
         dvy   = dq(i,ivy_spe,2)
-        duy   = dq(i,ivx_spe,2)
-        dry   = dq(i,irho_spe,2)
         dwy   = dq(i,ivz_spe,2)
 #endif
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
@@ -301,8 +301,6 @@ subroutine predictor
         qm(i,iBx,idim)    = q(i,iBx)     + half*dt*sBx + half*dq(i,iBx,idim)  * ddxm 
         qm(i,iBy,idim)    = q(i,iBy)     + half*dt*sBy + half*dq(i,iBy,idim)  * ddxm 
         qm(i,iBz,idim)    = q(i,iBz)     + half*dt*sBz + half*dq(i,iBz,idim)  * ddxm 
-
-
         qp(i,iBx,idim)    = q(i,iBx)     + half*dt*sBx - half*dq(i,iBx,idim)  * ddxp
         qp(i,iBy,idim)    = q(i,iBy)     + half*dt*sBy - half*dq(i,iBy,idim)  * ddxp
         qp(i,iBz,idim)    = q(i,iBz)     + half*dt*sBz - half*dq(i,iBz,idim)  * ddxp

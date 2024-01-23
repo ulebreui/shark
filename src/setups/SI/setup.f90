@@ -239,7 +239,7 @@ subroutine setup_inloop
    integer :: i,idust
    real(dp) :: u, v,Ohmdt, AA, BB,d,old_ek,new_ek
    
-   return
+   !return
 
     do i=1,ncells
     if(active_cell(i)==1)then
@@ -249,17 +249,17 @@ subroutine setup_inloop
         d = u_prim(i,irho) 
         Ohmdt = Omega_shear*dt
         AA    = 2.0d0*q_shear*Omega_shear*(position(i,1)-half*box_l)-2.0d0*rad0*eta_stream 
-        u_prim(i,ivz) = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
+        u_prim(i,ivz)  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
         u_prim(i,ivx)  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt ) / (1.+Ohmdt**2) 
 #if NDUST>0
-        Ohmdt=Omega_shear*dt
-        AA = 2.0d0*q_shear*Omega_shear*(position(i,1)-half*box_l)
+        Ohmdt = Omega_shear*dt
+        AA    = 2.0d0*q_shear*Omega_shear*(position(i,1)-half*box_l)
         do idust=1,ndust
           u = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust)) 
           v = u_prim(i,ivdx(idust))/u_prim(i,irhod(idust)) 
           d = u_prim(i,irhod(idust)) 
-          u_prim(i,ivdz(idust)) = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
-          u_prim(i,ivdx(idust))  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt ) / (1.+Ohmdt**2) 
+          u_prim(i,ivdz(idust))  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
+          u_prim(i,ivdx(idust))  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt )    / (1.+Ohmdt**2) 
         end do
 #endif
     endif
@@ -275,7 +275,7 @@ end subroutine setup_inloop
 
    integer :: i,idust
 
-   !return
+   return
 ! #if NDUST>0
 !     call compute_tstop
 ! #endif
