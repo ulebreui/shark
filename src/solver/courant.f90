@@ -87,6 +87,6 @@ endif
    endif
   end do
 #if NY>1
-  print *, 'time = ', time, 'dt = ', dt
+  !print *, 'time = ', time, 'dt = ', dt
 #endif 
 end subroutine courant

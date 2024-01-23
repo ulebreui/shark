@@ -70,7 +70,7 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim)
 
 
     P_rgt       = qright(iP)
-    P_lft     = qleft(iP)
+    P_lft       = qleft(iP)
 
     !Conservative variables
 
