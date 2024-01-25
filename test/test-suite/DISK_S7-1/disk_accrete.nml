@@ -3,7 +3,8 @@
 &GRID_PARAMS
 freq_out = 5000
 CFL = 0.800000000000000
-tend = 2000.000000000000000
+!tend = 2000.000000000000000
+tend = 20.000000000000000
 gamma = 1.666666666666667
 force_kick = .true.
 viscosity = .false.

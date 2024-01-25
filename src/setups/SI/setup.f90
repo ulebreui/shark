@@ -82,7 +82,7 @@ subroutine setup
         q(i,ivy)   = perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
         q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-        q(i,iP)    = q(i,irho)*cs0**2.0
+        q(i,iP)    =  q(i,irho)*cs0**2.0
 #if NDUST>0
      do idust=1,ndust
 
