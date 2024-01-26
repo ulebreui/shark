@@ -6,9 +6,13 @@ module setup_parameters
   real(dp) :: box_l   = 1.0d0
   real(dp),dimension(1:NDUST) :: dust2gas_ratio = 1.0d-2 !TODO to check/change when considering a distribution
   real(dp),dimension(1:NDUST) :: St_0 = 1.0d0
-  real(dp) :: kx_wave   = 1.0d0
+  real(dp) :: kx_wave_B   = 1.0d0
   real(dp) :: ky_wave  = 1.0d0
   real(dp) :: kz_wave   = 1.0d0
+
+  real(dp) :: kx_wave_d   = 1.0d0
+  real(dp) :: ky_wave_d  = 1.0d0
+  real(dp) :: kz_wave_d   = 1.0d0
 
   real(dp) :: beta_0  = 1.0d0
   real(dp) :: delta_B   = 1.0d0
@@ -16,7 +20,9 @@ module setup_parameters
   real(dp) :: vz_0  = 0d0
 
 
-  real(dp) :: vx_0   = 1.0d0
+  real(dp) :: vdx_0   = 0.0d0
+  real(dp) :: vdy_0   = 0.0d0
+  real(dp) :: vdz_0   = 0.0d0
   real(dp) :: cs_0   = 1.0d-1
 
 

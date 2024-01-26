@@ -61,7 +61,11 @@ subroutine setup
 
          
 
-            q(i,ivdx(idust)) = vx_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kx_wave) !Velocity perturbation for the dust
+            q(i,ivdx(idust)) = vdx_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kx_wave_d) !Velocity perturbation for the dust
+            q(i,ivdy(idust)) = vdy_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*ky_wave_d) !Velocity perturbation for the dust
+            q(i,ivdz(idust)) = vdz_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kz_wave_d) !Velocity perturbation for the dust
+
+
          !q(i,ivd(idust)) = 0.0d0
          !print *, "Vxd=", q(i,ivd(idust))*unit_v
 
@@ -74,8 +78,8 @@ subroutine setup
 if(beta_0>0) then
      q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
 
-     q(i,iBy)=delta_B*q(i,iBx)*sin(2.0d0*pi*position(i,1)/box_l*kx_wave) !Transversal magnetic perturbations
-     q(i,iBz)=delta_B*q(i,iBx)*cos(2.0d0*pi*position(i,1)/box_l*kx_wave)
+     q(i,iBy)=delta_B*q(i,iBx)*sin(2.0d0*pi*position(i,1)/box_l*kx_wave_B) !Transversal magnetic perturbations
+     q(i,iBz)=delta_B*q(i,iBx)*cos(2.0d0*pi*position(i,1)/box_l*kx_wave_B)
 
      !delta_Bnorm = q(i,iBy)**2.0d0+q(i,iBz)**2.0d0
     !print *, "Bx =", q(i,iBx)
@@ -92,9 +96,9 @@ if(beta_0>0) then
 #endif
 
 
-     q(i,ivy) = vy_0/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*ky_wave)+sin(2.0d0*pi*position(i,1)/(box_l)*kz_wave)) !Velocity perturbation for the gas
+     q(i,ivy) = vy_0/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*ky_wave)) !Velocity perturbation for the gas
 
-     q(i,ivz) = vz_0/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*kz_wave)+cos(2.0d0*pi*position(i,1)/(box_l)*ky_wave)) !Velocity perturbation for the gas
+     q(i,ivz) = vz_0/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*kz_wave)) !Velocity perturbation for the gas
 
 endif !Perhaps to be placed elsewhere in the future
 
@@ -151,7 +155,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,vx_0,vy_0,vz_0,kx_wave,ky_wave,kz_wave,beta_0,cs_0,delta_B,delta_rho,delta_rho_d
+  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,vdx_0,vdy_0,vdz_0,vy_0,vz_0,kx_wave_B,ky_wave,kz_wave,kx_wave_d,ky_wave_d,kz_wave_d,beta_0,cs_0,delta_B,delta_rho,delta_rho_d
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
