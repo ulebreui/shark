@@ -42,7 +42,12 @@ subroutine output(iout)
   
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
+#if GEOM<2
    if(active_cell(i)==1) write(ilun) position(i,1) !
+#endif
+#if GEOM==2
+   if(active_cell(i)==1) write(ilun) radii_c(i) !
+#endif
   end do
   !xdp
   close(ilun)

@@ -253,9 +253,9 @@ subroutine predictor
 #endif   
 
     if(force_kick) then
-        su0    = su0 + force_dust(i,idust,1)
-        sv0    = sv0 + force_dust(i,idust,2)
-        sw0    = sw0 + force_dust(i,idust,3)
+        su0    = su0 + force_dust(i,1,idust)
+        sv0    = sv0 + force_dust(i,2,idust)
+        sw0    = sw0 + force_dust(i,3,idust)
     endif
 
     !Direction x
@@ -491,19 +491,17 @@ subroutine add_delta_u
   integer :: i,idust,ivar,ix,iy,il,ily,icell
   integer :: ixx,iyy
 
-  real(dp), dimension(:,:)  , allocatable  :: delta_U
-  real(dp), dimension(:,:,:), allocatable  :: flux
   real(dp), dimension(1:nvar) :: qleft,qright,flx
   real(dp) :: csr,csl,barotrop,cs_eos
 
 
   if(static) return
 
-  allocate(delta_U(1:ncells,1:nvar))
-  allocate(flux(1:ncells,1:nvar,1:ndim))
   flux       = 0.0d0
-  delta_U    = 0.0d0
-
+! #if GEOM==2
+!     allocate(source_loc(1:ncells,1:nvar))
+!     source_loc=0.0d0
+! #endif
 
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
@@ -565,6 +563,19 @@ subroutine add_delta_u
             flux(i,ivar,2)=flx(ivar) 
         end do
 #endif
+! !         ! Geometrical source terms for non cartesian coordinates
+! #if GEOM==2
+!         source_loc(i,ivx)  = half*(qright(irho)*qright(ivy)**2+qright(iP)+qleft(irho)*qleft(ivy)**2+qleft(iP))!/radii_c(i)
+!         source_loc(i,ivy)  = -half*(qright(irho)*qright(ivy)*qright(ivx)+qleft(irho)*qleft(ivy)*qleft(ivx))!/radii_c(i)
+! #endif    
+! #if NDUST>0
+! #if GEOM==2
+!     do idust=1,ndust
+!         source_loc(i,ivdx(idust))  = half*(qright(irhod(idust))*qright(ivdy(idust))**2+qleft(irhod(idust))*qleft(ivdy(idust))**2)!/radii_c(i)
+!         source_loc(i,ivdy(idust))  = -half*(qright(irhod(idust))*qright(ivdy(idust))*qright(ivdx(idust))+qleft(irhod(idust))*qleft(ivdy(idust))*qleft(ivdx(idust)))!/radii_c(i)
+!     end do
+! #endif 
+! #endif
     end if
   end do
   !$OMP END DO
@@ -592,6 +603,17 @@ subroutine add_delta_u
               &                             + (flux(i,ivar,2)*surf(i,2)-flux(ily,ivar,2)*surf(ily,2))/vol(i)*dt
         end do
 #endif
+!               ! Geometrical source terms for non cartesian coordinates
+! #if GEOM==2        
+!         u_prim(i,ivx)=u_prim(i,ivx)+dt*half*(source_loc(i,ivx)+source_loc(icell(ix+1,iy),ivx))/radii_c(i)
+!         u_prim(i,ivy)=u_prim(i,ivy)+dt*half*(source_loc(i,ivy)+source_loc(icell(ix,iy+1),ivy))/radii_c(i)
+! #if NDUST>0
+!     do idust=1,ndust
+!         u_prim(i,ivdx(idust))=u_prim(i,ivdx(idust))+dt*half*(source_loc(i,ivdx(idust))+source_loc(icell(ix+1,iy),ivdx(idust)))/radii_c(i)
+!         u_prim(i,ivdy(idust))=u_prim(i,ivdy(idust))+dt*half*(source_loc(i,ivdy(idust))+source_loc(icell(ix,iy+1),ivdy(idust)))/radii_c(i)
+!     end do
+! #endif
+! #endif
       endif
     end do
   !end do
@@ -599,11 +621,9 @@ subroutine add_delta_u
   !$OMP END PARALLEL
 
 
-
-
-  deallocate(delta_U)
-  deallocate(flux)
-
+! #if GEOM==2
+!   deallocate(source_loc)
+! #endif
 
 end subroutine add_delta_u
 

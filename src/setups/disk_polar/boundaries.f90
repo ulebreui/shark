@@ -108,7 +108,7 @@ subroutine apply_boundaries_phi
       i_active_right = icell(ix,first_active_y+nghost-iy)
    
       phi_sg(ibound_left)       = phi_sg(i_active_left) 
-      phi_sg(ibound_right) = phi_sg(i_active_right)
+      phi_sg(ibound_right)      = phi_sg(i_active_right)
 
    end do
 

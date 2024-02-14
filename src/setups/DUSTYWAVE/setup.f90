@@ -29,7 +29,7 @@ box_l = box_l/unit_l
 
       !q(i,irho) = rho_0/unit_d 
       q(i,irho) = rho_0/unit_d*(1 + delta_rho*sin(2.0d0*pi*position(i,1)/box_l*kx_wave)) !DUSTYWAVE
-      q(i,ivx) = vx_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kx_wave) !DUSTYWAVE
+      q(i,ivx)  = vx_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kx_wave) !DUSTYWAVE
 
 
       cs(i)=cs_0/unit_v

@@ -63,7 +63,8 @@ subroutine allocate_init
   allocate(qp(1:ncells,1:nvar,1:ndim))
   ! Force on the gas
   allocate(force(1:ncells,1:3))
-
+  allocate(flux(1:ncells,1:nvar,1:ndim))
+  flux=0.0d0
   !Gravitational potential
   allocate(phi_sg(1:ncells))
   allocate(grad_phi_sg(1:ncells,1:2))

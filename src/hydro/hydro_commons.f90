@@ -10,6 +10,7 @@ module hydro_commons
   real(dp), dimension(:,:),   allocatable :: force
   real(dp), dimension(:) , allocatable    :: phi_sg
   real(dp), dimension(:,:), allocatable   :: grad_phi_sg
+  real(dp), dimension(:,:,:), allocatable  :: flux
 
   real(dp) :: gamma           = 1.66667d0   ! Adiabatic index
   integer :: iso_cs           = -1          ! Isothermal eos if positiv
