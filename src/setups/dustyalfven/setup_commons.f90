@@ -30,5 +30,28 @@ module setup_parameters
   real(dp) :: delta_rho   = 0.0d0
   real(dp) :: delta_rho_d   = 0.0d0
 
+  logical :: decaying_turb_compressive = .false.   ! Initialize compressive modes for decaying turbulence
+  logical :: decaying_turb_solenoidal = .false.   ! Initialize solenoidal modes for decaying turbulence
+  character (len=300) :: decay_turb_random_path = "test"
+
+
+
+  integer :: nb_turb_modes   = 1
+
+  integer , dimension(:)  , allocatable    :: k_turb
+  real(dp), dimension(:)  , allocatable    :: vx_turb
+  real(dp), dimension(:)  , allocatable    :: vy_turb
+  real(dp), dimension(:)  , allocatable    :: vz_turb
+  real(dp), dimension(:)  , allocatable    :: phix_turb
+  real(dp), dimension(:)  , allocatable    :: phiy_turb
+  real(dp), dimension(:)  , allocatable    :: phiz_turb
+
+
+
+
+
+
+
+
 
 end module setup_parameters
