@@ -62,6 +62,22 @@ subroutine solve(verbose,outputing)
   call system_clock ( t9, clock_rate, clock_max )
 
   if(force_kick) call kick(1.0d0)
+
+#if TURB>0
+!Maybe to put in force_kick
+
+  call compute_rms_velocity
+
+  if(driven_turb) then
+    !!Initialization of velocity/acceleration modes to be done within setup
+#if NY==1
+     !call driven_turbulence !works only in 1D - 1.5D
+     call add_driven_turb_kick
+#endif
+  end if
+
+
+#endif 
   ! Setup related modifs
   call setup_inloop
   call system_clock ( t10,  clock_rate, clock_max )

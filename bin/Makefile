@@ -72,7 +72,7 @@ ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
 ifeq ($(TURB),1)
-	MODOBJ+=turb_commons.o
+MODOBJ+=turb_commons.o
 endif
 MODOBJ+= commons.o parameters.o units.o boundary_types.o solvers.o force_kicks.o slope_limiters.o allocate_init.o ionisation_utils.o ionisation.o grid.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o
 ifneq ($(NDUST),0)
@@ -80,7 +80,7 @@ MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif
 OBJS= solve.o read_params.o
 ifeq ($(TURB),1)
-	MODOBJ+= turb_params.o turb_force.o
+MODOBJ+= turb_utils.o turb.o
 endif
 MODOBJ+= gravity_utils.o
 #############################################################################

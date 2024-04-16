@@ -4,95 +4,306 @@ subroutine setup
   use units
   implicit none
 
-  real(dp) :: rho_cloud,perturbation
-  real(dp) :: rmax,vol_tot,xx,yy,vkep,vx_nak,vy_nak
+  real(dp) :: rho_cloud,r_cloud,mcloud
+  real(dp) :: rmax,vol_tot
   real(dp) :: B_field
-   real(dp), dimension(1:2*ndust+2) :: v_sol
 
-  real (dp) :: A_nak, B_nak
-  real(dp), dimension(1:ndust) :: ux_nak, uy_nak
-  integer :: ind_ux,ind_uy,info
+  integer :: i,idust,imax,ix,iy,icell,i_turb
+
+  box_l = box_l/unit_l
 
 
-  integer :: i,idust,jdust,imax,ix,iy,icell
   call allocate_init
+  call gridinit(box_l,box_l)
+  q=0.0d0
+  iso_cs=1
 
 
-
-  tcross     = box_l/cs0/Mach
-
-  allocate(f_hat(1:numb_modes))
-  allocate(f_hat_old(1:numb_modes))
-  allocate(phase_forcing(1:numb_modes))
-
-  call distribution_dust(.true.)
+! #if TURB>0
+!   !!!Decaying turb!!!
+!   if (decaying_turb_compressive) then
+!     allocate(k_turb(1:nb_turb_modes))
+!     allocate(vx_turb(1:nb_turb_modes))
+!     allocate(phix_turb(1:nb_turb_modes))
 
 
+!     !Make directories for each Mach needed. Define a Mach param in setup_commons
 
-  call gridinit(box_l,box_l_y)
-  q = 0.0d0
-  iso_cs = 1
-  do i =1,ncells
-      xx=position(i,1)-half*box_l  ! Boxlen already in pc
-      yy=position(i,2)-half*box_l_y
+!     !print *, trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat')
 
-        q(i,irho)  = rho_init
+!     open(15,file=trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat')) !Read python-generated files
+!     open(16,file=trim(decay_turb_random_path) // trim('/vx_turb_modes.dat'))
+!     open(19,file=trim(decay_turb_random_path) // trim('/phix_turb_modes.dat'))
 
-        q(i,ivx)   = 0.0d0
-        q(i,ivy)   = 0.0d0
-        q(i,iP)    = q(i,irho)*cs0**2.0
-#if NDUST>0
-     do idust=1,ndust
 
-        q(i,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
-        epsilondust(i,idust) = dust2gas_species(idust)
+!     do i_turb = 1,nb_turb_modes
+!       read(15,*) k_turb(i_turb)
+!       read(16,*) vx_turb(i_turb)
+!       read(19,*) phix_turb(i_turb)
+!     end do
 
-        ! ts = St tcross = rhog sg/rho/cs
-        ! sg = St tcross*rho*cs0/rhog
+!     close(15)
+!     close(16)
+!     close(19)
 
-        sdust(i,idust)       = Stokes_species(idust)*rho_init*cs0/rhograin*tcross
+!   endif
 
-        q(i,ivdx(idust))      = 0.0d0
+!   if (decaying_turb_solenoidal) then
+!     allocate(k_turb(1:nb_turb_modes))
+!     allocate(vy_turb(1:nb_turb_modes))
+!     allocate(vz_turb(1:nb_turb_modes))
+!     allocate(phiy_turb(1:nb_turb_modes))
+!     allocate(phiz_turb(1:nb_turb_modes))
 
-        q(i,ivdy(idust))     = 0.0d0
-     end do
+
+!     open(15,file=trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat'))
+!     open(17,file=trim(decay_turb_random_path) // trim('/vy_turb_modes.dat'))
+!     open(18,file=trim(decay_turb_random_path) // trim('/vz_turb_modes.dat'))
+!     open(20,file=trim(decay_turb_random_path) // trim('/phiy_turb_modes.dat'))
+!     open(21,file=trim(decay_turb_random_path) // trim('/phiz_turb_modes.dat'))
+
+!     do i_turb = 1,nb_turb_modes
+
+!       read(15,*) k_turb(i_turb)
+!       read(17,*) vy_turb(i_turb)
+!       read(18,*) vz_turb(i_turb)
+!       read(20,*) phiy_turb(i_turb)
+!       read(21,*) phiz_turb(i_turb)
+!     end do
+
+!     close(15)
+!     close(17)
+!     close(18)
+!     close(20)
+!     close(21)
+
+!   endif
+! #endif
+
+
+!Generate initial conditions (velocity) for turb
+#if TURB>0
+
+    call random_acceleration_and_velocity(.true.)
 #endif
+
+
+
+#if NDUST>0
+
+    call distribution_dust(.true.)
+
+#endif
+
+  do i = 1,ncells
+
+      q(i,irho) = rho_0/unit_d 
+
+      cs(i)=cs_0/unit_v
+
+      q(i,iP)=q(i,irho)*cs(i)**2
+
+
+#if TURB>0
+       if (turb_compressive) then 
+
+      !   do i_turb = 1,nb_turb_modes
+
+      !     q(i,ivx) = q(i,ivx) + vx_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phix_turb(i_turb))) !Decaying turb (compressive modes) for the gas. Make sure Vrms/cs = Mach.
+
+      !   end do 
+      ! end if
+
+      !if (driven_turb_compressive) then !Driven turb initial condition!
+
+        do i_turb = 1,nb_turb_modes_driven
+
+
+          q(i,ivx) = q(i,ivx) + random_array_vx(i_turb)/unit_v*(sin(position(i,1)*k_turb_driven(i_turb)+random_array_phix(i_turb))) !Driven turb (compressive modes) for the gas. Beware: k in the form 2pi/l 
+
+        end do
+      endif
+
+#endif
+
+
+
+
+#if NDUST>0
+
+
+
+        do idust=1,ndust
+
+
+            !OLD SETUP
+            epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
+            !epsilondust(i,idust) = 1.0d0 
+            
+
+
+            q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+
+
+
+            !St_0(idust)=1d-2.0d0*10000-9999*1d-2.0d0*(idust-1)
+            !St_0(idust)=1d-2+9999*1d-2.0d0*(idust-1)
+
+            !sdust(i,idust)=St_0(idust)*box_l !TODO edit when adding coagulation
+
+
+         !q(i,ivd(idust)) = 0.0d0
+         !print *, "Vxd=", q(i,ivd(idust))*unit_v
+
+        end do
+
+
+#endif
+
+#if MHD==1
+if(beta_0>0) then
+
+     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
+
+endif
+#endif
+     
+
+
+#if TURB>0
+
+  ! if (decaying_turb_solenoidal) then
+
+  !   do i_turb = 1,nb_turb_modes
+
+  !     q(i,ivy) = q(i,ivy) + vy_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiy_turb(i_turb))) !Solenoidal modes. Make sure sqrt(sum(vx_turb**2+vy_turb**2))/cs = Mach.
+
+  !     q(i,ivz) = q(i,ivz) + vz_turb(i_turb)/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiz_turb(i_turb)))
+    
+  !   end do
+
+  ! endif 
+
+
+  if (turb_solenoidal) then
+      do i_turb = 1,nb_turb_modes_driven
+
+            q(i,ivy) = q(i,ivy) + random_array_vy(i_turb)/unit_v*(sin(position(i,1)*k_turb_driven(i_turb)+random_array_phiy(i_turb))) !Solenoidal modes.
+
+            q(i,ivz) = q(i,ivz) + random_array_vz(i_turb)/unit_v*(cos(position(i,1)*k_turb_driven(i_turb)+random_array_phiz(i_turb)))
+    
+
+      end do
+
+  endif
+
+#endif
+
+
+
+
+#if MHD==1
+if(beta_0==0) then
+
+     q(i,iBx)=0.0d0
+     q(i,iBy)=0.0d0
+     q(i,iBz)=0.0d0
+
+endif
+
+#endif 
+
+
+
   end do
-  cs=cs0
 
 
-call primtoc
-call apply_boundaries
+!!!Correct initial velocity to meet desired Mach!!!
+#if TURB>0
 
-call update_force_setup
+  print *,'rndom_vy', random_array_vy
+  print *,'rndom_vz', random_array_vz
 
+
+  call compute_rms_velocity  !Compute rms for initial velocity profile provided by random generation of random_vx_array
+  print *,'vrms=',V_rms
+  print *,'vy_rms=',Vy_rms
+  print *,'vz_rms=',Vz_rms
+  print *,'vtot_rms=',Vtot_rms
+
+  call initial_velocity_correction  !Uses the rms_velocity recently calculated
+  !print *, 'vx corrected',random_array_vx
+  print *,'rndom_vy corrected', random_array_vy
+  print *,'rndom_vz corrected', random_array_vz
+
+
+
+
+    do i = 1,ncells
+
+      if (turb_compressive) then 
+
+        q(i,ivx) = 0.0d0 !!!Don't forget to set it to 0 before correcting!!!
+
+
+        do i_turb = 1,nb_turb_modes_driven !Reset initial conditions with corrected random_array_vx
+
+          q(i,ivx) = q(i,ivx) + random_array_vx(i_turb)/unit_v*(sin(position(i,1)*k_turb_driven(i_turb)+random_array_phix(i_turb))) !Driven turb (compressive modes) for the gas. Beware: k in the form 2pi/l 
+
+        end do
+      endif
+
+
+
+      if (turb_solenoidal) then
+
+
+        q(i,ivy) = 0.0d0
+        q(i,ivz) = 0.0d0
+
+        do i_turb = 1,nb_turb_modes_driven
+
+          q(i,ivy) = q(i,ivy) + random_array_vy(i_turb)/unit_v*(sin(position(i,1)*k_turb_driven(i_turb)+random_array_phiy(i_turb))) !Solenoidal modes.
+          q(i,ivz) = q(i,ivz) + random_array_vz(i_turb)/unit_v*(cos(position(i,1)*k_turb_driven(i_turb)+random_array_phiz(i_turb)))
+    
+
+        end do
+
+      endif
+
+    end do !i boucle
+
+
+
+  call compute_rms_velocity  !Call it again to check if correction performed correctly (read it in output_0000)
+  print *,"updated vrms = ", V_rms
+  print *,"updated vyrms = ", Vy_rms
+  print *,"updated vzrms = ", Vz_rms
+  print *,"updated vtotrms = ", Vtot_rms
+
+
+#endif
+
+
+#if MHD==1
+
+  do i=1,ncells
+  
+    q(i,iBy) = delta_B*q(i,iBx)/unit_B*(sin(position(i,1)*k_mag)) !Alfven perturbation
+    q(i,iBz) = delta_B*q(i,iBx)/unit_B*(cos(position(i,1)*k_mag)) 
+
+  end do
+#endif
+
+
+
+  tend = tend/unit_t
+
+
+  call apply_boundaries
+  call primtoc
 end subroutine setup
 
-
-
-subroutine get_rhoturb(pert,del)
-
-  use random
-  use precision
-  implicit none
-
-  integer :: i
-  integer::iseed=0         
-  integer ,dimension(1,1:IRandNumSize)    :: allseed
-  integer,dimension(IRandNumSize) :: localseed=-1
-  real(dp) ::  pert,del,randno
-
-  if (localseed(1)==-1) then
-     call rans(1,iseed,allseed)
-     localseed = allseed(1,1:IRandNumSize)
-  end if
-
-  call ranf(localseed,randno)
-
-  del = randno*pert - 0.5d0*pert
-
-
-end subroutine get_rhoturb 
 
 subroutine write_setup_info(ilun)
   use parameters
@@ -125,7 +336,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,box_l_y,rho_init,Stokes_species,dust2gas_species
+  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,beta_0,cs_0,k_mag,delta_B
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
@@ -173,7 +384,7 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
      if(outputing) print *, "Total mass is", sum(u_prim(:,irho))
-     if(outputing) print *, "Total momentum is", sum(u_prim(:,ivx)+u_prim(:,ivy)+u_prim(:,ivz))
+     if(outputing) print *, "Total momentum is", sum(u_prim(:,ivx))
      if(outputing) print *, "Total energy is", sum(u_prim(:,iP))
 
      outputing=.false.
@@ -193,48 +404,16 @@ subroutine setup_inloop
    use commons
    use units
    implicit none
-   integer :: i,idust
-   real(dp) :: u, v,Ohmdt, AA, BB,d,old_ek,new_ek
-   
+   !call output(1)
    return
-
 end subroutine setup_inloop
-
 
  subroutine update_force_setup
    use parameters
    use commons
    use units
    implicit none
-
-   integer :: i,idust,k_mode,ix,iy,icell
-   real(dp) :: xx,yy,intensity
-   ! NOT THE RIGHT way
-
-   
-!    do k_mode = 1, numb_modes
-!       call random_number(intensity)
-!       f_hat(k_mode)       =  2.0d0*(intensity-1.0d0) * Mach*cs0/ turnover_time
-!       call random_number(intensity)      
-!       phase_forcing(k_mode)= 2.0*pi*intensity
-!     end do
-!     force      = 0.0d0
-!     force_dust = 0.0d0
-!     do iy = first_active_y,last_active_y
-!         do ix = first_active,last_active
-!         xx=position(icell(ix,iy),1)-half*box_l  ! Boxlen already in pc
-! #if NY>1
-!         yy=position(icell(ix,iy),2)-half*box_l_y
-! #endif    
-!         do k_mode=1,numb_modes
-!             force(icell(ix,iy),1)= force(icell(ix,iy),1) + f_hat(k_mode)* cos(phase_forcing(k_mode)*xx/box_l)  
-! #if NY>1
-!             force(icell(ix,iy),2)= force(icell(ix,iy),2) + f_hat(k_mode) *sin(phase_forcing(k_mode)*yy/box_l)
-! #endif        
-!       end do
-!    end do
-!   end do
-
+  
 end subroutine update_force_setup
 
 #if NDUST>0
@@ -259,7 +438,7 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/cs0
+        tstop(i,idust) = St_0(idust)*box_l*rho_0/cs(i)/q(i,irho)
      end do
      end if
   end do

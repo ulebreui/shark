@@ -1,29 +1,48 @@
 module setup_parameters
   use precision
+  use phys_const
   
-  !Cloud & Gas properties
+  !Cloud & Gas properties 
   real(dp),parameter :: mu_gas      = 2.31d0    ! Mean molecular weight
   real(dp) :: box_l   = 1.0d0
-  real(dp) :: box_l_y = 1.0d0
+  real(dp),dimension(1:NDUST) :: dust2gas_ratio = 1.0d-2 !TODO to check/change when considering a distribution
+  real(dp),dimension(1:NDUST) :: St_0 = 1.0d0
 
-  real(dp) :: rho_init    = 1.0d0
-  real(dp) :: cs0 = 1.0d0
-  real(dp) :: Mach = 1.0d0
-  real(dp) :: tcross = 1.0d0
-  real(dp) :: turnover_time=1.0d0
-  real(dp), dimension(:), allocatable :: f_hat
-  real(dp), dimension(:), allocatable :: phase_forcing
 
-  real(dp), dimension(:), allocatable :: f_hat_old
-  integer :: numb_modes = 20
-  real(dp), dimension(1:NDUST):: Stokes_species   = 0.2d0
-  real(dp), dimension(1:NDUST):: dust2gas_species = 1.0d0
+  real(dp) :: beta_0  = 1.0d0
 
-  real(dp) :: Stokes_min  = 1d-3
-  real(dp) :: Stokes_max  = 1.0d0
-  real(dp) :: Stokes_cut  = 0.01d0
-  real(dp) :: theta_dust  = 1d-11 ! Ratio between disk density and dust grain density
+  real(dp) :: cs_0   = 1.0d-1
 
-  logical  :: stokes_distrib = .false. ! Use a MRN like distribution
+
+  real(dp) :: rho_0 = 1.0d0
+
+  real(dp) :: delta_B = 1.0d-2
+  real(dp) :: k_mag = 2.0*3.141592653589793238462643383279d0/1.0d0
+
+
+
+  logical :: decaying_turb_compressive = .false.   ! Initialize compressive modes for decaying turbulence
+  logical :: decaying_turb_solenoidal = .false.   ! Initialize solenoidal modes for decaying turbulence
+  character (len=300) :: decay_turb_random_path = "test"
+
+
+
+  integer :: nb_turb_modes   = 1
+
+  integer , dimension(:)  , allocatable    :: k_turb
+  real(dp), dimension(:)  , allocatable    :: vx_turb
+  real(dp), dimension(:)  , allocatable    :: vy_turb
+  real(dp), dimension(:)  , allocatable    :: vz_turb
+  real(dp), dimension(:)  , allocatable    :: phix_turb
+  real(dp), dimension(:)  , allocatable    :: phiy_turb
+  real(dp), dimension(:)  , allocatable    :: phiz_turb
+
+
+
+
+
+
+
+
 
 end module setup_parameters
