@@ -177,6 +177,10 @@ subroutine output(iout)
    write(ilun) Vz_rms
    close(ilun)
 
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Vyz_rms'), form=format_out,access='stream')
+   write(ilun) Vyz_rms
+   close(ilun)
+
    open(ilun,file=trim(path) // trim(nchar)//trim('/Vtot_rms'), form=format_out,access='stream')
    write(ilun) Vtot_rms
    close(ilun)

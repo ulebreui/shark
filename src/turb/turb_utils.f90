@@ -5,7 +5,7 @@ subroutine read_turb_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/turb_params/new_seed,nb_turb_modes_driven,Mach_nb,driven_turb,turb_compressive,turb_solenoidal,k_min,k_max,corrector,iseed
+  namelist/turb_params/new_seed,nb_turb_modes_driven,Mach_nb_ini,Mach_yz_target,Mach_x_target,driven_turb,turb_compressive,turb_solenoidal,k_min,k_max,corrector,corrector_sol,iseed,turnover_time,phase_drift
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "turb_params namelist reading  !"

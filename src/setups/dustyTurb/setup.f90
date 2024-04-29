@@ -384,7 +384,7 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
      if(outputing) print *, "Total mass is", sum(u_prim(:,irho))
-     if(outputing) print *, "Total momentum is", sum(u_prim(:,ivx))
+     if(outputing) print *, "Total momentum is", sum(u_prim(:,ivx)+u_prim(:,ivy)+u_prim(:,ivz))
      if(outputing) print *, "Total energy is", sum(u_prim(:,iP))
 
      outputing=.false.

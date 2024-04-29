@@ -10,6 +10,13 @@ real(dp):: k_max = 2.0d0*pi/(1.0d0/10.0d0)
 
 logical :: new_seed = .false.
 integer :: iseed=0
+logical :: phase_drift = .true.
+integer :: iseed_phase_drift=0
+integer :: count=0
+integer :: count_bis=0
+
+
+
 logical :: driven_turb = .false.
 logical :: turb_compressive = .false.
 logical :: turb_solenoidal = .false.
@@ -17,13 +24,23 @@ logical :: turb_solenoidal = .false.
 logical :: ini_random = .true.
 
 real(dp) , dimension(:)  ,allocatable    :: k_turb_driven 
-real(dp) :: Mach_nb = 3.0d0
+real(dp) :: Mach_nb_ini = 1.0d0
+real(dp) :: Mach_yz_target = 1.0d0
+real(dp) :: Mach_x_target = 1.0d0
+
+
 real(dp) :: corrector = 1.0d0
+real(dp) :: corrector_sol = 1.0d-1
+
 real(dp) :: V_rms = 1.0d0
 
 real(dp) :: Vy_rms = 1.0d0
 real(dp) :: Vz_rms = 1.0d0	
-real(dp) :: Vtot_rms = 1.0d0	
+real(dp) :: Vtot_rms = 1.0d0
+real(dp) :: Vyz_rms = 1.0d0
+
+real(dp) :: turnover_time = 1.0d0	
+
 
 
 

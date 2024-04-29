@@ -50,9 +50,9 @@ subroutine random_acceleration_and_velocity(velocity)
     call gaussdev(localseed,rand_nb1) !Generate random numbers from a Gaussian for acceleration amplitudes
     random_array_ax(i) = corrector*rand_nb1 !Corrector to tune a posteriori the amplitudes to approach desired Mach
     call gaussdev(localseed,rand_nb2)
-    random_array_ay(i) = corrector*rand_nb2
+    random_array_ay(i) = corrector_sol*rand_nb2
     call gaussdev(localseed,rand_nb3)
-    random_array_az(i) = corrector*rand_nb3
+    random_array_az(i) = corrector_sol*rand_nb3
     call ranf(localseed,rand_nb4) !Generate random numbers from a uniform distrib for phases
     random_array_phix(i) = 2.0d0*pi*rand_nb4
     call ranf(localseed,rand_nb5)
@@ -96,7 +96,7 @@ subroutine initial_velocity_correction !!TODO extend to transversal components
 
   if (turb_compressive) then
     if(.not. turb_solenoidal) then
-      vel_corrector = Mach_nb*cs_0/V_rms
+      vel_corrector = Mach_nb_ini*cs_0/V_rms
       random_array_vx = vel_corrector*random_array_vx
       print *,'Initial velocity corrector (compressive) estimated to: ',vel_corrector
 
@@ -107,7 +107,7 @@ subroutine initial_velocity_correction !!TODO extend to transversal components
 
   if (turb_solenoidal) then
     if (.not. turb_compressive) then
-      vel_yz_corrector = Mach_nb*cs_0/Vtot_rms
+      vel_yz_corrector = Mach_nb_ini*cs_0/Vtot_rms
       random_array_vy = vel_yz_corrector*random_array_vy
       random_array_vz = vel_yz_corrector*random_array_vz 
       print *,'Initial velocity corrector (solenoidal-yz) estimated to: ',vel_yz_corrector
@@ -120,7 +120,7 @@ subroutine initial_velocity_correction !!TODO extend to transversal components
 
 
   if (turb_solenoidal .and. turb_compressive) then
-    vel_xyz_corrector = Mach_nb*cs_0/Vtot_rms
+    vel_xyz_corrector = Mach_nb_ini*cs_0/Vtot_rms
     random_array_vx = vel_xyz_corrector*random_array_vx
     random_array_vy = vel_xyz_corrector*random_array_vy 
     random_array_vz = vel_xyz_corrector*random_array_vz  
@@ -165,6 +165,7 @@ subroutine compute_rms_velocity
   V_rms=0.0d0
   Vy_rms=0.0d0
   Vz_rms=0.0d0
+  Vyz_rms=0.0d0
   Vtot_rms=0.0d0
 
 
@@ -201,8 +202,8 @@ subroutine compute_rms_velocity
 
 
   Vtot_rms = SQRT(V_rms+Vy_rms+Vz_rms) !Here V_rms is actually V_rms**2
-
-  V_rms = SQRT(V_rms) !Take sqrt to het right V_rms. We should probably define a new variable
+  Vyz_rms = SQRT(Vy_rms+Vz_rms) !Here V_rms is actually V_rms**2
+  V_rms = SQRT(V_rms) !Take sqrt to get right V_rms. We should probably define a new variable
   Vy_rms = SQRT(Vy_rms)
   Vz_rms = SQRT(Vz_rms)
 
@@ -234,23 +235,49 @@ subroutine add_driven_turb_kick
   implicit none
 
   integer :: i,i_turb
-  real(dp) ::  mom_x,rho,ax_kick
+  real(dp) ::  mom_x,mom_y,mom_z,rho,ax_kick,ay_kick,az_kick
 
   do i=1,ncells
     if(active_cell(i)==1) then
 
 	  mom_x = u_prim(i,ivx)
+    mom_y = u_prim(i,ivy)
+    mom_z = u_prim(i,ivz)
+
 	  rho = u_prim(i,irho)
 
     ax_kick = 0.0d0
+    ay_kick = 0.0d0
+    az_kick = 0.0d0
 
-    do i_turb=1,nb_turb_modes_driven
+    if (turb_compressive) then
+      do i_turb=1,nb_turb_modes_driven
 
-  	 ax_kick = ax_kick + random_array_ax(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phix(i_turb)) !Beware of the definition of k in your setup/nml
-  	
-    end do
+    	 ax_kick = ax_kick + random_array_ax(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phix(i_turb)) !Beware of the definition of k in your setup/nml
+    	
+      end do
 
-    u_prim(i,ivx) = mom_x + rho*ax_kick*dt
+      u_prim(i,ivx) = mom_x + rho*ax_kick*dt
+
+    end if
+
+
+    if (turb_solenoidal) then
+
+      do i_turb=1,nb_turb_modes_driven
+
+       ay_kick = ay_kick + random_array_ay(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phiy(i_turb)) !Beware of the definition of k in your setup/nml
+       az_kick = az_kick + random_array_az(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phiz(i_turb)) !Beware of the definition of k in your setup/nml
+      
+      end do
+
+      u_prim(i,ivy) = mom_y + rho*ay_kick*dt
+      u_prim(i,ivz) = mom_z + rho*az_kick*dt
+
+
+    end if 
+
+
     end if
   end do 
 
@@ -259,5 +286,80 @@ subroutine add_driven_turb_kick
 end subroutine add_driven_turb_kick
 
 
+
+subroutine kick_phase_drift
+!Allows the phase of each turb kick modes to slowly drift as time goes by
+
+  use commons
+  use parameters
+  use units
+  use precision
+  use random
+
+  implicit none
+
+  integer :: i_turb
+  integer ,dimension(1,1:IRandNumSize)    :: allseed
+  integer,dimension(IRandNumSize) :: localseed=-1
+  real(dp) ::  rand_nb1,rand_nb2,rand_nb3
+
+  
+   if (localseed(1)==-1) then
+
+
+      call rans(1,iseed_phase_drift,allseed)
+      localseed = allseed(1,1:IRandNumSize)
+ 
+  end if
+
+
+  do i_turb=1,nb_turb_modes_driven
+    call ranf(localseed,rand_nb1) !Generate random numbers from a uniform distrib for phases
+    random_array_phix(i_turb) = random_array_phix(i_turb) + 2.0d0*pi*rand_nb1*dt/turnover_time
+    call ranf(localseed,rand_nb2)
+    random_array_phiy(i_turb) = random_array_phiy(i_turb) + 2.0d0*pi*rand_nb2*dt/turnover_time
+    call ranf(localseed,rand_nb3)
+    random_array_phiz(i_turb) = random_array_phiz(i_turb)+ 2.0d0*pi*rand_nb3*dt/turnover_time
+
+
+  end do
+end subroutine kick_phase_drift
+
+
+
+subroutine adjust_yz_kick_intensity
+!To prevent transversal velocitiess from endlessly building up, adjust corrector to match targeted Mach
+
+  use commons
+  use parameters
+  use units
+  use precision
+  use random
+
+  implicit none
+
+
+ 
+  call compute_rms_velocity
+
+  if (Vyz_rms/cs_0 > Mach_yz_target) then
+
+
+
+      random_array_ay = random_array_ay*0.97  
+      random_array_az = random_array_az*0.97 
+
+  end if 
+
+  if (V_rms/cs_0 > Mach_x_target) then
+
+
+
+      random_array_ax = random_array_ax*0.999  
+
+
+
+  end if
+end subroutine adjust_yz_kick_intensity
 
 
