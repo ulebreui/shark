@@ -25,6 +25,7 @@ subroutine output(iout)
   write(ilun,'("NY        =",I11)')NY
   write(ilun,'("MHD        =",I11)')MHD
   write(ilun,'("GEOM        =",I11)')GEOM
+  write(ilun,'("TURB        =",I11)')TURB
   write(ilun,'("GRIDSPACE       =",I11)')GRIDSPACE
   write(ilun,'("time        =",E23.15)')time
   write(ilun,'("unit_t        =",E23.15)')unit_t
@@ -171,6 +172,36 @@ subroutine output(iout)
   end do
   close(ilun)
 #endif
+
+#if TURB>0
+   open(ilun,file=trim(path) // trim(nchar)//trim('/V_rms'), form=format_out,access='stream')
+   write(ilun) V_rms
+   close(ilun)
+
+
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Vy_rms'), form=format_out,access='stream')
+   write(ilun) Vy_rms
+   close(ilun)
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Vz_rms'), form=format_out,access='stream')
+   write(ilun) Vz_rms
+   close(ilun)
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Vyz_rms'), form=format_out,access='stream')
+   write(ilun) Vyz_rms
+   close(ilun)
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Vtot_rms'), form=format_out,access='stream')
+   write(ilun) Vtot_rms
+   close(ilun)
+
+
+
+#endif
+
+
+
 if(charging) then
   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
    do i = 1,ncells

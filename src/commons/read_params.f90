@@ -42,7 +42,7 @@ subroutine read_params
    print *, "Dust namelist reading  !"
    call read_dust_params(13,nmlfile)
 #endif
-#if TURB==1
+#if TURB>0
    print *, "Turb namelist reading  !"
    call read_turb_params(13,nmlfile)
 #endif

@@ -20,6 +20,7 @@ subroutine setup
 
 
 
+
 #if NDUST>0
 
     call distribution_dust(.true.)
@@ -28,12 +29,16 @@ subroutine setup
 
   do i = 1,ncells
 
-      q(i,irho) = rho_0/unit_d 
+      q(i,irho) = rho_0/unit_d !Spatially uniform gas density
 
       cs(i)=cs_0/unit_v
 
       q(i,iP)=q(i,irho)*cs(i)**2
 
+
+      !q(i,irho)= delta_rho*rho_0/unit_d*sin(2.0d0*pi*position(i,1)/box_l*kx_wave) !Density perturbation for the dust
+
+      q(i,ivx) = vx_0/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*kx_wave)) !Wave-like velocity perturbation for the gas
 
 
 
@@ -50,36 +55,33 @@ subroutine setup
             
 
 
-            q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+            q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho) !Spatially uniform dust density
 
 
-
-            !St_0(idust)=1d-2.0d0*10000-9999*1d-2.0d0*(idust-1)
-            !St_0(idust)=1d-2+9999*1d-2.0d0*(idust-1)
 
             !sdust(i,idust)=St_0(idust)*box_l !TODO edit when adding coagulation
 
          
 
             q(i,ivdx(idust)) = vdx_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kx_wave_d) !Velocity perturbation for the dust
-            q(i,ivdy(idust)) = vdy_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*ky_wave_d) !Velocity perturbation for the dust
-            q(i,ivdz(idust)) = vdz_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kz_wave_d) !Velocity perturbation for the dust
+
+            !q(i,irhod(idust))= delta_rho_d*epsilondust(i,idust)*q(i,irho)*sin(2.0d0*pi*position(i,1)/box_l*kx_wave_d) !Density perturbation for the dust
 
 
          !q(i,ivd(idust)) = 0.0d0
          !print *, "Vxd=", q(i,ivd(idust))*unit_v
 
-  end do
+        end do
 
 
 #endif
 
 #if MHD==1
 if(beta_0>0) then
-     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
 
-     q(i,iBy)=delta_B*q(i,iBx)*sin(2.0d0*pi*position(i,1)/box_l*kx_wave_B) !Transversal magnetic perturbations
-     q(i,iBz)=delta_B*q(i,iBx)*cos(2.0d0*pi*position(i,1)/box_l*kx_wave_B)
+     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
+     q(i,iBy)=delta_B*q(i,iBx)*sin(2.0d0*pi*position(i,1)/box_l*ky_wave_B) !Transversal magnetic perturbations
+     q(i,iBz)=delta_B*q(i,iBx)*cos(2.0d0*pi*position(i,1)/box_l*kz_wave_B)
 
      !delta_Bnorm = q(i,iBy)**2.0d0+q(i,iBz)**2.0d0
     !print *, "Bx =", q(i,iBx)
@@ -87,24 +89,34 @@ if(beta_0>0) then
     !print *, "Bz =", q(i,iBz)
 
      !print *, "Bnorm squared =", Bnorm2
-     
+
+
+
+
+
+    q(i,ivy) = vy_0/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*ky_wave)) !Wave-like velocity perturbation for the gas
+
+    q(i,ivz) = vz_0/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*kz_wave)) !Wave-like velocity perturbation for the gas
+
+
 #if NDUST>0
      do idust=1,ndust
-         q(i,ivdy(idust)) = 0.0d0
-         q(i,ivdz(idust)) = 0.0d0
+          q(i,ivdy(idust)) = vdy_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*ky_wave_d) !Velocity perturbation for the dust
+          q(i,ivdz(idust)) = vdz_0/unit_v*sin(2.0d0*pi*position(i,1)/box_l*kz_wave_d) !Velocity perturbation for the dust
      end do
 #endif
 
 
-     q(i,ivy) = vy_0/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*ky_wave)) !Velocity perturbation for the gas
 
-     q(i,ivz) = vz_0/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*kz_wave)) !Velocity perturbation for the gas
 
-endif !Perhaps to be placed elsewhere in the future
+
+endif !end of if (beta>0). Perhaps to be placed elsewhere in the future
+
+
 
 if(beta_0==0) then
-     q(i,iBx)=0.0d0
 
+     q(i,iBx)=0.0d0
      q(i,iBy)=0.0d0
      q(i,iBz)=0.0d0
 endif
@@ -115,6 +127,8 @@ endif
 
 
   end do
+
+
 
   tend = tend/unit_t
 
@@ -155,7 +169,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,vdx_0,vdy_0,vdz_0,vy_0,vz_0,kx_wave_B,ky_wave,kz_wave,kx_wave_d,ky_wave_d,kz_wave_d,beta_0,cs_0,delta_B,delta_rho,delta_rho_d
+  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,vdx_0,vdy_0,vdz_0,vx_0,vy_0,vz_0,ky_wave_B,kz_wave_B,kx_wave,ky_wave,kz_wave,kx_wave_d,ky_wave_d,kz_wave_d,beta_0,cs_0,delta_B,delta_rho,delta_rho_d
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

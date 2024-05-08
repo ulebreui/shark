@@ -70,12 +70,8 @@ subroutine allocate_init
   allocate(grad_phi_sg(1:ncells,1:2))
   phi_sg=0.0d0
   grad_phi_sg=0.0d0
-#if TURB==1
-  allocate(f_turb(1:ncells,1:3))
-  f_turb=0.0d0
-  allocate(f_turb_old(1:ncells,1:3))
-  f_turb_old=0.0d0
-#endif
+
+
   allocate(cs(1:ncells))
 
 #if NDUST>0
@@ -92,6 +88,35 @@ subroutine allocate_init
     allocate(fargo_velocity(1:ncells))
     fargo_velocity = 0.0d0
   endif
+
+#if TURB>0
+
+  allocate(k_turb_driven(1:nb_turb_modes_driven))
+  allocate(random_array_ax(1:nb_turb_modes_driven))
+  allocate(random_array_ay(1:nb_turb_modes_driven))
+  allocate(random_array_az(1:nb_turb_modes_driven))
+  allocate(random_array_vx(1:nb_turb_modes_driven))
+  allocate(random_array_vy(1:nb_turb_modes_driven))
+  allocate(random_array_vz(1:nb_turb_modes_driven))
+  allocate(random_array_phix(1:nb_turb_modes_driven))
+  allocate(random_array_phiy(1:nb_turb_modes_driven))
+  allocate(random_array_phiz(1:nb_turb_modes_driven))
+  k_turb_driven=0.0d0
+  random_array_ax=0.0d0
+  random_array_ay=0.0d0
+  random_array_az=0.0d0
+  random_array_vx=0.0d0
+  random_array_vy=0.0d0
+  random_array_vz=0.0d0
+  random_array_phix=0.0d0
+  random_array_phiy=0.0d0
+  random_array_phiz=0.0d0
+
+
+
+#endif
+
+
   if(charging) then
     allocate(eta_a(1:ncells))
     allocate(eta_h(1:ncells))
