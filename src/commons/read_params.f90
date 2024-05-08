@@ -7,7 +7,7 @@ subroutine read_params
   character(len=70):: nmlfile,infile
   integer :: io
   logical::nml_ok
-  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma,force_kick,slope_type,viscosity,smallr,smallc,smallP
+  namelist/grid_params/tend,rin,freq_out,fargo,static,CFL,nrestart,gamma,force_kick,slope_type,viscosity,smallr,smallc,smallP
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -31,7 +31,6 @@ subroutine read_params
       write(*,*) 'Invalid line in the grid namelist'
       stop
    end if
- 
 
    if(static) then
       print*, 'Static gas'

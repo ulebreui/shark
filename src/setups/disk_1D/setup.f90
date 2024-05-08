@@ -31,19 +31,14 @@ subroutine setup
       H        = HoverR*rr
       Omega    = sqrt(Mstar/rr**3)
       cs0      = Omega*H
-      vfarg=0.0d0
-      if(fargo) then
-        vfarg= -omega*rr
-        fargo_velocity(icell(ix,iy))=vfarg
-      endif
+
       q(icell(ix,iy),irho)                    = sigma_R0*(R0_disk/rr)*exp(-rr/R_out_disk)
-      if(test_planet_disk)q(icell(ix,iy),irho)                    = sigma_R0!*(R0_disk/rr)
 
       !if(rr>R_out_disk) q(icell(ix,iy),irho)  = sigma_R0*(R0_disk/rr)*decrease_density
       q(icell(ix,iy),ivx)                     = 0.0
       !q(icell(ix,iy),ivy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*2.0d0)
       q(icell(ix,iy),ivy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
-      if(test_planet_disk)q(icell(ix,iy),ivy) = omega*rr+vfarg!*sqrt(1.0d0-HoverR**2.0*(2.0d0))
+      if(test_planet_disk)q(icell(ix,iy),ivy) = omega*rr!*sqrt(1.0d0-HoverR**2.0*(2.0d0))
 
       q(icell(ix,iy),iP)                      = q(icell(ix,iy),irho)*cs0**2.0
       cs(icell(ix,iy))                        = cs0
@@ -58,7 +53,7 @@ subroutine setup
         if(growth_step)  q(icell(ix,iy),idust_pscal(idust,1)) = scut/unit_l
 #endif
         q(icell(ix,iy),ivdx(idust))    = 0.0d0
-        q(icell(ix,iy),ivdy(idust))    = omega*rr+vfarg
+        q(icell(ix,iy),ivdy(idust))    = omega*rr
      end do
 #endif
   eta_visc(icell(ix,iy)) = alpha_visc*H*cs(icell(ix,iy))
@@ -255,9 +250,6 @@ subroutine setup_inloop
                     u_prim(i,ivdy(idust))  = rho_new*vy_new
 #if NDUSTPSCAL>0
                 do ipscal=1,ndustpscal
-                    !rho_init= uprim_condinit(i,idust_pscal(idust,ipscal))
-                    !rho_old = u_prim(i,idust_pscal(idust,ipscal))
-                    !rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
                     u_prim(i,idust_pscal(idust,ipscal)) = u_prim(i,idust_pscal(idust,ipscal))/rho_old*rho_new ! We don't relax passive scalars
                 end do
 #endif                
@@ -277,40 +269,6 @@ subroutine setup_inloop
         end do
     end do
 
-
-   ! This is now done in the boundary routine
-   ! !Accretion in the outer boundary
-   ! if(accretion) then
-   ! ix = last_active
-   !  do iy=first_active_y,last_active_y
-   !      if(phi(icell(ix,iy))<phi_mom*pi) then
-   !          maccreted = (M_acc/(365.25*24.*3600.)*unit_t)
-   !          vrout     = cs(icell(ix,iy))
-   !          sigma_out = maccreted/vrout/phi_mom/pi
-   !          !print *, sigma_out
-   !          u_prim(icell(ix,iy),irho) = u_prim(icell(ix,iy),irho) + sigma_out
-   !          u_prim(icell(ix,iy),ivx)  = u_prim(icell(ix,iy),ivx)  - sigma_out*vrout
-   !          u_prim(icell(ix,iy),ivy)  = u_prim(icell(ix,iy),ivy)  + sigma_out*L_out*unit_lout/R_out_disk
-   !      endif
-   ! end do
-   ! endif
-     !Accretion in the outer boundary
-   ! if(accretion) then
-   !  ix = last_active
-   !  do iy=first_active_y,last_active_y
-   !      if(phi(icell(ix,iy))<phi_mom*pi) then
-   !          maccreted = M_acc/(365.25*24.*3600.)*unit_t
-   !          vrout     = cs(icell(ix,iy))
-   !          sigma_out = maccreted/vrout/phi_mom/pi/box_l
-
-   !          u_prim(icell(ix,iy),irho) =  sigma_out
-   !          u_prim(icell(ix,iy),ivx)  =- sigma_out*vrout
-   !          u_prim(icell(ix,iy),ivy)  =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
-   !      endif
-   ! end do
-   ! endif
-   ! call apply_boundaries !Boundaries are applied here.
-
 end subroutine setup_inloop
 
 
@@ -326,67 +284,6 @@ end subroutine setup_inloop
    integer :: i,idust,ix,iy,ixx,iyy,icell
    real(dp) :: xx, yy, rr, xx_p, yy_p, rr_p, theta_p,r_cyl,x_soft,y_soft,d_planet,px,py,p_r,p_theta,phi_loc,phi_p
 
-
-  if(self_gravity) then
-  !Compute potential in active cells
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,rr,phi_loc,ix,iy,rr_p,phi_p)
-  !$OMP DO
-   do i=1,ncells
-       if(active_cell(i)==1)then
-            phi_sg(i)=0.0d0
-            rr=radii_c(i)
-            phi_loc=float(iyy(i))*dx(i,2)
-            do ix=first_active,last_active
-                do iy=first_active_y,last_active_y
-                    rr_p=radii_c(icell(ix,iy))
-                    phi_p=float(iy)*dx(icell(ix,iy),2)
-                    phi_sg(i)=phi_sg(i)-q(i,irho)*dx(icell(ix,iy),1)*dx(icell(ix,iy),2)/(sqrt(a_smooth_pl**2+rr**2.+rr_p**2-2.0d0*rr*rr_p*cos(phi_p-phi_loc)))
-                end do
-            end do
-        endif
-    end do
-    !$OMP END DO  
-    !$OMP END PARALLEL 
-    endif
-if(Mplanet>0.0d0) then
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,xx,yy,rr,theta_p)
-  !$OMP DO
-   do i=1,ncells
-    if(active_cell(i)==1)then
-
-        theta_p = 2.0d0*pi*mod(time/(2.0d0*pi/sqrt(Mstar/Rplanet**3)),1.0d0) ! Orbital period
-        xx      = radii_c(i)*cos(phi(i))
-        yy      = radii_c(i)*sin(phi(i))
-        rr_p    = sqrt((xx-cos(theta_p+pi)*Rplanet)**2+(yy-sin(theta_p+pi)*Rplanet)**2+a_smooth_pl**2)
-        phi_sg(i) = - Mplanet/rr_p
-    endif
-   end do
-  !$OMP END DO  
-  !$OMP END PARALLEL 
-endif
-!Computes grad phi
-if(self_gravity.or.Mplanet>0.0d0) then
-    call apply_boundaries_phi
-    do i=1,ncells
-        if(active_cell(i)==1)then
-            ix=ixx(i)
-            iy=iyy(i)
-            theta_p = 2.0d0*pi*mod(time/(2.0d0*pi/sqrt(Mstar/Rplanet**3)),1.0d0) + pi ! Orbital period
-
-            grad_phi_sg(i,1) =(phi_sg(icell(ix+1,iy)) - phi_sg(icell(ix-1,iy)))/(0.5d0*dx(icell(ix-1,iy),1)+dx(i,1)+0.5d0*dx(icell(ix+1,iy),1))
-            grad_phi_sg(i,2) =(phi_sg(icell(ix,iy+1)) - phi_sg(icell(ix,iy-1)))/(0.5d0*dx(icell(ix,iy-1),2)+dx(i,2)+0.5d0*dx(icell(ix,iy+1),2))/radii_c(i)
-            !grad_phi_sg(i,1) = - Mplanet*(Rplanet*cos(theta_p-phi(i))-radii_c(i))/(a_smooth_pl**2+Rplanet**2-2.0d0*radii_c(i)*Rplanet*cos(theta_p-phi(i))+radii_c(i)**2)**(3./2.)
-            !grad_phi_sg(i,2) = - Mplanet*Rplanet*sin(theta_p-phi(i))/(a_smooth_pl**2+Rplanet**2-2.0d0*Rplanet*radii_c(i)*cos(theta_p-phi(i))+radii_c(i)**2)**(3./2.)
-            !grad_phi_sg(i,1) = slope_limit(2.0d0*(phi_sg(i) - phi_sg(icell(ix-1,iy)))/(dx(i,1)+dx(icell(ix-1,iy),1)),2.0d0*(phi_sg(icell(ix+1,iy)) - phi_sg(i))/(dx(icell(ix+1,iy),1)+dx(i,1)))
-            !grad_phi_sg(i,2) = slope_limit(2.0d0*(phi_sg(i) - phi_sg(icell(ix,iy-1)))/(dx(i,2)+dx(icell(ix,iy-1),2)),2.0d0*(phi_sg(icell(ix,iy+1)) - phi_sg(i))/(dx(icell(ix,iy+1),2)+dx(i,2)))/radii_c(i)
-        end if
-    end do
-   endif 
-
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
   !$OMP PRIVATE(i,idust,xx,yy,rr, xx_p, yy_p, rr_p,theta_p,r_cyl,x_soft,y_soft,px,py,p_r,p_theta)
@@ -396,19 +293,12 @@ if(self_gravity.or.Mplanet>0.0d0) then
         force(i,1)  = - Mstar/radii_c(i)**2
         force(i,2)  = 0.0d0
         force(i,3)  = 0.0d0
-        if(self_gravity.or.Mplanet>0.0d0) then
-            force(i,1)  = force(i,1) - grad_phi_sg(i,1)
-            force(i,2)  = force(i,2) - grad_phi_sg(i,2)
-        endif
+
 #if NDUST>0
         do idust=1,ndust
          force_dust(i,1,idust)  =  - Mstar/radii_c(i)**2
          force_dust(i,2,idust)  = 0.0d0
          force_dust(i,3,idust)  = 0.0d0
-        if(self_gravity.or.Mplanet>0.0d0) then
-            force_dust(i,1,idust)  = force_dust(i,1,idust)  - grad_phi_sg(i,1)
-            force_dust(i,2,idust)  = force_dust(i,2,idust)  - grad_phi_sg(i,2)
-        endif
         end do
 #endif
 

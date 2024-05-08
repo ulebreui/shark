@@ -6,7 +6,7 @@ subroutine allocate_init
   use units
   implicit none
 
-  integer :: idust,i
+  integer :: idust,i,ipscal,icountpscal
 
   call get_active_cells
 
@@ -88,6 +88,10 @@ subroutine allocate_init
   Mc= 0.0d0
 #endif  
 
+  if(fargo) then
+    allocate(fargo_velocity(1:ncells))
+    fargo_velocity = 0.0d0
+  endif
   if(charging) then
     allocate(eta_a(1:ncells))
     allocate(eta_h(1:ncells))
@@ -151,12 +155,20 @@ subroutine allocate_init
 
   
 #if NDUST>0  
+  icountpscal=1
   do idust=1,ndust
     print *,'idust   =', idust, 'irhod = ',iP+idust, ' ivdx = ', iP+ndust+idust,' ivdy = ',  iP+2*ndust+idust,' ivdz = ',  iP+3*ndust+idust
     irhod(idust)= iP+idust
     ivdx(idust) = iP+ndust+idust
     ivdy(idust) = iP+2*ndust+idust
     ivdz(idust) = iP+3*ndust+idust
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+      idust_pscal(idust,ipscal) = iP +4*ndust+icountpscal
+      print *,'idustpscal   =', idust_pscal(idust,ipscal)
+      icountpscal= icountpscal +1
+    end do
+#endif     
     index_vdn(idust,1) = ivdx(idust)
     index_vdt(idust,1) = ivdy(idust)
     index_vdn(idust,2) = ivdy(idust)

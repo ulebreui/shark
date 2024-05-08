@@ -116,13 +116,17 @@ subroutine allocate_dust
   allocate(sdust(1:ncells,1:ndust))
   allocate(mdust(1:ncells,1:ndust))
   allocate(tstop(1:ncells,1:ndust))
+  allocate(tcoag(1:ncells,1:ndust))
+
   allocate(force_dust(1:ncells,1:3,1:ndust))
   allocate(irhod(1:ndust))
   allocate(ivdx(1:ndust))
   allocate(ivdy(1:ndust))
   allocate(ivdz(1:ndust))
 
-
+#if NDUSTPSCAL>0
+   allocate(idust_pscal(1:ndust,1:ndustpscal))
+#endif
   !Size : bin edges
   aplus  = 0.0d0
   aminus = 0.0d0
@@ -136,7 +140,7 @@ subroutine allocate_dust
   mdust=0.0d0
 
   tstop = 0.0d0
-
+  tcoag = 0.0d0
   force_dust=0.0d0
 
   if(charging) then
@@ -338,11 +342,11 @@ subroutine read_dust_params(ilun,nmlfile)
   integer :: io,ilun
   logical::nml_ok
   namelist/dust_params/frag_thre,vfrag,drag,dust_back_reaction,smin,smax,scut,scutmin,mrn,rhograin&
-  &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,&
-  & CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
+  &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,growth_step &
+  &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species
+ & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"

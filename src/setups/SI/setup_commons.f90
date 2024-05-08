@@ -11,7 +11,7 @@ module setup_parameters
   real(dp) :: Q_shear     = 1.5d0
   real(dp) :: HoverR      = 0.1d0
   real(dp) :: eta_stream  = 0.005d0
-  real(dp) :: rad0= 1.0d0
+  real(dp) :: rad0        = 1.0d0
 
   real(dp), dimension(1:NDUST):: Stokes_species   = 0.2d0
   real(dp), dimension(1:NDUST):: dust2gas_species = 1.0d0

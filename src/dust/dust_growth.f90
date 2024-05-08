@@ -90,9 +90,9 @@ subroutine dust_growth(verbose)
            St1 = t_stop_loc(idust)/t_l
            St2 = t_stop_loc(jdust)/t_l
            
-           vclass1 = dsqrt(3.0d0/2.0d0)*cs_eos(T)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
-           vclass2 = dsqrt(3.0d0/2.0d0)*cs_eos(T)*dsqrt(f_Stokes*St1)           
-           vclass3 = dsqrt(3.0d0/2.0d0)*cs_eos(T)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
+           vclass1 = alpha_turb*cs_eos(T)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
+           vclass2 = alpha_turb*cs_eos(T)*dsqrt(f_Stokes*St1)           
+           vclass3 = alpha_turb*cs_eos(T)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
            
            vdrift_turb                            = vclass2
            if(t_stop_loc(idust)<t_eta)vdrift_turb = vclass1
@@ -251,3 +251,37 @@ subroutine dust_growth(verbose)
    !$OMP END PARALLEL
    
  end subroutine dust_growth
+
+
+
+! This files contain the dust growth routines.
+subroutine dust_growth_stepinski(verbose)
+  use parameters
+  use commons
+  use units
+  use OMP_LIB
+  implicit none
+  logical :: verbose
+  integer :: i,idust,jdust,ipscal
+
+
+
+
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust,ipscal)    
+  
+  !$OMP DO 
+  do i=1,ncells
+  if (active_cell(i)==1) then
+     ! Differential velocity loop
+     do idust=1,ndust
+           u_prim(i,idust_pscal(idust,1))=max(u_prim(i,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(i,irhod(idust))*sminstep/unit_l)
+           !sdust(i,idust) = u_prim(i,idust_pscal(idust,1))/q(i,irhod(idust))
+      end do
+   endif
+   end do
+   !$OMP END DO
+   !$OMP END PARALLEL
+   
+ end subroutine dust_growth_stepinski

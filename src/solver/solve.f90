@@ -24,13 +24,13 @@ subroutine solve(verbose,outputing)
 
   if(force_kick) call update_force_setup
 
+
+  call system_clock ( t3, clock_rate, clock_max )
 #if NDUST>0
   ! Re-calc distribution
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-  call system_clock ( t3, clock_rate, clock_max )
-
   if(charging)   call charge
 
   call system_clock ( t4, clock_rate, clock_max )
@@ -52,12 +52,17 @@ subroutine solve(verbose,outputing)
   ! Source terms are computed and added to u_prim
   call source_terms
 
+  if(fargo) call fargo_scheme
+
   call system_clock ( t8, clock_rate, clock_max )
 
 #if NDUST>0
   ! Dust step (dynamics, growth, charging)
   if(drag)   call dust_drag(1.0d0) ! Second half kick
   if(growth) call dust_growth(verbose)
+#if NDUSTPSCAL > 0 
+  if(growth_step) call dust_growth_stepinski(verbose) ! Dust growth with Stepinski /!\ dust size is in the first pscal
+#endif
 #endif
   call system_clock ( t9, clock_rate, clock_max )
 
@@ -113,7 +118,7 @@ subroutine ctoprim
   use OMP_LIB
 
   implicit none
-  integer :: i,idust
+  integer :: i,idust,ipscal
   real(dp):: ekin,cs_eos,barotrop,emag
 
   ! Gas related primitive quantities
@@ -124,10 +129,11 @@ subroutine ctoprim
   do i = 1,ncells
     q(i,irho)             = max(u_prim(i,irho),smallr)
     q(i,ivx)              = u_prim(i,ivx)/u_prim(i,irho)
-
-    ekin = half*u_prim(i,irho)*((u_prim(i,ivx)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivy)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivz)/u_prim(i,irho))**2.0)
     q(i,ivz)              = u_prim(i,ivz)/u_prim(i,irho)
     q(i,ivy)              = u_prim(i,ivy)/u_prim(i,irho)
+    
+    ekin = half*u_prim(i,irho)*((u_prim(i,ivx)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivy)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivz)/u_prim(i,irho))**2.0)
+
     emag=0.0d0
 #if MHD==1   
     emag                  = half*(u_prim(i,iBx)**2.0+u_prim(i,iBy)**2.0+u_prim(i,iBz)**2.0)
@@ -142,7 +148,13 @@ subroutine ctoprim
         q(i,irhod(idust)) = u_prim(i,irhod(idust))
         q(i,ivdx(idust))  = u_prim(i,ivdx(idust))/u_prim(i,irhod(idust))
         q(i,ivdy(idust))  = u_prim(i,ivdy(idust))/u_prim(i,irhod(idust))
-        q(i,ivdz(idust))  = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust))      
+        q(i,ivdz(idust))  = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust))
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        q(i,idust_pscal(idust,ipscal))  = u_prim(i,idust_pscal(idust,ipscal))/u_prim(i,irhod(idust))
+        if(growth_step)  sdust(i,idust) = q(i,idust_pscal(idust,ipscal))
+    end do
+#endif             
      end do
 #endif
 #if MHD==1
@@ -176,7 +188,7 @@ subroutine primtoc
   use OMP_LIB
 
   implicit none
-  integer :: i,idust
+  integer :: i,idust,ipscal
 
   do i = 1 ,ncells
      u_prim(i,irho)              = q(i,irho)
@@ -190,6 +202,11 @@ subroutine primtoc
         u_prim(i,ivdx(idust))   = q(i,irhod(idust)) * q(i,ivdx(idust))
         u_prim(i,ivdy(idust))   = q(i,irhod(idust)) * q(i,ivdy(idust))
         u_prim(i,ivdz(idust))   = q(i,irhod(idust)) * q(i,ivdz(idust))
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        u_prim(i,idust_pscal(idust,ipscal))  = q(i,irhod(idust))*q(i,idust_pscal(idust,ipscal))
+    end do
+#endif
      end do
 #endif    
 #if MHD==1

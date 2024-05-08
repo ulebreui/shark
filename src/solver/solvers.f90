@@ -493,7 +493,7 @@ subroutine solver_dust_Huang_Bai(qleft,qright,flx,idim)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,ipscal
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d
 
@@ -599,28 +599,52 @@ flx(i_rho)  =  0.d0
 flx(i_u)    =  0.d0
 flx(i_v)    =  0.d0
 flx(i_w)    =  0.d0
-
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx(idust_pscal(idust,ipscal))  =  0
+    end do
+#endif 
 ! Huang & Bai solver (for both MHD==0 and MHD==1)
 if(u_rgt>0.0d0 .and. u_lft>0.0d0) then
     flx(i_rho)  =  flx_rho_lft 
     flx(i_u)    =  flx_mom_u_lft 
     flx(i_v)    =  flx_mom_v_lft     
     flx(i_w)    =  flx_mom_w_lft 
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx(idust_pscal(idust,ipscal))  = qleft(idust_pscal(idust,ipscal))*flx_rho_lft
+    end do
+#endif 
 else if (u_lft<0.0d0 .and. u_rgt<0.0d0) then
     flx(i_rho)  =  flx_rho_rgt
     flx(i_u)    =  flx_mom_u_rgt
     flx(i_v)    =  flx_mom_v_rgt    
     flx(i_w)    =  flx_mom_w_rgt 
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx(idust_pscal(idust,ipscal))  = qright(idust_pscal(idust,ipscal))*flx_rho_rgt
+    end do
+#endif 
 else if (u_lft<0.0d0 .and. u_rgt>0.0d0) then
     flx(i_rho)  =  0.d0
     flx(i_u)    =  0.d0
     flx(i_v)    =  0.d0
     flx(i_w)    =  0.d0
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx(idust_pscal(idust,ipscal))  = 0.0d0
+    end do
+#endif 
 else if (u_lft>0.0d0 .and. u_rgt<0.0d0) then
     flx(i_rho)  =  flx_rho_lft   + flx_rho_rgt
     flx(i_u)    =  flx_mom_u_lft + flx_mom_u_rgt
     flx(i_v)    =  flx_mom_v_lft + flx_mom_v_rgt 
     flx(i_w)    =  flx_mom_w_lft + flx_mom_w_rgt 
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx(idust_pscal(idust,ipscal))  = qleft(idust_pscal(idust,ipscal))*flx_rho_lft + qright(idust_pscal(idust,ipscal))*flx_rho_rgt
+    end do
+#endif 
 endif
 
 end do

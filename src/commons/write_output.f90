@@ -4,7 +4,7 @@ subroutine output(iout)
   use commons
   use units
   implicit none
-  integer  :: i,idust,jdust,iout,ilun=50
+  integer  :: i,idust,jdust,iout,ilun=50,ipscal
   real(dp) :: sum_dust,barotrop,B_field
   real(dp), dimension(1: nx*ny) :: xdp
   character(LEN = 5) :: nchar
@@ -20,6 +20,7 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/info.dat'))
   write(ilun,'("nvar        =",I11)')nvar
   write(ilun,'("ndust        =",I11)')NDUST
+  write(ilun,'("ndustpscal   =",I11)')NDUSTPSCAL
   write(ilun,'("NX        =",I11)')NX
   write(ilun,'("NY        =",I11)')NY
   write(ilun,'("MHD        =",I11)')MHD
@@ -31,6 +32,7 @@ subroutine output(iout)
   write(ilun,'("unit_l        =",E23.15)')unit_l
   write(ilun,'("unit_v        =",E23.15)')unit_v
   write(ilun,'("unit_p        =",E23.15)')unit_p
+
   if(charging) then
    write(ilun,'("charging       =",I11)')1
   else
@@ -129,7 +131,16 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+#if NDUSTPSCAL>0
+ open(ilun,file=trim(path) // trim(nchar)//trim('/dustpscal'), form=format_out,access='stream')
 
+ do idust=1,ndust
+   do ipscal=1,ndustpscal
+      if(active_cell(i)==1) write(ilun) q(i,idust_pscal(idust,ipscal))
+   end do
+ end do
+ close(ilun)
+#endif
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells

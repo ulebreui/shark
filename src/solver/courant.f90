@@ -15,7 +15,7 @@ subroutine courant
   implicit none
 
   integer :: i,idust
-  real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast
+  real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast,vv,fratio
   if(static)then
      return
   endif
@@ -33,38 +33,29 @@ subroutine courant
    dxx  = min(dx(i,1),radii_c(i)*dx(i,2))
 #endif
 #endif
-   vmax = cs(i)+abs(q(i,ivx))
-#if NY==1
-   vmax = max(vmax,abs(q(i,ivy)))!cs propagates only in x here because 1D
-#endif
-#if NY>1
-   vmax = max(vmax,abs(q(i,ivy))+cs(i))
-#endif
-   vmax = max(vmax,abs(q(i,ivz)))!cs propagates only in x here because 1D
+
+   vv   = abs(q(i,ivx)) + abs(q(i,ivy))+ abs(q(i,ivz))
+   vmax = cs(i)+vv
 
 #if MHD==1
 #if NDUST==0
       magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho))))
       vmax=  max(vmax,magnetosonic_fast+abs(q(i,ivx)))
-
-
 #endif
 #endif
 
 #if NDUST>0     
    do idust=1,ndust
 #if MHD==1
-      ca = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irhod(idust))) !TODO , to modify when accounting for a dust distribution
+      ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irhod(idust))) !TODO , to modify when accounting for a dust distribution
 #endif
-      vmax=  max(vmax,ca+abs(q(i,ivdx(idust))))
-      vmax=  max(vmax,abs(q(i,ivdy(idust))))
-      vmax=  max(vmax,abs(q(i,ivdz(idust))))
-
+      vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust)))
+      vmax =  max(vmax,ca+vv)
    enddo
 
 #endif
-      !print(vmax)
-      dt = min(dt,CFL*dxx/abs(vmax))
+   !print(vmax)
+   dt = min(dt,CFL*dxx/abs(vmax))
 
 #if GRAVITY==1   
       dt = min(dt,CFL*dxx/sqrt(Mc(i)/sqrt(radii_c(i)**2.+(l_soft/unit_l)**2.)))
@@ -81,8 +72,10 @@ if(force_kick) then
 
    end do
 #endif 
-
-   if(force_max>0.d0)dt = min(dt,CFL*sqrt(dxx/force_max))
+   if(vv.ne.0.0d0) then
+      fratio = max(force_max*dxx/vv**2,1d-3)
+      dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)
+   endif
 endif
    endif
   end do

@@ -175,6 +175,7 @@ end subroutine gridinit
 !Grid initialisation routine
 
 #if GEOM==2
+#if NY>1
 subroutine gridinit_disk_log(rmax_x,inner_r)
   use parameters
   use commons
@@ -236,33 +237,67 @@ subroutine gridinit_disk_log(rmax_x,inner_r)
   end do
 #endif
 
-! #if GRIDSPACE==1
-!   print *,'You are using a log space cylindrical grid.'
-
-!   zeta_r=(rmax_x/inner_r)**(1.0d0/nx)
-!   do iy = 1, ny_max
-!     do ix = first_active, last_active
-!       rplus =inner_r*zeta_r**(ix+1-first_active)
-!       rminus=inner_r*zeta_r**(ix-first_active)
-!       radii_c(icell(ix,iy))    = half*(rplus+rminus)
-!       dx  (icell(ix,iy),1)     = rplus-rminus
-!       dx  (icell(ix,iy),2)     = 2.0d0*pi/float(ny) ! d_Phi
-!       phi(icell(ix,iy))        = (float(iy-first_active_y)+half) *2.0d0*pi/float(ny)
-!       position(icell(ix,iy),1) = radii_c(icell(ix,iy))*cos(phi(icell(ix,iy)))
-!       position(icell(ix,iy),2) = radii_c(icell(ix,iy))*sin(phi(icell(ix,iy))) 
-!       surf(icell(ix,iy),1)     = rminus*(dx  (icell(ix,iy),2))  ! r dphi
-!       surf(icell(ix,iy),2)     = dx  (icell(ix,iy),1)! dr
-!       vol (icell(ix,iy))       = radii_c(icell(ix,iy))*dx  (icell(ix,iy),1)*dx  (icell(ix,iy),2)
-!     end do
-!     do ix=1,nghost
-!       radii_c(icell(ix,iy))             = inner_r*0.5d0
-!       radii_c(icell(nx_max+1-ix,iy))    = rmax_x+0.5d0*dx  (icell(last_active,iy),1)
-!       dx  (icell(ix,iy),1)              = dx  (icell(first_active,iy),1)
-!       dx  (icell(nx_max+1-ix,iy),1)     = dx  (icell(last_active,iy),1)
-!     end do
-!   end do
-! #endif
 end subroutine gridinit_disk_log
+#endif
+
+#if NY==1
+subroutine gridinit_disk_log(rmax_x,inner_r)
+  use parameters
+  use commons
+  use units
+  implicit none
+
+  real(dp):: rmax_x,rmax_y,inner_r
+  integer :: i, ix, iy,icell
+#if GRIDSPACE==1
+  !real(dp), dimension(1,nx+1):: radii_edges
+  real(dp) :: zeta_r
+#endif
+  print *, 'Number of cells        = ', Ncells
+  print *, 'Number of active cells = ', Ncells_active
+
+! Polar grid (face-on)
+#if GRIDSPACE==0
+      print *,'You are using a linear space cylindrical grid.'
+
+      do ix = 1, nx_max
+        do iy = 1, ny_max
+          dx  (icell(ix,iy),1)     = rmax_x/float(nx) ! d_r
+          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
+          phi(icell(ix,iy))        = (float(iy-first_active_y)+half) * 2.0d0*pi/float(ny)
+          position(icell(ix,iy),1) = radii_c(icell(ix,iy))*cos(phi(icell(ix,iy)))
+          surf(icell(ix,iy),1)     = (radii_c(icell(ix,iy))-half* dx (icell(ix,iy),1))! r dpho
+          vol (icell(ix,iy))       = radii_c(icell(ix,iy))*dx  (icell(ix,iy),1)
+
+        end do
+      end do
+#endif
+#if GRIDSPACE==1
+  print *,'You are using a log space cylindrical grid.'
+
+  zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx))
+  do iy = 1, ny_max
+    do ix = 1, nx_max
+      radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
+      dx  (icell(ix,iy),1)     = inner_r*(zeta_r**(ix+1-first_active)-zeta_r**(ix-first_active))
+      phi(icell(ix,iy))        = (float(iy-first_active_y)+half) *2.0d0*pi/float(ny)
+      position(icell(ix,iy),1) = radii_c(icell(ix,iy))
+      surf(icell(ix,iy),1)     = inner_r*(zeta_r**(ix-first_active))
+      vol (icell(ix,iy))       = radii_c(icell(ix,iy))*dx  (icell(ix,iy),1)
+    end do
+    do ix=1,nghost
+      radii_c(icell(ix,iy))             = inner_r*0.5d0
+      radii_c(icell(nx_max+1-ix,iy))    = rmax_x+0.5d0*dx  (icell(last_active,iy),1)
+      dx  (icell(ix,iy),1)              = dx  (icell(first_active,iy),1)
+      dx  (icell(nx_max+1-ix,iy),1)     = dx  (icell(last_active,iy),1)
+    end do
+  end do
+#endif
+
+end subroutine gridinit_disk_log
+#endif
+
+
 #endif
 
 #if NX>1

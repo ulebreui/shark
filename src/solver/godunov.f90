@@ -18,7 +18,7 @@ subroutine predictor
 
 
   real(dp) :: dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz
-  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe
+  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
   real(dp), dimension(:,:,:),allocatable :: dq
@@ -35,7 +35,7 @@ subroutine predictor
   ! Computes primitive variables
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,il,ir,ivar,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz)
+  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz)
   
   drx   = 0.0d0 
   dpx   = 0.0d0  
@@ -283,6 +283,32 @@ subroutine predictor
 
 #endif
 
+#if NDUSTPSCAL>0
+    do ipscal= 1, ndustpscal
+        r_rho = q(i,idust_pscal(idust,ipscal))
+
+        drx   = dq(i,idust_pscal(idust,ipscal),1)
+        dry   = dq(i,idust_pscal(idust,ipscal),2)
+
+        sr0   = -u*drx-v*dry - (dux+dvy)*r_rho
+#if GEOM==2
+        !Polar geometry source terms
+        sr0    = sr0 - r_rho*u/radius_polar
+#endif
+        ! Direction x
+
+        dx_loc=dx(i,1)
+        qm(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  + half*drx   *dx_loc
+        qp(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   *dx_loc
+        
+        ! Direction y
+#if NY>1
+       dx_loc=radius_polar*dx(i,2)
+       qm(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   *dx_loc
+       qp(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   *dx_loc
+#endif
+    end do
+#endif
       end do
 #endif
 
@@ -332,153 +358,6 @@ end do !End of very first do loop (i)
 #endif 
 
 end subroutine predictor
-
-! ! This is the Riemmann solver : llf + Godunov scheme
-! subroutine add_delta_u
-!   use parameters
-!   use commons
-!   use units
-!   use OMP_LIB
-!   use hydro_solvers
-
-!   implicit none
-!   integer :: i,idust,ivar,ix,iy,il,ily,icell,idim
-!   integer :: ixx,iyy
-
-!   real(dp), dimension(:,:)  , allocatable  :: delta_U
-!   real(dp), dimension(:,:,:), allocatable  :: flux
-!   real(dp), dimension(1:nvar) :: qleft,qright,flx
-!   real(dp) :: csr,csl,barotrop,cs_eos
-
-
-!   if(static) return
-
-!   ! Initialisation of the flux,lambda_llf and delta U: they must be allocatable for 2D simus with h-res
-
-
-!   allocate(delta_U(1:ncells,1:nvar))
-!   allocate(flux(1:ncells,1:nvar,1:ndim))
-!   flux       = 0.0d0
-!   delta_U    = 0.0d0
-
-!   !$OMP PARALLEL &
-!   !$OMP DEFAULT(SHARED)&
-!   !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,qleft,qright,flx,csr,csl)
-!   !$OMP DO
-!   do i = 1, ncells
-!     if(active_cell_predictor(i)==1) then
-!       ix=ixx(i)
-!       iy=iyy(i)
-!       do idim = 1,ndim 
-!         il = icell(ix-1,iy)
-!         if(idim==2) then
-!           il = icell(ix,iy-1)
-!         endif
-
-!         do ivar=1,nvar
-!             qleft(ivar)  = qm(il,ivar,idim)
-!             qright(ivar) = qp(i,ivar,idim)
-!             flx(ivar)    = 0.0d0
-!         end do
-
-!         csl=sqrt(gamma*qleft(iP)/qleft(irho))
-!         csr=sqrt(gamma*qright(iP)/qright(irho))
-!         if(iso_cs==1) then
-!             csl=cs(il)
-!             csr=cs(i)
-!         endif
-!         if(non_standard_eos==1) then
-!             csl=cs_eos(barotrop(qleft(irho)))
-!             csr=cs_eos(barotrop(qright(irho)))
-!         endif
-
-! #if SOLVER==0        
-!         call solver_llf(qleft,qright,flx,csl,csr,idim)
-! #endif
-! #if SOLVER==1       
-!         call solver_hll(qleft,qright,flx,csl,csr,idim)
-! #endif
-! #if SOLVER==2        
-!         call solver_hllc(qleft,qright,flx,csl,csr,idim)
-! #endif
-
-
-
-! #if NDUST>0
-
-! #if SOLVERDUST==0
-
-!     call solver_dust_Huang_Bai(qleft,qright,flx,idim)
-
-! #endif
-
-! #if SOLVERDUST==1
-!         call solver_dust_llf(qleft,qright,flx,idim)
-! #endif
-
-! #if SOLVERDUST==2
-!         call solver_dust_hll(qleft,qright,flx,idim)
-! #endif
-
-! #endif
-
-
-! #if MHD==1
-     
-! #if SOLVERB==0
-
-!         call solver_induction_llf(qleft,qright,flx,csl,csr,idim)
-! #endif
-
-! #if SOLVERB==1
-
-!         call solver_induction_Huang_Bai(qleft,qright,flx,idim)
-! #endif
-
-! #if SOLVERB==2
-
-!         call solver_induction_hll(qleft,qright,flx,csl,csr,idim)
-! #endif
-
-! #endif
-
-
-!         do ivar=1,nvar
-!             flux(i,ivar,idim)=flx(ivar) 
-!         end do
-!       end do
-!     end if
-!   end do
-!   !$OMP END DO
-!  !stop
-!   !$OMP BARRIER
-
-!   !$OMP DO
-!   do i=1,ncells
-!     if(active_cell(i)==1) then
-!         ix = ixx(i)
-!         iy = iyy(i)
-!         do ivar = 1, nvar
-!             delta_U(i,ivar)=(flux(i,ivar,1)*surf(i,1)-flux(icell(ix+1,iy),ivar,1)*surf(icell(ix+1,iy),1))/vol(i)*dt
-!             if(ndim==2) then
-!               delta_U(i,ivar)=delta_U(i,ivar)+(flux(i,ivar,2)*surf(i,2)-flux(icell(ix,iy+1),ivar,2)*surf(icell(ix,iy+1),2))/vol(i)*dt
-!             endif
-!         end do
-!       endif
-!     end do
-!   !end do
-!   !$OMP END DO
-!   !$OMP END PARALLEL
-!   !Update state vector 
-!   u_prim=u_prim+delta_U
-
-
-
-!   deallocate(delta_U)
-!   deallocate(flux)
-! end subroutine add_delta_u
-
-
 
 ! This is the Riemmann solver : llf + Godunov scheme
 subroutine add_delta_u
@@ -530,6 +409,7 @@ subroutine add_delta_u
           csl=sqrt(gamma*qleft(iP)/qleft(irho))
           csr=sqrt(gamma*qright(iP)/qright(irho))
       endif
+
       call solve_wrapper(qleft,qright,flx,csl,csr,1)
 
       do ivar=1,nvar
@@ -550,11 +430,15 @@ subroutine add_delta_u
             csl = cs(il)
             csr = cs(i)
         else if(non_standard_eos==1) then
+
             csl = cs_eos(barotrop(qleft(irho)))
             csr = cs_eos(barotrop(qright(irho)))
+
         else      
+
           csl = sqrt(gamma*qleft(iP)/qleft(irho))
           csr = sqrt(gamma*qright(iP)/qright(irho))
+          
         endif
 
         call solve_wrapper(qleft,qright,flx,csl,csr,2)
@@ -563,19 +447,7 @@ subroutine add_delta_u
             flux(i,ivar,2)=flx(ivar) 
         end do
 #endif
-! !         ! Geometrical source terms for non cartesian coordinates
-! #if GEOM==2
-!         source_loc(i,ivx)  = half*(qright(irho)*qright(ivy)**2+qright(iP)+qleft(irho)*qleft(ivy)**2+qleft(iP))!/radii_c(i)
-!         source_loc(i,ivy)  = -half*(qright(irho)*qright(ivy)*qright(ivx)+qleft(irho)*qleft(ivy)*qleft(ivx))!/radii_c(i)
-! #endif    
-! #if NDUST>0
-! #if GEOM==2
-!     do idust=1,ndust
-!         source_loc(i,ivdx(idust))  = half*(qright(irhod(idust))*qright(ivdy(idust))**2+qleft(irhod(idust))*qleft(ivdy(idust))**2)!/radii_c(i)
-!         source_loc(i,ivdy(idust))  = -half*(qright(irhod(idust))*qright(ivdy(idust))*qright(ivdx(idust))+qleft(irhod(idust))*qleft(ivdy(idust))*qleft(ivdx(idust)))!/radii_c(i)
-!     end do
-! #endif 
-! #endif
+
     end if
   end do
   !$OMP END DO
@@ -603,20 +475,10 @@ subroutine add_delta_u
               &                             + (flux(i,ivar,2)*surf(i,2)-flux(ily,ivar,2)*surf(ily,2))/vol(i)*dt
         end do
 #endif
-!               ! Geometrical source terms for non cartesian coordinates
-! #if GEOM==2        
-!         u_prim(i,ivx)=u_prim(i,ivx)+dt*half*(source_loc(i,ivx)+source_loc(icell(ix+1,iy),ivx))/radii_c(i)
-!         u_prim(i,ivy)=u_prim(i,ivy)+dt*half*(source_loc(i,ivy)+source_loc(icell(ix,iy+1),ivy))/radii_c(i)
-! #if NDUST>0
-!     do idust=1,ndust
-!         u_prim(i,ivdx(idust))=u_prim(i,ivdx(idust))+dt*half*(source_loc(i,ivdx(idust))+source_loc(icell(ix+1,iy),ivdx(idust)))/radii_c(i)
-!         u_prim(i,ivdy(idust))=u_prim(i,ivdy(idust))+dt*half*(source_loc(i,ivdy(idust))+source_loc(icell(ix,iy+1),ivdy(idust)))/radii_c(i)
-!     end do
-! #endif
-! #endif
+
       endif
     end do
-  !end do
+
   !$OMP END DO
   !$OMP END PARALLEL
 
@@ -627,6 +489,145 @@ subroutine add_delta_u
 
 end subroutine add_delta_u
 
+! ! This is the Riemmann solver : llf + Godunov scheme
+! subroutine add_delta_u
+!   use parameters
+!   use commons
+!   use units
+!   use OMP_LIB
+!   use hydro_solvers
+
+!   implicit none
+!   integer :: i,idust,ivar,ix,iy,il,ily,icell,idim
+!   integer :: ixx,iyy
+
+!   real(dp), dimension(:,:)  , allocatable  :: delta_U
+!   real(dp), dimension(1:nvar) :: qleft,qright,flx
+!   real(dp) :: csr,csl,barotrop,cs_eos
+
+
+!   if(static) return
+
+!   ! Initialisation of the flux,lambda_llf and delta U: they must be allocatable for 2D simus with h-res
+
+
+!   allocate(delta_U(1:ncells,1:nvar))
+
+!   flux       = 0.0d0
+!   delta_U    = 0.0d0
+
+!   !$OMP PARALLEL &
+!   !$OMP DEFAULT(SHARED)&
+!   !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,idim,qleft,qright,flx,csr,csl)
+!   !$OMP DO
+!   do i = 1, ncells
+!     if(active_cell_predictor(i)==1) then
+!       ix=ixx(i)
+!       iy=iyy(i)
+!       do idim = 1,ndim 
+!         il = icell(ix-1,iy)
+!         if(idim==2) then
+!           il = icell(ix,iy-1)
+!         endif
+
+!         do ivar=1,nvar
+!             qleft(ivar)  = qm(il,ivar,idim)
+!             qright(ivar) = qp(i,ivar,idim)
+!             flx(ivar)    = 0.0d0
+!         end do
+
+!         csl=sqrt(gamma*qleft(iP)/qleft(irho))
+!         csr=sqrt(gamma*qright(iP)/qright(irho))
+!         if(iso_cs==1) then
+!             csl=cs(il)
+!             csr=cs(i)
+!         endif
+!         if(non_standard_eos==1) then
+!             csl=cs_eos(barotrop(qleft(irho)))
+!             csr=cs_eos(barotrop(qright(irho)))
+!         endif
+
+! ! #if SOLVER==0        
+! !         call solver_llf(qleft,qright,flx,csl,csr,idim)
+! ! #endif
+! ! #if SOLVER==1       
+! !         call solver_hll(qleft,qright,flx,csl,csr,idim)
+! ! #endif
+! ! #if SOLVER==2        
+! !         call solver_hllc(qleft,qright,flx,csl,csr,idim)
+! ! #endif
+
+! ! #if NDUST>0
+
+! ! #if SOLVERDUST==0
+
+! !     call solver_dust_Huang_Bai(qleft,qright,flx,idim)
+
+! ! #endif
+
+! ! #if SOLVERDUST==1
+! !         call solver_dust_llf(qleft,qright,flx,idim)
+! ! #endif
+
+! ! #if SOLVERDUST==2
+! !         call solver_dust_hll(qleft,qright,flx,idim)
+! ! #endif
+
+! ! #endif
+
+! ! #if MHD==1
+     
+! ! #if SOLVERB==0
+
+! !         call solver_induction_llf(qleft,qright,flx,csl,csr,idim)
+! ! #endif
+
+! ! #if SOLVERB==1
+
+! !         call solver_induction_Huang_Bai(qleft,qright,flx,idim)
+! ! #endif
+
+! ! #if SOLVERB==2
+
+! !         call solver_induction_hll(qleft,qright,flx,csl,csr,idim)
+! ! #endif
+
+! ! #endif
+!         call solve_wrapper(qleft,qright,flx,csl,csr,idim)
+
+!         do ivar=1,nvar
+!             flux(i,ivar,idim)=flx(ivar) 
+!         end do
+!       end do
+!     end if
+!   end do
+!   !$OMP END DO
+!  !stop
+!   !$OMP BARRIER
+
+!   !$OMP DO
+!   do i=1,ncells
+!     if(active_cell(i)==1) then
+!         ix = ixx(i)
+!         iy = iyy(i)
+!         do ivar = 1, nvar
+!             delta_U(i,ivar)=(flux(i,ivar,1)*surf(i,1)-flux(icell(ix+1,iy),ivar,1)*surf(icell(ix+1,iy),1))/vol(i)*dt
+!             if(ndim==2) then
+!               delta_U(i,ivar)=delta_U(i,ivar)+(flux(i,ivar,2)*surf(i,2)-flux(icell(ix,iy+1),ivar,2)*surf(icell(ix,iy+1),2))/vol(i)*dt
+!             endif
+!         end do
+!       endif
+!     end do
+!   !end do
+!   !$OMP END DO
+!   !$OMP END PARALLEL
+!   !Update state vector 
+!   u_prim=u_prim+delta_U
+
+
+
+!   deallocate(delta_U)
+! end subroutine add_delta_u
 
 subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
  use hydro_solvers
@@ -652,7 +653,6 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
 #if SOLVER==2        
         call solver_hllc(qleft,qright,flx,csl,csr,idim)
 #endif
-
 
  ! Then the dust
 

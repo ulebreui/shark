@@ -44,10 +44,6 @@ module hydro_commons
   integer :: iBz
 #endif
 
-#if GEOM==2
-  logical  :: fargo
-  real(dp) :: omega_fargo = 1.0d0
-  real(dp) :: q_fargo     = 1.5d0
-#endif
-  
+  real(dp), dimension(:) , allocatable    :: fargo_velocity
+
 end module hydro_commons

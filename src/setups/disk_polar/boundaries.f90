@@ -13,8 +13,8 @@ subroutine apply_boundaries
     use commons
     use units
     implicit none
-    integer :: i,idust,icell
-    real(dp):: unit_lout,sigma_out,t_rel,vrout,maccreted
+    integer :: i,idust,icell,ipscal
+    real(dp):: unit_lout,sigma_out,t_rel,vrout,maccreted,rhod_old
 
     integer :: who_app,ighost,nn,nn2,ix,iy,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
 
@@ -75,9 +75,17 @@ subroutine apply_boundaries
             u_prim(ibound_right,ivy)  =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
 #if NDUST>0
            do idust=1,ndust
-             !u_prim(ibound_right,irhod(idust))  =  sigma_out/100.
-             !u_prim(ibound_right,ivdx(idust))   =  -sigma_out*vrout/100.
-             !u_prim(ibound_right,ivdy(idust))   =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l/100.
+! #if NDUSTPSCAL>0
+!             rhod_old=u_prim(ibound_right,irhod(idust))
+! #endif           
+             u_prim(ibound_right,irhod(idust))  =  dust2gas*sigma_out
+             u_prim(ibound_right,ivdx(idust))   =  -dust2gas*sigma_out*vrout
+             u_prim(ibound_right,ivdy(idust))   =  dust2gas*sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
+#if NDUSTPSCAL>0
+            !do ipscal=1,ndustpscal
+            u_prim(ibound_right,idust_pscal(idust,1))  = dust2gas*sigma_out*scut/unit_l
+            !end do
+#endif     
            end do
 #endif
         endif

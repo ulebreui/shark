@@ -38,14 +38,17 @@ module parameters
 
   ! Variables
   integer,parameter   ::  Ndust       = NDUST  !Number of dust species
+  integer,parameter   ::  ndustpscal  = NDUSTPSCAL
   integer, parameter  ::  Nmhd        = MHD*3
-  integer,parameter   ::  nvar        = 5 + Ndust * (4) + Nmhd !Number of variables
+  integer,parameter   ::  nvar        = 5 + Ndust * (4+NDUSTPSCAL) + Nmhd !Number of variables
 
   real(dp),parameter            :: half = 0.5d0
 
   logical             ::  static            = .false.
   logical             ::  force_kick        = .false.
   logical             ::  viscosity         = .false.
+  logical             ::  fargo             = .false.
+
   integer             ::  freq_out          = 1000    ! Output frequency
   real(dp)            ::  rin = 0.0d0  ! Inner radius boundary for cylindrical geometry
   real(dp)            ::  CFL = half  ! CFL constant

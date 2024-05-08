@@ -67,6 +67,7 @@ subroutine setup
   end do
 
   call gridinit(box_l,box_l_y)
+
   q = 0.0d0
   iso_cs = 1
   do i =1,ncells
@@ -106,7 +107,7 @@ subroutine setup
 
 call primtoc
 call apply_boundaries
-
+call compute_tstop
 call update_force_setup
 
 end subroutine setup
@@ -200,7 +201,8 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
-   integer :: icount,iout
+   integer :: icount,iout,i
+   real(dp):: mtot,mdtot
    logical :: outputing,verbose
 
         !We make an output at a certain frequency rate of for specific values of the density. This can be tuned at will
@@ -215,9 +217,20 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
-     if(outputing) print *, "Total mass is", sum(u_prim(:,irho))
-     if(outputing) print *, "Total momentum is", sum(u_prim(:,ivx)+u_prim(:,ivy)+u_prim(:,ivz))
-     if(outputing) print *, "Total energy is", sum(u_prim(:,iP))
+
+     if(outputing) then
+        mtot=0.0d0
+        mdtot=0.0d0
+        do i=1,ncells
+          if(active_cell(i)==1) then
+          mtot=mtot+u_prim(i,irho)
+          mdtot=mdtot+u_prim(i,irhod(1))
+          endif
+        end do
+     end if
+
+     if(outputing) print *, " Total mass is", mtot
+      if(outputing) print *," Total dust mass is", mdtot
 
      outputing=.false.
 
@@ -239,7 +252,7 @@ subroutine setup_inloop
    integer :: i,idust
    real(dp) :: u, v,Ohmdt, AA, BB,d,old_ek,new_ek
    
-   !return
+   if(force_kick) return
 
     do i=1,ncells
     if(active_cell(i)==1)then
@@ -274,11 +287,6 @@ end subroutine setup_inloop
    implicit none
 
    integer :: i,idust
-
-   return
-! #if NDUST>0
-!     call compute_tstop
-! #endif
 
 
    do i=1,ncells

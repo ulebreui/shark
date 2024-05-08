@@ -3,15 +3,16 @@ module dust_parameters
   implicit none
 
   !Flags
-  logical             ::  drag                  = .true.   ! Dust growth is activated  
-  logical             ::  growth                = .false.   ! Dust growth is activated
-  logical             ::  fragmentation         = .false.   ! Fragmentation is activated
-  logical             ::  drift_in_growth       = .false.      ! Drift velocity included in growth
+  logical             ::  drag                  = .true.      ! Dust growth is activated  
+  logical             ::  growth                = .false.     ! Dust growth is activated
+  logical             ::  growth_step           = .false.     ! Dust growth is activated with Stepinski solver
+  logical             ::  fragmentation         = .false.     ! Fragmentation is activated
+  logical             ::  drift_in_growth       = .false.     ! Drift velocity included in growth
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
   logical             ::  ambipolar_in_growth   = .false.     ! Ambipolar velocity included in growth
   logical             ::  lorentz_dust          = .false.     ! Add the lorentz force on the dust
-  logical             ::  dust_back_reaction    = .true.     ! Add the dust back-reaction
+  logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
   logical             ::  electrostatic_barrier = .false.     ! Add the electrostatic barrier for dust growth
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
   real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
@@ -20,17 +21,17 @@ module dust_parameters
   real(dp)            ::  delta_vambi       = 1.0
   character (len=60)  ::  dust_distribution = 'mrn'
   
-  real(dp):: CFL_growth         = 0.1d0 !CFL for smoluchowski
+  real(dp):: CFL_growth         = 0.1d0 ! CFL for smoluchowski
   real(dp):: eps_threshold      = 1d-10
   real(dp):: eps_threshold_frag = 1d-10
 
   real(dp):: rhodust_threshold  = 1d-27
   real(dp):: dust_ratio_min     = 1d-11
-  integer :: kernel_type        = 0 !0 = physical, 1= constant, 2 = additive
+  integer :: kernel_type        = 0 ! 0 = physical, 1= constant, 2 = additive
 
 
-  integer ::  frag_thre       = 0 !0 = NRJ, 1= velocity
-  integer ::  i_coupled_species = 1 !Index of the dust species coupled to B in the induction eq
+  integer ::  frag_thre       = 0   ! 0 = NRJ, 1= velocity
+  integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq
   
   !Dust distribution
   real(dp)::  smin            = 1d-7    ! Minimum possible dust size 
@@ -48,8 +49,8 @@ module dust_parameters
   real(dp)::  dust2gas        = 0.01d0  ! Dust-to-gas ratio
 
   !Frag parameters (mostly from Ormel's paper)
-  real(dp)::  Abr     = 2.8d3!Blum & Wurm 2000
-  real(dp)::  ksicrit = 2d-7 !Blum & Wurm 2000
+  real(dp)::  Abr     = 2.8d3 ! Blum & Wurm 2000
+  real(dp)::  ksicrit = 2d-7  ! Blum & Wurm 2000
   !real(dp)::  gamma_grains = 370.0d0 ! erg cm-2
   !real(dp)::  estar_grains = 3.7d10 ! dyn cm-2
   real(dp)::  gamma_grains = 25.0d0 ! erg cm-2
@@ -57,16 +58,17 @@ module dust_parameters
 
   real(dp)::  vfrag = 100 ! cm/s
   !Monomer properties
-  real(dp):: size_mono  = 1d-5    ! 0.1 micron
-  real(dp):: slope_mono = 3.5d0   ! Index of power law monomer size distribution
-
+  real(dp):: size_mono   = 1d-5    ! 0.1 micron
+  real(dp):: slope_mono  = 3.5d0   ! Index of power law monomer size distribution
+  real(dp):: alpha_turb  = 1.5d0
+  real(dp):: sminstep    = 1d-5
 end module dust_parameters
 
 module dust_commons
   use precision  
   implicit none
 
- !Dust related quantities
+ ! Dust related arrays
 
   real(dp), dimension(:)  , allocatable    :: aplus
   real(dp), dimension(:)  , allocatable    :: aminus
@@ -77,11 +79,14 @@ module dust_commons
   real(dp), dimension(:,:), allocatable    :: mdust
   real(dp), dimension(:,:,:), allocatable  :: force_dust
   real(dp), dimension(:,:), allocatable    :: tstop
+  real(dp), dimension(:,:), allocatable    :: tcoag
 
+  ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod
   integer,  dimension(:),  allocatable     :: ivdx
   integer,  dimension(:),  allocatable     :: ivdy
   integer,  dimension(:),  allocatable     :: ivdz ! Z - velocity component
+  integer,  dimension(:,:),  allocatable   :: idust_pscal
   real(dp) :: dt_cfl_dust=1d140
 
 
