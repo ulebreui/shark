@@ -82,14 +82,14 @@ subroutine solve(verbose,outputing)
         iseed_phase_drift = iseed_phase_drift + 1
      end if 
 
-     count = count + 1
-     if (count_bis==0 .or. count == count_bis + 20) then
-        call adjust_yz_kick_intensity
-        count_bis = count
+     !count = count + 1
+     !if (count_bis==0 .or. count == count_bis + 20) then
+        !call adjust_yz_kick_intensity
+        !count_bis = count
         !print *, 'Vyz_rms', Vyz_rms
         !print *, 'ay', random_array_ay
 
-     end if
+     !end if
 
      call add_driven_turb_kick
 #endif
