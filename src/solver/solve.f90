@@ -31,7 +31,8 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-  if(charging)   call charge
+  if(charging)   call charge !Set res_Marchand=True to compute charges and res
+  if(dust_inertia) call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
 
   call system_clock ( t4, clock_rate, clock_max )
 

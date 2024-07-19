@@ -35,7 +35,7 @@ module units
     real(dp),parameter :: unit_m = unit_l**3*unit_d 
 
     real(dp),parameter :: unit_v = unit_l/unit_t
-    real(dp),parameter :: unit_nH= 1.0d0
+    real(dp),parameter :: unit_nH= unit_d/(mu_gas*mH)
 
 
 

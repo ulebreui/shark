@@ -15,6 +15,7 @@ module setup_parameters
 
 
   real(dp) :: rho_0 = 1.0d0
+  real(dp) :: T_cloud = 10 !Kelvin
 
   real(dp) :: delta_B = 1.0d-2
   real(dp) :: k_mag = 2.0*3.141592653589793238462643383279d0/1.0d0

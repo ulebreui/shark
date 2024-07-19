@@ -49,6 +49,7 @@ subroutine setup
   call mtot
 #endif 
   if(charging) call charge
+  if (dust_inertia) call resistivities_with_dust_inertia
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
 #else
   non_standard_eos=1
@@ -96,7 +97,7 @@ subroutine setup
   end do
   call primtoc
   if(charging) call charge
-
+  if (dust_inertia) call resistivities_with_dust_inertia
 #endif
 end subroutine setup
 
