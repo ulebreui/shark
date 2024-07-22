@@ -237,7 +237,7 @@ if(charging) then
       if(active_cell(i)==1) write(ilun) ne(i)
    end do
   close(ilun)
-
+#if NDUST>0
   open(ilun,file=trim(path) // trim(nchar)//trim('/zd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
@@ -245,6 +245,7 @@ if(charging) then
    end do
   end do
   close(ilun)
+#endif
 
 endif
 
