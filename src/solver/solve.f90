@@ -18,12 +18,12 @@ subroutine solve(verbose,outputing)
   call system_clock ( t1, clock_rate, clock_max )
 
   call apply_boundaries !Boundaries are applied here.
+  if(force_kick) call kick(0.5d0)
   call ctoprim
   call system_clock ( t2, clock_rate, clock_max )
 
 
   if(force_kick) call update_force_setup
-
 
   call system_clock ( t3, clock_rate, clock_max )
 #if NDUST>0
@@ -66,7 +66,8 @@ subroutine solve(verbose,outputing)
 #endif
   call system_clock ( t9, clock_rate, clock_max )
 
-  if(force_kick) call kick(1.0d0)
+  ! if(force_kick) call kick(1.0d0)
+  if(force_kick) call kick(0.5d0)
 
 #if TURB>0
 !Maybe to put in force_kick
@@ -159,8 +160,8 @@ subroutine ctoprim
   do i = 1,ncells
     q(i,irho)             = max(u_prim(i,irho),smallr)
     q(i,ivx)              = u_prim(i,ivx)/u_prim(i,irho)
-    q(i,ivz)              = u_prim(i,ivz)/u_prim(i,irho)
     q(i,ivy)              = u_prim(i,ivy)/u_prim(i,irho)
+    q(i,ivz)              = u_prim(i,ivz)/u_prim(i,irho)
     
     ekin = half*u_prim(i,irho)*((u_prim(i,ivx)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivy)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivz)/u_prim(i,irho))**2.0)
 

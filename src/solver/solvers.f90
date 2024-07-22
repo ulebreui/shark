@@ -384,7 +384,7 @@ subroutine solver_hllc(qleft,qright,flx,csl,csr,idim)
 
     !Energy
     E_rgt     = P_rgt  /(gamma-1.d0)   + half * rho_rgt * u_rgt **2 + half * rho_rgt   * v_rgt **2 + half * rho_rgt  * w_rgt   **2
-    E_lft     = P_lft  /(gamma-1.d0)   + half * rho_lft * u_lft **2 + half * rho_lft   * v_lft **2+ half * rho_lft  * w_lft  **2
+    E_lft     = P_lft  /(gamma-1.d0)   + half * rho_lft * u_lft **2 + half * rho_lft   * v_lft **2 + half * rho_lft  * w_lft  **2
 
 
     !Fluxs
@@ -403,26 +403,6 @@ subroutine solver_hllc(qleft,qright,flx,csl,csr,idim)
 
     flx_P_rgt = (E_rgt +P_rgt)   * u_rgt! (E+P) v
     flx_P_lft = (E_lft +P_lft)   * u_lft
-
-    ! #if MHD==1 !TODO
-    ! #if NDUST==0
-    ! flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
-    ! flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
-
-    ! flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-    ! flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
-       
-    ! flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-    ! flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
-
-    ! E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
-    ! E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
-
-    ! flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
-    ! flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
-
-    ! #endif
-    ! #endif
 
     !HLLC
     S_lft  = min(min(u_lft,u_rgt)-max(csl,csr),0.0d0)
@@ -784,7 +764,7 @@ subroutine solver_dust_llf(qleft,qright,flx,idim)
     flx(i_v)    =  0.d0
     flx(i_w)    =  0.d0
 
-    flx(i_rho) = half*(flx_rho_lft   + flx_rho_rgt)    - half*lambda_llf_d*(rho_rgt - rho_lft)
+    flx(i_rho) = half*(flx_rho_lft  + flx_rho_rgt)   - half*lambda_llf_d*(rho_rgt - rho_lft)
     flx(i_u)  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
     flx(i_v)  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
     flx(i_w)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)

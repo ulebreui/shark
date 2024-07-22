@@ -51,6 +51,9 @@ subroutine output(iout)
 #if GEOM==2
    if(active_cell(i)==1) write(ilun) radii_c(i) !
 #endif
+#if GEOM==4
+   if(active_cell(i)==1) write(ilun) radii_c(i) !
+#endif
   end do
   !xdp
   close(ilun)
@@ -62,6 +65,9 @@ subroutine output(iout)
 #endif
 #if GEOM==2
    if(active_cell(i)==1) write(ilun) q(i,irho)*unit_dcol
+#endif
+#if GEOM>2
+   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
 #endif
   end do
   close(ilun)  
@@ -128,6 +134,9 @@ subroutine output(iout)
 #endif
 #if GEOM==2
    if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_dcol
+#endif
+#if GEOM>2
+   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_d
 #endif
    end do
   end do

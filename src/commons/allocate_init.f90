@@ -46,6 +46,7 @@ subroutine allocate_init
   dx_r_cell=0.d0
   dx_c=0.d0
 #endif
+
 #if GEOM==2
     allocate(phi(1:ncells))
     phi=1.0d0
@@ -56,6 +57,27 @@ subroutine allocate_init
     dx_r_cell=0.d0
 #endif
 #endif
+#if GEOM==3
+    allocate(phi(1:ncells))
+    phi=1.0d0
+#if GRIDSPACE==1
+    allocate(dx_l_cell(1:nx_max))
+    allocate(dx_r_cell(1:nx_max))
+    dx_l_cell=0.d0
+    dx_r_cell=0.d0
+#endif
+#endif
+
+#if GEOM==4
+#if GRIDSPACE==1
+    allocate(dx_l_cell(1:nx_max))
+    allocate(dx_r_cell(1:nx_max))
+    dx_l_cell=0.d0
+    dx_r_cell=0.d0
+#endif
+#endif
+
+
   ! Variable related quantities
   allocate(u_prim(1:ncells,1:nvar))
   allocate(q(1:ncells,1:nvar))

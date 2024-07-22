@@ -28,7 +28,7 @@ module commons
 #endif
 
 #if GEOM==2
-  ! Disk face-on geometry
+  ! Disk face-on geometry /!\ Phi is the azimuthal angle here it ranges from 0 to 2pi
   real(dp), dimension(:), allocatable :: phi
 #if GRIDSPACE ==1
   real(dp), dimension(:), allocatable :: dx_r_cell
@@ -36,6 +36,22 @@ module commons
 #endif
 #endif
 
+#if GEOM==3
+  ! 2D spherical geometry /!\ Phi is now the polar angle it ranges from 0 to pi
+  real(dp), dimension(:), allocatable :: phi
+#if GRIDSPACE ==1
+  real(dp), dimension(:), allocatable :: dx_r_cell
+  real(dp), dimension(:), allocatable :: dx_l_cell
+#endif
+#endif
+#if GEOM==4
+  ! 2D cylindrical geometry
+  real(dp), dimension(:), allocatable :: height
+#if GRIDSPACE ==1
+  real(dp), dimension(:), allocatable :: dx_r_cell
+  real(dp), dimension(:), allocatable :: dx_l_cell
+#endif
+#endif
   real(dp), dimension(:,:), allocatable :: Surf
   real(dp), dimension(:), allocatable   :: dvol
   real(dp), dimension(:), allocatable   :: vol

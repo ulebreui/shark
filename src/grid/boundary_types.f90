@@ -207,15 +207,6 @@ subroutine shear_boundaries(vel_shear)
          u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic along y
          u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
       end do
-      ! We must apply the shear to the corner cells 
-      if(ix == first_active .or. ix == last_active) then
-         if(ix == first_active) pm = -1.0d0
-         if(ix == last_active)  pm = 1.0d0
-
-         mom_new  = u_prim(i_active_left,ivz)  + pm * u_prim(i_active_left,irho)  * vel_shear
-         mom_new  = u_prim(i_active_right,ivz) + pm * u_prim(i_active_right,irho) * vel_shear
-
-      end if
    end do
   end do
 
@@ -230,13 +221,11 @@ subroutine shear_boundaries(vel_shear)
             u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! We first apply the periodic conditions along x
             u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
          end do     
-         
+     
          ! Then, we compensate the shear in the z velocity
 
-         mom_new  = u_prim(i_active_left,ivz) - u_prim(i_active_left,irho)*vel_shear
-         u_prim(ibound_left,ivz)         = mom_new
-         mom_new  =  u_prim(i_active_right,ivz) + u_prim(i_active_right,irho)*vel_shear
-         u_prim(ibound_right,ivz)        = mom_new         
+         u_prim(ibound_left,ivz)         = u_prim(i_active_left,ivz) - u_prim(i_active_left,irho)*vel_shear
+         u_prim(ibound_right,ivz)        = u_prim(i_active_right,ivz) + u_prim(i_active_right,irho)*vel_shear     
 #if NDUST>0         
          do idust=1,ndust
             u_prim(ibound_left ,ivdz(idust))     = u_prim(i_active_left,ivdz(idust)) - u_prim(i_active_left,irhod(idust))*vel_shear

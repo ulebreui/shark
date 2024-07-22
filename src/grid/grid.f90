@@ -106,7 +106,7 @@ subroutine gridinit(rmax_x,rmax_y)
 #if GEOM==1
 subroutine gridinit(rmax_x,rmax_y)
 #endif
-#if GEOM==2
+#if GEOM>1
 subroutine gridinit(rmax_x,rmax_y,inner_r)
 #endif
   use parameters
@@ -318,62 +318,6 @@ subroutine gridinit_sphere1D(rmax)
   print *,'You are using a spherical grid in 1D'
   print *,' Logarithmic grid'
 
-
- !  zeta_r=(rmax/(rin*au))**(1.0d0/(ncells_active-1))
-
- !  radii   = 0.0d0
- !  radii_c = 0.0d0
- !  do i=first_active,last_active
- !     radii(i)= (rin*au/unit_l)*zeta_r**(i-first_active)
- !  enddo
-
- !  do i=first_active,last_active
- !     dx(i,1)=radii(i)-radii(i-1)
- !  end do
-
- !  do i=1,first_active
- !     dx(i,1)=dx(first_active,1)
- !  end do
-
- !  !Cell center
- !  do i=first_active,ncells
- !     radii_c(i)     = ( (radii(i)**3 + radii(i-1)**3) / 2.)**(1./3.)
- !  end do
-
- ! !Cell volume
- !  do i=first_active,last_active
- !     vol(i) = (radii(i)**3.-radii(i-1)**3.)/3.0d0
- !  end do
-
- !  !Cell volume from center to the right 
- !  do i=first_active,last_active
- !     dvol(i)  =(radii(i)**3-(radii_c(i)**3) )/3.0d0
- !   end do
-
- !  do i=first_active,last_active
- !     Surf(i,1) = radii(i-1)**2.
- !  end do
-
- !  !Surf(first_active-1,1) = 0.0
- !  !Surf(last_active+1,1)  = 0.0
- !  do i=1,ncells
- !  position(i,1)=radii(i)
- !  end do
-
- ! do i=first_active,ncells-1!-nghost
- !     dx_c(i)      = radii_c(i+1) - radii_c(i-1)
- !     dx_r(i)      = radii_c(i+1) - radii_c(i)
- !     dx_l(i)      = radii_c(i)   - radii_c(i-1)
- !     dx_r_cell(i) = radii_c(i+1) - radii(i)
- !     dx_l_cell(i) = radii(i)     - radii_c(i)
- !  end do
- !  do i=1,nghost
- !     dx_l(i)      = radii_c(first_active)
- !     dx_l_cell(i) = radii_c(first_active)
- !     dx_r(i)      = dx_r(first_active)
- !     dx_r_cell(i) = dx_r_cell(first_active)
- !  end do
-  
   
     zeta_r =(rmax/(rin*au))**(1.0d0/(nx-1))
     inner_r= rin*au/unit_l
@@ -416,6 +360,132 @@ end subroutine gridinit_sphere1D
 #endif
 #endif
 
+! NOT FUNCTIONAL
+#if GEOM==3 
+#if NY>1
+subroutine gridinit_disk_log(rmax_x,inner_r)
+  use parameters
+  use commons
+  use units
+  implicit none
 
+  real(dp):: rmax_x,rmax_y,inner_r
+  integer :: i, ix, iy,icell
+#if GRIDSPACE==1
+  !real(dp), dimension(1,nx+1):: radii_edges
+  real(dp) :: zeta_r
+#endif
+  print *, 'Number of cells        =', Ncells
+  print *, 'Number of active cells =', Ncells_active
 
+! Polar grid (face-on)
+#if GRIDSPACE==0
+      print *,'You are using a linear space 2D spherical grid.'
+
+      do ix = 1, nx_max
+        do iy = 1, ny_max
+          dx  (icell(ix,iy),1)     = rmax_x/float(nx) ! d_r
+          dx  (icell(ix,iy),2)     = pi/float(ny) ! d_Phi
+          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
+          phi(icell(ix,iy))        = (float(iy-first_active_y)+half) * pi/float(ny)
+          position(icell(ix,iy),1) = radii_c(icell(ix,iy))*cos(phi(icell(ix,iy)))
+          position(icell(ix,iy),2) = radii_c(icell(ix,iy))*sin(phi(icell(ix,iy)))  
+          surf(icell(ix,iy),1)     = (radii_c(icell(ix,iy))-half* dx (icell(ix,iy),1))*(dx  (icell(ix,iy),2))  ! r dpho
+          surf(icell(ix,iy),2)     = dx  (icell(ix,iy),1)! dr
+          vol (icell(ix,iy))       = radii_c(icell(ix,iy))*dx  (icell(ix,iy),1)*dx  (icell(ix,iy),2)
+
+        end do
+      end do
+#endif
+#if GRIDSPACE==1
+  print *,'You are using a log space 2D spherical grid.'
+
+  zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx))
+  do iy = 1, ny_max
+    do ix = 1, nx_max
+      radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
+      dx  (icell(ix,iy),1)     = inner_r*(zeta_r**(ix+1-first_active)-zeta_r**(ix-first_active))
+      dx  (icell(ix,iy),2)     = pi/float(ny) ! d_Phi
+      phi(icell(ix,iy))        = (float(iy-first_active_y)+half) *pi/float(ny)
+      position(icell(ix,iy),1) = radii_c(icell(ix,iy))*cos(phi(icell(ix,iy)))
+      position(icell(ix,iy),2) = radii_c(icell(ix,iy))*sin(phi(icell(ix,iy))) 
+      surf(icell(ix,iy),1)     = inner_r*(zeta_r**(ix-first_active))*(dx  (icell(ix,iy),2))  ! r dphi
+      surf(icell(ix,iy),2)     = dx  (icell(ix,iy),1)! dr
+      vol (icell(ix,iy))       = radii_c(icell(ix,iy))*dx  (icell(ix,iy),1)*dx  (icell(ix,iy),2)
+    end do
+    do ix=1,nghost
+      radii_c(icell(ix,iy))             = inner_r*0.5d0
+      radii_c(icell(nx_max+1-ix,iy))    = rmax_x+0.5d0*dx  (icell(last_active,iy),1)
+      dx  (icell(ix,iy),1)              = dx  (icell(first_active,iy),1)
+      dx  (icell(nx_max+1-ix,iy),1)     = dx  (icell(last_active,iy),1)
+    end do
+  end do
+#endif
+
+end subroutine gridinit_disk_log
+#endif
+#endif
+
+#if GEOM==4
+#if NY>1
+subroutine gridinit_disk_log(rmax_x,inner_r,rmax_y)
+  use parameters
+  use commons
+  use units
+  implicit none
+
+  real(dp):: rmax_x,rmax_y,inner_r
+  integer :: i, ix, iy,icell
+#if GRIDSPACE==1
+  !real(dp), dimension(1,nx+1):: radii_edges
+  real(dp) :: zeta_r
+#endif
+  print *, 'Number of cells        =', Ncells
+  print *, 'Number of active cells =', Ncells_active
+
+! Polar grid (face-on)
+#if GRIDSPACE==0
+      print *,'You are using a linear space 2D cylindrical grid - R,Z configuration'
+
+      do ix = 1, nx_max
+        do iy = 1, ny_max
+          dx  (icell(ix,iy),1)     = rmax_x/float(nx) ! d_r
+          dx  (icell(ix,iy),2)     = rmax_y/float(ny) ! d_y
+          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
+          position(icell(ix,iy),1) = radii_c(icell(ix,iy))
+          position(icell(ix,iy),2) = (float(iy-first_active_y)+half) *rmax_y/float(ny)  
+          surf(icell(ix,iy),1)     = (dx  (icell(ix,iy),2))  ! dy
+          surf(icell(ix,iy),2)     = dx  (icell(ix,iy),1)! dr
+          vol (icell(ix,iy))       = dx  (icell(ix,iy),1)*dx  (icell(ix,iy),2)
+
+        end do
+      end do
+#endif
+#if GRIDSPACE==1
+  print *,'You are using a log space 2D cylindrical grid - R,Z configuration'
+
+  zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx))
+  do iy = 1, ny_max
+    do ix = 1, nx_max
+      radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
+      dx  (icell(ix,iy),1)     = inner_r*(zeta_r**(ix+1-first_active)-zeta_r**(ix-first_active))
+      dx  (icell(ix,iy),2)     = rmax_y/float(ny) ! d_y
+      position(icell(ix,iy),1) = radii_c(icell(ix,iy))
+      position(icell(ix,iy),2) = (float(iy-first_active_y)+half) *rmax_y/float(ny)
+      surf(icell(ix,iy),1)     = (dx  (icell(ix,iy),2))   ! dy
+      surf(icell(ix,iy),2)     = dx  (icell(ix,iy),1)     ! dr
+      vol (icell(ix,iy))       = dx  (icell(ix,iy),1)*dx  (icell(ix,iy),2)
+    end do
+    do ix=1,nghost
+      radii_c(icell(ix,iy))             = inner_r*0.5d0
+      radii_c(icell(nx_max+1-ix,iy))    = rmax_x +0.5d0*dx  (icell(last_active,iy),1)
+      dx  (icell(ix,iy),1)              = dx  (icell(first_active,iy),1)
+      dx  (icell(nx_max+1-ix,iy),1)     = dx  (icell(last_active,iy),1)
+    end do
+  end do
+#endif
+
+end subroutine gridinit_disk_log
+#endif
+#endif
 

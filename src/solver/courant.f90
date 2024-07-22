@@ -83,3 +83,10 @@ endif
   !print *, 'time = ', time, 'dt = ', dt
 #endif 
 end subroutine courant
+
+
+
+
+
+
+
