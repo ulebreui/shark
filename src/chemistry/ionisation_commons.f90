@@ -4,10 +4,10 @@
 
   logical             ::  charging              = .false.   ! Charging is activated
   logical             ::  charging_all_the_time = .false.   ! Charging is activated
-  logical             :: res_Marchand = .false.   ! To compute charges within Marchand algorithm
+  logical             :: res_Marchand = .true.   ! To compute charges within Marchand algorithm
   logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
-  logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
-  logical             :: ions = .true.   
+  logical             :: electrons = .false.   ! To include electrons in the resistivitiy computation
+  logical             :: ions = .false.   
 
 
 
