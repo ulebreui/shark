@@ -50,6 +50,10 @@ clustered_fraction  = 1.0d0   ! DUST IS NOT CLUSTERED
 
 &IONISATION_PARAMS
 charging=.true.
+res_Marchand=.false.
+dust_inertia=.true.
+electrons=.true.
+ions=.true.
 /
 
 

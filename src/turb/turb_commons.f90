@@ -21,6 +21,9 @@ logical :: driven_turb = .false.
 logical :: turb_compressive = .false.
 logical :: turb_solenoidal = .false.
 
+logical :: turb_dust = .false.
+
+
 logical :: ini_random = .true.
 
 real(dp) , dimension(:)  ,allocatable    :: k_turb_driven 
@@ -53,6 +56,9 @@ real(dp) , dimension(:)  , allocatable    :: random_array_az
 real(dp) , dimension(:)  , allocatable    :: random_array_phix
 real(dp) , dimension(:)  , allocatable    :: random_array_phiy
 real(dp) , dimension(:)  , allocatable    :: random_array_phiz
+real(dp) , dimension(:)  , allocatable    :: random_array_phix_d
+real(dp) , dimension(:)  , allocatable    :: random_array_phiy_d
+real(dp) , dimension(:)  , allocatable    :: random_array_phiz_d
 
 
 end module turb_commons

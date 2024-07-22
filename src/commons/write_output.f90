@@ -237,6 +237,15 @@ if(charging) then
       if(active_cell(i)==1) write(ilun) ne(i)
    end do
   close(ilun)
+
+  open(ilun,file=trim(path) // trim(nchar)//trim('/zd'), form=format_out,access='stream')
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) zd(i,idust)
+   end do
+  end do
+  close(ilun)
+
 endif
 
  end subroutine output

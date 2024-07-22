@@ -70,12 +70,14 @@ subroutine random_acceleration_and_velocity(velocity)
     random_array_vz(i) = rand_nb9
   end if 
 
+
+
   end do
   return
 
   end subroutine random_acceleration_and_velocity
 
-subroutine initial_velocity_correction !!TODO extend to transversal components
+subroutine initial_velocity_correction 
 
   !!Tune the amplitudes of each initial velocity mode to 'meet' desired Mach
   !!Velocity modes are taken to be sinusoidal
@@ -234,8 +236,9 @@ subroutine add_driven_turb_kick
 
   implicit none
 
-  integer :: i,i_turb
-  real(dp) ::  mom_x,mom_y,mom_z,rho,ax_kick,ay_kick,az_kick
+  integer :: i,i_turb,idust
+  real(dp) ::  mom_x,mom_y,mom_z,rho,ax_kick,ay_kick,az_kick,mom_x_d,mom_y_d,mom_z_d,rho_d
+
 
   do i=1,ncells
     if(active_cell(i)==1) then
@@ -259,6 +262,22 @@ subroutine add_driven_turb_kick
 
       u_prim(i,ivx) = mom_x + rho*ax_kick*dt
 
+      if (turb_dust) then
+
+        do idust=1,ndust
+
+          mom_x_d = u_prim(i,ivdx(idust))
+          rho_d= u_prim(i,irhod(idust))
+
+          u_prim(i,ivdx(idust)) = mom_x_d + rho_d*ax_kick*dt
+
+        end do
+      end if
+
+
+
+
+
     end if
 
 
@@ -274,11 +293,27 @@ subroutine add_driven_turb_kick
       u_prim(i,ivy) = mom_y + rho*ay_kick*dt
       u_prim(i,ivz) = mom_z + rho*az_kick*dt
 
+      if (turb_dust) then
+
+        do idust=1,ndust
+
+          mom_y_d = u_prim(i,ivdy(idust))
+          mom_z_d = u_prim(i,ivdz(idust))
+          rho_d= u_prim(i,irhod(idust))
+
+          u_prim(i,ivdy(idust)) = mom_y_d + rho_d*ay_kick*dt
+          u_prim(i,ivdz(idust)) = mom_z_d + rho_d*az_kick*dt
+
+
+        end do
+      end if
+
 
     end if 
 
 
     end if
+
   end do 
 
 
@@ -323,12 +358,19 @@ subroutine kick_phase_drift
 
 
   end do
+
+  print *, 'rand_nb1', rand_nb1
+  print *, 'rand_nb2', rand_nb2
+  print *, 'rand_nb3', rand_nb3
+
+
 end subroutine kick_phase_drift
 
 
 
+
 subroutine adjust_yz_kick_intensity
-!To prevent transversal velocitiess from endlessly building up, adjust corrector to match targeted Mach
+!To prevent transversal velocities from endlessly building up, adjust corrector to match targeted Mach
 
   use commons
   use parameters

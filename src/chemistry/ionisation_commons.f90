@@ -4,6 +4,13 @@
 
   logical             ::  charging              = .false.   ! Charging is activated
   logical             ::  charging_all_the_time = .false.   ! Charging is activated
+  logical             :: res_Marchand = .false.   ! To compute charges within Marchand algorithm
+  logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
+  logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
+  logical             :: ions = .true.   
+
+
+
 
   real(dp), dimension(:), allocatable      :: eta_a
   real(dp), dimension(:), allocatable      :: eta_o

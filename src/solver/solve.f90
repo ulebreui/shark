@@ -31,7 +31,8 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-  if(charging)   call charge
+  if(charging)   call charge !Set res_Marchand=True to compute charges and res
+  if(dust_inertia) call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
 
   call system_clock ( t4, clock_rate, clock_max )
 
@@ -83,14 +84,14 @@ subroutine solve(verbose,outputing)
         iseed_phase_drift = iseed_phase_drift + 1
      end if 
 
-     count = count + 1
-     if (count_bis==0 .or. count == count_bis + 20) then
-        call adjust_yz_kick_intensity
-        count_bis = count
+     !count = count + 1
+     !if (count_bis==0 .or. count == count_bis + 20) then
+        !call adjust_yz_kick_intensity
+        !count_bis = count
         !print *, 'Vyz_rms', Vyz_rms
         !print *, 'ay', random_array_ay
 
-     end if
+     !end if
 
      call add_driven_turb_kick
 #endif
