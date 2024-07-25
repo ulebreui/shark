@@ -9,9 +9,9 @@ subroutine setup
   real(dp) :: B_field
   real(dp), dimension(1:2*ndust+2) :: v_sol
   real (dp) :: A_nak, B_nak
-  !real(dp), dimension(1:ndust) :: ux_nak, uy_nak
+  real(dp), dimension(1:ndust) :: ux_nak, uy_nak
 
-  real(dp) :: ux_nak, uy_nak
+  !real(dp) :: ux_nak, uy_nak
 
   integer :: ind_ux,ind_uy,info
 
@@ -49,111 +49,111 @@ subroutine setup
 
   endif
 
-!   A_nak = 0.0d0
-!   B_nak = 1.0d0
+  A_nak = 0.0d0
+  B_nak = 1.0d0
 
-!   do idust=1,ndust
+  do idust=1,ndust
 
-!     A_nak = A_nak + dust2gas_species(idust)*Stokes_species(idust)/(1.0d0+Stokes_species(idust)**2)
-!     B_nak = B_nak + dust2gas_species(idust)/(1.0d0+Stokes_species(idust)**2)
+    A_nak = A_nak + dust2gas_species(idust)*Stokes_species(idust)/(1.0d0+Stokes_species(idust)**2)
+    B_nak = B_nak + dust2gas_species(idust)/(1.0d0+Stokes_species(idust)**2)
 
-!   end do
+  end do
 
-!   vx_nak = 2.0d0*eta_stream*vkep*A_nak/(A_nak+B_nak)
-!   vy_nak = -eta_stream*vkep*B_nak/(A_nak+B_nak)
+  vx_nak = 2.0d0*eta_stream*vkep*A_nak/(A_nak+B_nak)
+  vy_nak = -eta_stream*vkep*B_nak/(A_nak+B_nak)
 
-!   do idust=1,ndust
+  do idust=1,ndust
 
-!     ux_nak(idust) = (vx_nak+2.0d0*Stokes_species(idust)*vy_nak)/(1.0d0+Stokes_species(idust)**2)
-!     uy_nak(idust) = (vy_nak-half*Stokes_species(idust)*vx_nak)/(1.0d0+Stokes_species(idust)**2)
+    ux_nak(idust) = (vx_nak+2.0d0*Stokes_species(idust)*vy_nak)/(1.0d0+Stokes_species(idust)**2)
+    uy_nak(idust) = (vy_nak-half*Stokes_species(idust)*vx_nak)/(1.0d0+Stokes_species(idust)**2)
 
-!   end do
+  end do
 
-!   call gridinit(box_l,box_l_y)
-
-!   q = 0.0d0
-!   iso_cs = 1
-!   do i =1,ncells
-!         xx=position(i,1)-half*box_l  ! Boxlen already in pc
-!         yy=position(i,2)-half*box_l_y
-
-!         q(i,irho)  = rho_init
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(i,ivx)    = vx_nak + perturbation
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(i,ivy)   = perturbation
-!         call get_rhoturb(2d-2*cs0,perturbation)
-!         q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-!         q(i,iP)    =  q(i,irho)*cs0**2.0
-! #if NDUST>0
-!      do idust=1,ndust
-
-!         q(i,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
-!         epsilondust(i,idust) = dust2gas_species(idust)
-
-!         if(.not. stokes_distrib) sdust(i,idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(i,ivdx(idust))      = perturbation+ux_nak(idust)
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(i,ivdy(idust))     =  perturbation
-!         call get_rhoturb(2d-2*cs0,perturbation)
-!         q(i,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
-!      end do
-! #endif
-!   end do
-!   cs=cs0
-
-  ux_nak  = -(2.0d0*stokes_species(1)/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep ! Dust velocity
-  vx_nak  = -dust2gas_species(1)*ux_nak ! Gas velocity
-  uy_nak  = -(1.0d0-stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
-  vy_nak  = -(1.0d0+dust2gas_species(1)*stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
   call gridinit(box_l,box_l_y)
-  q=0.0d0
+
+  q = 0.0d0
   iso_cs = 1
-  do iy = 1,ny_max
-    do ix = 1,nx_max
-        xx=position(icell(ix,iy),1)-half*box_l  ! Boxlen already in pc
-        yy=position(icell(ix,iy),2)-half*box_l_y
-        q(icell(ix,iy),irho)  = rho_init
+  do i =1,ncells
+        xx=position(i,1)-half*box_l  ! Boxlen already in pc
+        yy=position(i,2)-half*box_l_y
+
+        q(i,irho)  = rho_init
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(icell(ix,iy),ivx)  = vx_nak + perturbation
+        q(i,ivx)    = vx_nak + perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(icell(ix,iy),ivy)   = perturbation
-     call get_rhoturb(2d-2*cs0,perturbation)
-      q(icell(ix,iy),ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-      q(icell(ix,iy),iP)    = q(icell(ix,iy),irho)*cs0**2.0
-      !cs(icell(ix,iy)) = cs0
-  enddo
-  enddo
-  cs =cs0
+        q(i,ivy)   = perturbation
+        call get_rhoturb(2d-2*cs0,perturbation)
+        q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
+        q(i,iP)    =  q(i,irho)*cs0**2.0
 #if NDUST>0
-   do iy = 1,ny_max
-    do ix = 1,nx_max
      do idust=1,ndust
-        q(icell(ix,iy),irhod(idust))    = dust2gas_species(1)*rho_init!+ perturbation
-        epsilondust(icell(ix,iy),idust) = dust2gas_species(1)
-        !sdust(icell(ix,iy),idust)       = Stokes_species(1)
-        if(.not. stokes_distrib) sdust(icell(ix,iy),idust)       = Stokes_species(idust)!*rho_init*cs0/rhograin/omega_shear
 
+        q(i,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
+        epsilondust(i,idust) = dust2gas_species(idust)
+
+        if(.not. stokes_distrib) sdust(i,idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(icell(ix,iy),ivdx(idust))      = perturbation+ux_nak
+        q(i,ivdx(idust))      = perturbation+ux_nak(idust)
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(icell(ix,iy),ivdy(idust))     =  perturbation
-        xx=position(icell(ix,iy),1)  -half*box_l  ! Boxlen already in pc
+        q(i,ivdy(idust))     =  perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
-        q(icell(ix,iy),ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak
+        q(i,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
      end do
-  end do
-  end do
 #endif
+  end do
+  cs=cs0
+
+  ! ux_nak  = -(2.0d0*stokes_species(1)/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep ! Dust velocity
+  ! vx_nak  = -dust2gas_species(1)*ux_nak ! Gas velocity
+  ! uy_nak  = -(1.0d0-stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
+  ! vy_nak  = -(1.0d0+dust2gas_species(1)*stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
+  ! call gridinit(box_l,box_l_y)
+  ! q=0.0d0
+  ! iso_cs = 1
+  ! do iy = 1,ny_max
+  !   do ix = 1,nx_max
+  !       xx=position(icell(ix,iy),1)-half*box_l  ! Boxlen already in pc
+  !       yy=position(icell(ix,iy),2)-half*box_l_y
+  !       q(icell(ix,iy),irho)  = rho_init
+  !       call get_rhoturb(2d-2*cs0,perturbation)
+
+  !       q(icell(ix,iy),ivx)  = vx_nak + perturbation
+  !       call get_rhoturb(2d-2*cs0,perturbation)
+
+  !       q(icell(ix,iy),ivy)   = perturbation
+  !    call get_rhoturb(2d-2*cs0,perturbation)
+  !     q(icell(ix,iy),ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
+  !     q(icell(ix,iy),iP)    = q(icell(ix,iy),irho)*cs0**2.0
+  !     !cs(icell(ix,iy)) = cs0
+  ! enddo
+  ! enddo
+  ! cs =cs0
+! #if NDUST>0
+!    do iy = 1,ny_max
+!     do ix = 1,nx_max
+!      do idust=1,ndust
+!         q(icell(ix,iy),irhod(idust))    = dust2gas_species(1)*rho_init!+ perturbation
+!         epsilondust(icell(ix,iy),idust) = dust2gas_species(1)
+!         !sdust(icell(ix,iy),idust)       = Stokes_species(1)
+!         if(.not. stokes_distrib) sdust(icell(ix,iy),idust)       = Stokes_species(idust)!*rho_init*cs0/rhograin/omega_shear
+
+!         call get_rhoturb(2d-2*cs0,perturbation)
+
+!         q(icell(ix,iy),ivdx(idust))      = perturbation+ux_nak
+!         call get_rhoturb(2d-2*cs0,perturbation)
+
+!         q(icell(ix,iy),ivdy(idust))     =  perturbation
+!         xx=position(icell(ix,iy),1)  -half*box_l  ! Boxlen already in pc
+!         call get_rhoturb(2d-2*cs0,perturbation)
+!         q(icell(ix,iy),ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak
+!      end do
+!   end do
+!   end do
+! #endif
 
 call primtoc
 call apply_boundaries
@@ -251,7 +251,7 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
-   integer :: icount,iout,i
+   integer :: icount,iout,i,idust
    real(dp):: mtot,mdtot
    logical :: outputing,verbose
 
@@ -274,7 +274,9 @@ subroutine read_setup_params(ilun,nmlfile)
         do i=1,ncells
           if(active_cell(i)==1) then
           mtot=mtot+u_prim(i,irho)
-          mdtot=mdtot+u_prim(i,irhod(1))
+          do idust=1,ndust
+            mdtot=mdtot+u_prim(i,irhod(idust))
+          end do
           endif
         end do
      end if
@@ -387,8 +389,8 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        !tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/(rad0*Omega_shear*hoverr)
-        tstop(i,idust) = sdust(i,idust)/Omega_shear
+        tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/(rad0*Omega_shear*hoverr)
+        !tstop(i,idust) = sdust(i,idust)/Omega_shear
 
      end do
      end if

@@ -5,7 +5,7 @@ subroutine output(iout)
   use units
   implicit none
   integer  :: i,idust,jdust,iout,ilun=50,ipscal
-  real(dp) :: sum_dust,barotrop,B_field
+  real(dp) :: sum_dust,barotrop,B_field,rhod_tot
   real(dp), dimension(1: nx*ny) :: xdp
   character(LEN = 5) :: nchar
   character(len=80)  :: path, makedirectory,format_out
@@ -125,7 +125,25 @@ subroutine output(iout)
 #endif 
 
 #if NDUST>0
-
+  open(ilun,file=trim(path) // trim(nchar)//trim('/rhod_tot'), form=format_out,access='stream')
+   do i = 1,ncells
+   if(active_cell(i)==1)  then
+   rhod_tot=0.d0
+   do idust=1,ndust
+#if GEOM<2
+    rhod_tot = rhod_tot + q(i,irhod(idust))*unit_d
+#endif
+#if GEOM==2
+   rhod_tot  = rhod_tot +  q(i,irhod(idust))*unit_dcol
+#endif
+#if GEOM>2
+   rhod_tot  = rhod_tot + q(i,irhod(idust))*unit_d
+#endif
+   end do
+    write(ilun) rhod_tot
+   endif 
+   end do
+  close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
