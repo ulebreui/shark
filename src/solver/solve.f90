@@ -13,7 +13,7 @@ subroutine solve(verbose,outputing)
   use units
   implicit none
   logical :: verbose,outputing
-  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10
+  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
 
@@ -33,11 +33,14 @@ subroutine solve(verbose,outputing)
 #endif
   if(charging)   call charge !Set res_Marchand=True to compute charges and res
   if(dust_inertia) call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
-
   call system_clock ( t4, clock_rate, clock_max )
 
   ! We compute the stability timestep
   call courant
+
+#if DIFFUSION_TEST==1
+    dt= tend/1000 !for this test, static=.true. --> the code won't go into courant routine
+#endif
 
   call system_clock ( t5, clock_rate, clock_max )
   
@@ -52,6 +55,16 @@ subroutine solve(verbose,outputing)
 
   ! Source terms are computed and added to u_prim
   call source_terms
+
+#if MHD==1
+#if DIFFUSION_TEST==1
+  !if static=.true., source_terms won't be called/computed
+    !do i,1=ncells  
+        !call hyper_diffusion_induction_eq(q(i,iBz),D_test(i),q(i,iBz),dx(i,1),dx(i,1),dx(i,1),i)
+        !call hyper_diffusion_induction_eq(q(i,iBy),D_test(i),q(i,iBy),dx(i,1),dx(i,1),dx(i,1),i)
+    !end do
+#endif
+#endif
 
   if(fargo) call fargo_scheme
 

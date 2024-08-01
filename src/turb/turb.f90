@@ -359,9 +359,9 @@ subroutine kick_phase_drift
 
   end do
 
-  print *, 'rand_nb1', rand_nb1
-  print *, 'rand_nb2', rand_nb2
-  print *, 'rand_nb3', rand_nb3
+  !print *, 'rand_nb1', rand_nb1
+  !print *, 'rand_nb2', rand_nb2
+  !print *, 'rand_nb3', rand_nb3
 
 
 end subroutine kick_phase_drift

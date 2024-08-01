@@ -8,6 +8,8 @@
   logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
   logical             :: electrons = .false.   ! To include electrons in the resistivitiy computation
   logical             :: ions = .false.   
+  logical             :: dusty_nonideal_MHD = .false.   
+
 
 
 
@@ -15,6 +17,12 @@
   real(dp), dimension(:), allocatable      :: eta_a
   real(dp), dimension(:), allocatable      :: eta_o
   real(dp), dimension(:), allocatable      :: eta_h
+
+  real(dp), dimension(:), allocatable      :: eta_eff_yy
+  real(dp), dimension(:), allocatable      :: eta_eff_yz
+  real(dp), dimension(:), allocatable      :: eta_eff_zy
+  real(dp), dimension(:), allocatable      :: eta_eff_zz
+
 
   real(dp), dimension(:), allocatable      :: sigma_o
   real(dp), dimension(:), allocatable      :: sigma_p

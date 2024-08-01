@@ -139,6 +139,7 @@ subroutine allocate_init
 #endif
 
 
+
   if(charging) then
     allocate(eta_a(1:ncells))
     allocate(eta_h(1:ncells))
@@ -149,6 +150,11 @@ subroutine allocate_init
     allocate(ni(1:ncells))
     allocate(ne(1:ncells))
     allocate(psi_old(1:ncells))
+    allocate(eta_eff_yy(1:ncells))
+    allocate(eta_eff_yz(1:ncells))
+    allocate(eta_eff_zy(1:ncells))
+    allocate(eta_eff_zz(1:ncells))
+
 
     eta_a  =0.0d0
     eta_h  =0.0d0
@@ -159,6 +165,11 @@ subroutine allocate_init
     ni     =0.0d0
     ne     =0.0d0
     psi_old=0.0d0
+    eta_eff_yy=0.0d0
+    eta_eff_yz=0.0d0
+    eta_eff_zy=0.0d0
+    eta_eff_zz=0.0d0
+
 
   endif
 

@@ -15,7 +15,7 @@ subroutine courant
   implicit none
 
   integer :: i,idust
-  real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast,vv,fratio
+  real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast,vv,fratio,D_max
   if(static)then
      return
   endif
@@ -72,6 +72,19 @@ if(force_kick) then
 
    end do
 #endif 
+
+#if MHD==1
+if (dusty_nonideal_MHD) then !!Adapt timestep to hyper_diffusion in induction equation
+
+   call effective_diffusion_coef_induction
+   D_max = max(eta_eff_yy(i),eta_eff_yz(i),eta_eff_zy(i),eta_eff_zz(i)) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
+   print *, D_max
+   dt = min(dt,CFL*dxx**2/D_max)
+
+end if
+
+#endif
+
    if(vv.ne.0.0d0) then
       fratio = max(force_max*dxx/vv**2,1d-3)
       dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)

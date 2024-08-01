@@ -1068,7 +1068,7 @@ subroutine solver_induction_Huang_Bai(qleft,qright,flx,idim)
     integer  :: idim,idust,i_u,i_v,i_rho,i_w
 
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,lambda_llf_B
-    real(dp) :: u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt 
+    real(dp) :: u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt,rho_lft,rho_rgt
 
 
     real(dp) ::flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt

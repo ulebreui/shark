@@ -61,6 +61,9 @@ subroutine charge
      ! Temperature --> taken from setup_commons.
          !or: T(i) if energy equation
       T            = barotrop(u_prim(i,irho))
+#if TURB>0
+      T = T_cloud
+#endif
 
      ! Grain size in cm
      l_grain_loc=sdust(i,:)*unit_l
@@ -138,6 +141,15 @@ subroutine charge
      do idust=1,ndust
         zd(i,idust)=psi_loc*tau_k(idust)+(1.0d0-eps_psi**2.0*thetai**2.0)/(1.0d0+eps_psi*thetai*alpha_k(idust)+eps_psi**2*thetai**2.0)
         ni(i)= ni(i)-zd(i,idust)*n_k(idust)/(1.0d0-eps_psi)
+
+        print *, 'psi_loc',psi_loc
+        print *, 'tau_k',tau_k
+        print *, 'eps_psi',eps_psi
+        print *, 'thetai',thetai
+        print *, 'alpha_k',alpha_k
+
+       
+
         if(lowT>0) ni(i)=sqrt(eps_psi*x*nH_loc/sigmav_ie)
      end do
      ne(i)=eps_psi*ni(i)
@@ -285,7 +297,6 @@ end subroutine charge
 #endif
 
 
-
 subroutine resistivities_with_dust_inertia
   use parameters
   use commons
@@ -382,3 +393,32 @@ subroutine resistivities_with_dust_inertia
 end subroutine resistivities_with_dust_inertia
 
 
+#if MHD==1
+subroutine effective_diffusion_coef_induction
+  use parameters
+  use commons
+  use units
+  use OMP_LIB 
+  implicit none
+  real(dp) :: B_norm,bx,by,bz
+  integer :: i
+
+
+ do i=1,ncells
+
+    B_norm=dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
+    bx=q(i,iBx)/B_norm
+    by=q(i,iBy)/B_norm
+    bz=q(i,iBz)/B_norm
+
+    eta_eff_yy(i) = (eta_o(i)+(bx**2+by**2)*eta_a(i))*clight**2 !Resistivities must be in cm^2/s
+    eta_eff_yz(i)=(bx*eta_h(i)+by*bz*eta_a(i))*clight**2
+
+    eta_eff_zy(i) = (by*bz*eta_a(i)-eta_h(i)*bx)*clight**2 !Resistivities must be in cm^2/s
+    eta_eff_zz(i)=(eta_o(i)+(bx**2+bz**2)*eta_a(i))*clight**2
+
+ end do
+
+end subroutine effective_diffusion_coef_induction
+
+#endif

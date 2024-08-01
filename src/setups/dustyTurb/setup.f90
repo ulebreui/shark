@@ -93,6 +93,17 @@ subroutine setup
 
     call distribution_dust(.true.)
 
+    do i=1,ncells
+      do idust=1,ndust
+        sdust(i,idust)    = smax/unit_l !if a single grain
+      end do
+    end do  
+
+
+
+
+
+
 #endif
 
   do i = 1,ncells
