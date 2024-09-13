@@ -392,6 +392,8 @@ subroutine compute_tstop
         tstop(i,idust) = rhograin*sdust(i,idust)/rho_init/(rad0*Omega_shear*hoverr)
         !tstop(i,idust) = sdust(i,idust)/Omega_shear
 
+        St(i,idust) = tstop(i,idust)*Omega_shear
+
      end do
      end if
   end do

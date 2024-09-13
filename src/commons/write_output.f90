@@ -176,6 +176,15 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+  if(SI) then
+     open(ilun,file=trim(path) // trim(nchar)//trim('/St'), form=format_out,access='stream')
+     do idust=1,ndust
+      do i = 1,ncells
+         if(active_cell(i)==1) write(ilun) St(i,idust)
+      end do
+     end do
+     close(ilun)
+  endif
   open(ilun,file=trim(path) // trim(nchar)//trim('/vd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells

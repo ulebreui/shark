@@ -25,6 +25,12 @@ subroutine dust_growth(verbose)
   real(dp), dimension(1:ncells)         :: dt_cfl_all
   real(dp):: dt_growth,time_growth
 
+
+  !Sub_stepping for SI
+  if (SI) then
+   dt=dt_growth_SI
+  endif
+
   ! Flags 
   frag_test = 0
   turbgrow  = 0
@@ -89,6 +95,11 @@ subroutine dust_growth(verbose)
            f_Stokes = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
            St1 = t_stop_loc(idust)/t_l
            St2 = t_stop_loc(jdust)/t_l
+
+           if (SI) then
+               St1 = t_stop_loc(idust)*omega_shear
+               St2 = t_stop_loc(jdust)*omega_shear
+            endif
            
            vclass1 = alpha_turb*cs_eos(T)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
            vclass2 = alpha_turb*cs_eos(T)*dsqrt(f_Stokes*St1)           
@@ -97,6 +108,11 @@ subroutine dust_growth(verbose)
            vdrift_turb                            = vclass2
            if(t_stop_loc(idust)<t_eta)vdrift_turb = vclass1
            if(t_stop_loc(idust)>t_L)vdrift_turb   = vclass3
+
+           if (SI) then
+                  vdrift_turb                            = vclass2
+           endif
+
            
            vdrift_brow  = dsqrt(dSQRT((8.0d0*kb*T/pi)*(mdust(i,idust)*unit_m+mdust(i,jdust)*unit_m)/(mdust(i,idust)*mdust(i,jdust)*unit_m**2)/unit_v**2)**2)
            vdrift_hydro = dsqrt((q(i,ivdx(idust))-q(i,ivdx(jdust)))**2+(q(i,ivdy(idust))-q(i,ivdy(jdust)))**2+(q(i,ivdz(idust))-q(i,ivdz(jdust)))**2)
@@ -133,13 +149,16 @@ subroutine dust_growth(verbose)
                  f_frag = 0.0d0
                  p_coag = 1.0d0
 
-                 If(frag_test==1) then
+                 if(frag_test==1) then
 
                     ! if(frag_thre==0) then
                     Ecol   = 0.5d0*(m1*m2)/(m1+m2)*dvij(idust,jdust)**2
                     Ebr    = (m1+m2)/m_mono*Ebr_mono
                     f_frag = max(min((Ecol-0.1d0*Ebr)/(4.9d0*Ebr),1.0d0),0.0d0)
-                    !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/vfrag,1.0d0),0.0d0) ! velocity threshold
+
+                    if (SI) then
+                     f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/0.9*vfrag,1.0d0),0.0d0) ! velocity threshold
+                    endif
 
                  endif
                  dndt = clustered_fraction**2.0*pi*(s1+s2)**2.*dvij(idust,jdust)*u_prim(i,irhod(idust))*u_prim(i,irhod(jdust))/m1/m2 ! K n1 n2

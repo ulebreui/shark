@@ -117,6 +117,8 @@ subroutine allocate_dust
   allocate(mdust(1:ncells,1:ndust))
   allocate(tstop(1:ncells,1:ndust))
   allocate(tcoag(1:ncells,1:ndust))
+  allocate(St(1:ncells,1:ndust))
+
 
   allocate(force_dust(1:ncells,1:3,1:ndust))
   allocate(irhod(1:ndust))

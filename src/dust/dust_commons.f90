@@ -14,10 +14,14 @@ module dust_parameters
   logical             ::  lorentz_dust          = .false.     ! Add the lorentz force on the dust
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
   logical             ::  electrostatic_barrier = .false.     ! Add the electrostatic barrier for dust growth
+  logical             ::  SI = .false.     ! To compute growth within Streaming Instability setup
+
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
   real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
 
   real(dp)            ::  dtcontrol_growth  = -1.0d0
+  real(dp)            ::  dt_growth_SI  = 0.0d0
+
   real(dp)            ::  delta_vambi       = 1.0
   character (len=60)  ::  dust_distribution = 'mrn'
   
@@ -28,6 +32,9 @@ module dust_parameters
   real(dp):: rhodust_threshold  = 1d-27
   real(dp):: dust_ratio_min     = 1d-11
   integer :: kernel_type        = 0 ! 0 = physical, 1= constant, 2 = additive
+
+  integer :: count_SI_growth        = 0 ! counter for call of dust growth along with SI
+  integer :: SI_growth_period        = 10 ! Period of dust growth call. !!! --> coag solver called every 10 hydro timesteps
 
 
   integer ::  frag_thre       = 0   ! 0 = NRJ, 1= velocity
@@ -80,6 +87,8 @@ module dust_commons
   real(dp), dimension(:,:,:), allocatable  :: force_dust
   real(dp), dimension(:,:), allocatable    :: tstop
   real(dp), dimension(:,:), allocatable    :: tcoag
+  real(dp), dimension(:,:), allocatable    :: St
+
 
   ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod

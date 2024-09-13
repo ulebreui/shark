@@ -60,7 +60,20 @@ subroutine solve(verbose,outputing)
 #if NDUST>0
   ! Dust step (dynamics, growth, charging)
   if(drag)   call dust_drag(1.0d0) ! Second half kick
-  if(growth) call dust_growth(verbose)
+  if(growth) then 
+    if(.not. SI) call dust_growth(verbose)
+    if (SI) then !SI defined in dust folder because code needs to know what it is (needs to be declared) regardless of chosen setup
+      count_SI_growth=count_SI_growth+1
+      dt_growth_SI=dt_growth_SI+dt !--> period of time over which dust growth should be integrated when sub-stepping
+      if (count_SI_growth==SI_growth_period) then
+        call dust_growth(verbose) !!Compute growth with SI every x (user-defined) timesteps (i.e. shear times)
+        count_SI_growth=0
+        dt_growth_SI=0.0d0
+
+      endif
+    endif
+   endif
+
 #if NDUSTPSCAL > 0 
   if(growth_step) call dust_growth_stepinski(verbose) ! Dust growth with Stepinski /!\ dust size is in the first pscal
 #endif
