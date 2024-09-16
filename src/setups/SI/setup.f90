@@ -393,6 +393,9 @@ subroutine compute_tstop
         !tstop(i,idust) = sdust(i,idust)/Omega_shear
 
         St(i,idust) = tstop(i,idust)*Omega_shear
+        !smin    = Stokes_min*rho_init*cs0/rhograin/omega_shear
+        !St(i,idust) = sdust(i,idust)*omega_shear*rhograin/(rho_init*cs0)
+
 
      end do
      end if

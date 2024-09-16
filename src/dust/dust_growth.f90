@@ -77,7 +77,9 @@ subroutine dust_growth(verbose)
      niter_growth = 0
      T            = barotrop(q(i,irho))
      lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs_eos(T)*unit_v
-     vambi        = delta_vambi*clight**2*eta_a(i)/lambJ/(4.0d0*pi)
+     if (charging) then !Else, eta_a is not allocated
+      vambi        = delta_vambi*clight**2*eta_a(i)/lambJ/(4.0d0*pi)
+     end if
      Reynolds     = 6.2d7*dsqrt(q(i,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
      t_L          = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))/unit_t
      t_eta        = t_L/dsqrt(Reynolds)
@@ -116,13 +118,18 @@ subroutine dust_growth(verbose)
            
            vdrift_brow  = dsqrt(dSQRT((8.0d0*kb*T/pi)*(mdust(i,idust)*unit_m+mdust(i,jdust)*unit_m)/(mdust(i,idust)*mdust(i,jdust)*unit_m**2)/unit_v**2)**2)
            vdrift_hydro = dsqrt((q(i,ivdx(idust))-q(i,ivdx(jdust)))**2+(q(i,ivdy(idust))-q(i,ivdy(jdust)))**2+(q(i,ivdz(idust))-q(i,ivdz(jdust)))**2)
-           vdrift_ad    = dsqrt((vambi/unit_v*(abs(gamma_d(i,idust))/sqrt(1.0d0+gamma_d(i,idust)**2)&
+           if (charging) then !Else, eta_a is not allocated
+               vdrift_ad    = dsqrt((vambi/unit_v*(abs(gamma_d(i,idust))/sqrt(1.0d0+gamma_d(i,idust)**2)&
             &-abs(gamma_d(i,jdust))/sqrt(1.0d0+gamma_d(i,jdust)**2)))**2.)
+           end if 
 
            if(turbgrow ==1)  dvij(idust,jdust) = vdrift_turb
            if(browgrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_brow**2.)
            if(driftgrow==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_hydro**2.)
-           if(ambigrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_ad**2.)
+
+           if (charging) then !Else, eta_a is not allocated
+               if(ambigrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_ad**2.)
+           end if
         end do
      end do
 

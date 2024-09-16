@@ -143,6 +143,7 @@ subroutine allocate_dust
 
   tstop = 0.0d0
   tcoag = 0.0d0
+  St = 0.0d0
   force_dust=0.0d0
 
   if(charging) then
@@ -348,7 +349,7 @@ subroutine read_dust_params(ilun,nmlfile)
   &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,SI_growth_period,SI,
+ & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,SI_growth_period,SI
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"
