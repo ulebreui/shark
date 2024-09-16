@@ -34,8 +34,8 @@ module dust_parameters
   integer :: kernel_type        = 0 ! 0 = physical, 1= constant, 2 = additive
 
   integer :: count_SI_growth        = 0 ! counter for call of dust growth along with SI
-  integer :: SI_growth_period        = 10 ! Period of dust growth call. !!! --> coag solver called every 10 hydro timesteps
-
+  real(dp) :: SI_growth_period        = 0.1 ! Period of dust growth call !!! --> coag solver called every 0.1 orbital time
+  integer :: SI_growth_multiple_timestep = 1 !!!time of dust growth call. !!! --> coag solver called every 1 hydro timesteps
 
   integer ::  frag_thre       = 0   ! 0 = NRJ, 1= velocity
   integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq

@@ -65,7 +65,7 @@ subroutine solve(verbose,outputing)
     if (SI) then !SI defined in dust folder because code needs to know what it is (needs to be declared) regardless of chosen setup
       count_SI_growth=count_SI_growth+1
       dt_growth_SI=dt_growth_SI+dt !--> period of time over which dust growth should be integrated when sub-stepping
-      if (count_SI_growth==SI_growth_period) then
+      if (count_SI_growth==SI_growth_multiple_timestep .or. dt_growth_SI>SI_growth_period) then !!Call for dust growth defined either in terms of hydro timestep multiple or of period of time (in orbital time units) --> Whichever is shorter.
         call dust_growth(verbose) !!Compute growth with SI every x (user-defined) timesteps (i.e. shear times)
         count_SI_growth=0
         dt_growth_SI=0.0d0
