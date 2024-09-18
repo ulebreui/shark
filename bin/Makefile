@@ -13,7 +13,6 @@ NDUST=0
 GEOM=0
 GRIDSPACE=0 #0 = linear, 1 = log ! Only for 2D disk
 TURB=0
-DIFFUSION_TERM=0 #To test diffusion routine
 MHD = 0
 NDUSTPSCAL = 0 # number of dust passive scalars
 GRAVITY    = 0
@@ -34,7 +33,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DMHD=$(MHD) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DSOLVERB=$(SOLVERB) -DNGHOST=$(NGHOST) -DTURB=$(TURB) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL) -DIFFUSION_TEST=$(DIFFUSION_TEST)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DMHD=$(MHD) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DSOLVERB=$(SOLVERB) -DNGHOST=$(NGHOST) -DTURB=$(TURB) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL)
 
 #############################################################################
 # Fortran compiler options and directives

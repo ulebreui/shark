@@ -16,9 +16,13 @@ subroutine courant
 
   integer :: i,idust
   real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast,vv,fratio,D_max
+
+
   if(static)then
-     return
+     return 
   endif
+
+
   dt=2d44
   ca=0.0d0
 

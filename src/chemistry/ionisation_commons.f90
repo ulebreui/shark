@@ -30,6 +30,22 @@
 
   real(dp), dimension(:), allocatable      :: ni
   real(dp), dimension(:), allocatable      :: ne
+  real(dp), dimension(:), allocatable      :: Hall_e
+  real(dp), dimension(:), allocatable      :: Hall_i
+
+  real(dp), dimension(:), allocatable      :: E_x
+  real(dp), dimension(:), allocatable      :: E_y
+  real(dp), dimension(:), allocatable      :: E_z
+
+  real(dp), dimension(:), allocatable      :: v_i_x
+  real(dp), dimension(:), allocatable      :: v_i_y
+  real(dp), dimension(:), allocatable      :: v_i_z
+
+  real(dp), dimension(:), allocatable      :: v_e_x
+  real(dp), dimension(:), allocatable      :: v_e_y
+  real(dp), dimension(:), allocatable      :: v_e_z
+
+
 
   real(dp), dimension(:), allocatable      :: psi_old
 

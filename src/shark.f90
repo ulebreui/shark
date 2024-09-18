@@ -98,6 +98,7 @@ subroutine time_loop
 
 
      !New time
+     !print*, 'dt=', dt
      time = time +dt
      call flag_continue(continue_sim)
 

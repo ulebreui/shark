@@ -154,6 +154,17 @@ subroutine allocate_init
     allocate(eta_eff_yz(1:ncells))
     allocate(eta_eff_zy(1:ncells))
     allocate(eta_eff_zz(1:ncells))
+    allocate(Hall_e(1:ncells))
+    allocate(Hall_i(1:ncells))
+    allocate(E_x(1:ncells))
+    allocate(E_y(1:ncells))
+    allocate(E_z(1:ncells))
+    allocate(v_e_x(1:ncells))
+    allocate(v_e_y(1:ncells))
+    allocate(v_e_z(1:ncells))
+    allocate(v_i_x(1:ncells))
+    allocate(v_i_y(1:ncells))
+    allocate(v_i_z(1:ncells))
 
 
     eta_a  =0.0d0
@@ -169,7 +180,17 @@ subroutine allocate_init
     eta_eff_yz=0.0d0
     eta_eff_zy=0.0d0
     eta_eff_zz=0.0d0
-
+    Hall_i     =0.0d0
+    Hall_e     =0.0d0
+    E_x=0.0d0
+    E_y=0.0d0
+    E_z=0.0d0
+    v_e_x=0.0d0
+    v_e_y=0.0d0
+    v_e_z=0.0d0
+    v_i_x=0.0d0
+    v_i_y=0.0d0
+    v_i_z=0.0d0
 
   endif
 
