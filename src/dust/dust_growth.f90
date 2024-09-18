@@ -112,6 +112,9 @@ subroutine dust_growth(verbose)
            if(t_stop_loc(idust)>t_L)vdrift_turb   = vclass3
 
            if (SI) then
+
+                  vclass2 = SQRT(alpha_turb)*cs0*dsqrt(f_Stokes*St1) !SQRT(alpha) to stay consistent with the definition in the literature          
+
                   vdrift_turb                            = vclass2
            endif
 
