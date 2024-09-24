@@ -113,7 +113,7 @@ subroutine dust_growth(verbose)
 
            if (SI) then
 
-                  vclass2 = SQRT(alpha_turb)*cs0*dsqrt(f_Stokes*St1) !SQRT(alpha) to stay consistent with the definition in the literature          
+                  vclass2 = dsqrt(alpha_turb)*cs(i)*dsqrt(f_Stokes*St1) !SQRT(alpha) to stay consistent with the definition in the literature          
 
                   vdrift_turb                            = vclass2
            endif
@@ -167,7 +167,7 @@ subroutine dust_growth(verbose)
                     f_frag = max(min((Ecol-0.1d0*Ebr)/(4.9d0*Ebr),1.0d0),0.0d0)
 
                     if (SI) then
-                     f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/0.9*vfrag,1.0d0),0.0d0) ! velocity threshold
+                     f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/(0.9*vfrag),1.0d0),0.0d0) ! velocity threshold
                     endif
 
                  endif
