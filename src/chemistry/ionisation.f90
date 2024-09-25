@@ -57,7 +57,7 @@ subroutine charge
   !$OMP PRIVATE(sigmas_ions,sigmas_dust,omegas_el,omegas_ions,omegas_dust,lowT,cross_sec)
   !$OMP DO
   do i=1,ncells
-     if(active_cell(i)==1) then
+     !if(active_cell(i)==1) then
      ! Temperature --> taken from setup_commons.
          !or: T(i) if energy equation
       T            = barotrop(u_prim(i,irho))
@@ -206,7 +206,7 @@ subroutine charge
       end if
 
 
-     endif
+     !endif
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -243,7 +243,6 @@ subroutine charge
 
   !Now we compute the actual ionisation
   do i=1,ncells
-  if (active_cell(i)==1) then
      ! Temperature
      T            = barotrop(q(i,irho))
 #if TURB==1
@@ -291,7 +290,6 @@ subroutine charge
      eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
      eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
 
-endif
 end do
 
 end subroutine charge
@@ -327,7 +325,7 @@ subroutine resistivities_with_dust_inertia
 
   !Now we compute the actual ionisation
   do i=1,ncells
-  if (active_cell(i)==1) then
+  !if (active_cell(i)==1) then
 
       !Magnetic field intensity
       !B = dsqrt(Bx(i)**2+By(i)**2+Bz(i)**2) !If computed directly by induction equation
@@ -411,7 +409,8 @@ subroutine resistivities_with_dust_inertia
      eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
      eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
 
-endif
+
+!endif
    end do
 
 end subroutine resistivities_with_dust_inertia
@@ -429,7 +428,8 @@ subroutine effective_diffusion_coef_induction
 
 
  do i=1,ncells
-    if (active_cell(i)==1) then
+    !if (active_cell(i)==1) then
+
 
     B_norm=dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
     bx=q(i,iBx)/B_norm
@@ -441,14 +441,13 @@ subroutine effective_diffusion_coef_induction
     ! print*,'bz=',bz
 
 
-    eta_eff_yy(i) = (eta_o(i)+(bx**2+by**2)*eta_a(i))*clight**2 !Resistivities must be in cm^2/s
-    eta_eff_yz(i)=(bx*eta_h(i)+by*bz*eta_a(i))*clight**2
+    eta_eff_yy(i) = (eta_o(i)+(bx**2+by**2)*eta_a(i)) !Resistivities must be in cm^2/s--> that is why we call res_units in solve.f90 first.
+    eta_eff_yz(i)=(bx*eta_h(i)+by*bz*eta_a(i))
 
-    eta_eff_zy(i) = (by*bz*eta_a(i)-eta_h(i)*bx)*clight**2 !Resistivities must be in cm^2/s
-    eta_eff_zz(i)=(eta_o(i)+(bx**2+bz**2)*eta_a(i))*clight**2
+    eta_eff_zy(i) = (by*bz*eta_a(i)-eta_h(i)*bx) !Resistivities must be in cm^2/s
+    eta_eff_zz(i)=(eta_o(i)+(bx**2+bz**2)*eta_a(i))
 
-
-    endif
+    !end if
  end do
 
 ! print*,'eta_o=',eta_o
@@ -466,6 +465,31 @@ end subroutine effective_diffusion_coef_induction
 
 
 #if MHD==1
+subroutine res_units
+  use parameters
+  use commons
+  use units
+  use OMP_LIB 
+  implicit none
+  integer :: i
+
+  do i=1,ncells
+
+    eta_o(i) = eta_o(i)*clight**2/(4*pi) !from s to cm^2/s
+    eta_a(i) = eta_a(i)*clight**2/(4*pi)
+    eta_H(i) = eta_H(i)*clight**2/(4*pi)
+
+end do
+
+
+
+
+end subroutine res_units
+
+#endif
+
+
+#if MHD==1
 #if NDUST>0
 subroutine electric_field
   use parameters
@@ -476,12 +500,13 @@ subroutine electric_field
 
   implicit none
 
-  real(dp) :: B_norm,bx,by,bz,dxBy,dxBz,E_i_x,E_ohm_x,E_H_x,E_ad_x,E_i_y,E_ohm_y,E_H_y,E_ad_y,E_i_z,E_ohm_z,E_H_z,E_ad_z
+  real(dp) :: B_norm,bx,by,bz,E_i_x,E_ohm_x,E_H_x,E_ad_x,E_i_y,E_ohm_y,E_H_y,E_ad_y,E_i_z,E_ohm_z,E_H_z,E_ad_z
   real(dp) :: total_dust_current_x,total_dust_current_y,total_dust_current_z
   real(dp) :: v_e1x,v_e1y,v_e1z,v_e2x,v_e2y,v_e2z,v_e3x,v_e3y,v_e3z,v_i1x,v_i1y,v_i1z,v_i2x,v_i2y,v_i2z,v_i3x,v_i3y,v_i3z
-  real(dp) :: By_left,Bz_left,By_right,Bz_right,dBy,dBz
+  !real(dp) :: dBy,dBz
+  !real(dp) :: dxBy,dxBz
   real(dp), dimension(1:ncells) ::  Bym,Byp,Bzm,Bzp 
-  integer :: i,idust
+  integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx
 
     total_dust_current_x = 0.0d0
     total_dust_current_y = 0.0d0
@@ -489,13 +514,22 @@ subroutine electric_field
 
 
   do i=1,ncells
-    if(active_cell_predictor(i)==1) then
+    if(active_cell(i)==1) then
+
+        ix=ixx(i)
+        iy=iyy(i)
 
         if(slope_type>0) then
-            !il = icell(ix-1,iy)
-            !ir = icell(ix+1,iy)
-            dBy = slope_limit(2.0d0*(q(i,iBy) - q(i-1,iBy))/(dx(i,1)+dx(i-1,1)),2.0d0*(q(i+1,iBy) - q(i,iBy))/(dx(i+1,1)+dx(i,1)))
-            dBz = slope_limit(2.0d0*(q(i,iBz) - q(i-1,iBz))/(dx(i,1)+dx(i-1,1)),2.0d0*(q(i+1,iBz) - q(i,iBz))/(dx(i+1,1)+dx(i,1)))
+            il = icell(ix-1,iy)
+            ir = icell(ix+1,iy)
+            dBy = slope_limit(2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBy) - q(i,iBy))/(dx(ir,1)+dx(i,1)))
+            dBz = slope_limit(2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBz) - q(i,iBz))/(dx(ir,1)+dx(i,1)))
+
+            !dBy = 2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1))
+            !dBz = 2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1))
+
+            !Infer magnetic field at cell surfaces
+
 
             Bym(i) = q(i,iBy) + half*dBy*dx(i,1)
             Byp(i) = q(i,iBy) - half*dBy*dx(i,1)
@@ -513,20 +547,11 @@ subroutine electric_field
 
         do idust=1,ndust
 
-            total_dust_current_x = total_dust_current_x + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdx(idust))-q(i,ivx)) !Total (relative to neutral velocity) dust current
-            total_dust_current_y = total_dust_current_y + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdy(idust))-q(i,ivy))
-            total_dust_current_z = total_dust_current_z + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdz(idust))-q(i,ivz))
+            total_dust_current_x = total_dust_current_x + (4*pi/clight)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdx(idust))-q(i,ivx)) !Total (relative to neutral velocity) dust current
+            total_dust_current_y = total_dust_current_y + (4*pi/clight)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdy(idust))-q(i,ivy))
+            total_dust_current_z = total_dust_current_z + (4*pi/clight)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*(q(i,ivdz(idust))-q(i,ivz))!Charge!!
 
         end do
-
-        !Infer magnetic field at cell surfaces
-
-
-        By_left = Bym(i-1)
-        By_right = Byp(i)
-
-        Bz_left = Bzm(i-1)
-        Bz_right = Bzp(i)
 
 
 
@@ -538,25 +563,29 @@ subroutine electric_field
 
         ! dxBy=(qp(i,iBy,1)-qm(i,iBy,1))/dx(i,1)
         ! dxBz=(qp(i,iBz,1)-qm(i,iBz,1))/dx(i,1)
-        dxBy=(By_right-By_left)/dx(i,1)
-        dxBz=(Bz_right-Bz_left)/dx(i,1)
+        dxBy=(Bym(i)-Byp(i))/dx(i,1)
+        dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
 
 
-        E_i_x = -q(i,ivy)*q(i,iBz)+q(i,ivz)*q(i,iBy)
-        E_i_y = -q(i,ivz)*q(i,iBx)+q(i,ivx)*q(i,iBz)
-        E_i_z = -q(i,ivx)*q(i,iBy)+q(i,ivy)*q(i,iBx)
 
-        E_ohm_x = eta_o(i)*(-total_dust_current_x)
-        E_ohm_y = eta_o(i)*(-dxBz-total_dust_current_y)
-        E_ohm_z = eta_o(i)*(dxBy-total_dust_current_z)
 
-        E_H_x = eta_H(i)*(-bz*dxBz-bz*total_dust_current_y)
-        E_H_y = eta_H(i)*(-bx*dxBy-bx*total_dust_current_z+bz*total_dust_current_x)
-        E_H_z = eta_H(i)*(bx*dxBz+bx*total_dust_current_y+by*total_dust_current_x)
 
-        E_ad_x = eta_a(i)*(-(by**2+bz**2)*total_dust_current_x+bx*by*(dxBz+total_dust_current_y)+bx*bz*(total_dust_current_z-dxBy))
-        E_ad_y = eta_a(i)*(-(bx**2+bz**2)*(dxBz+total_dust_current_y)-by*bz*dxBy+bx*by*total_dust_current_x+by*bz*total_dust_current_z)
-        E_ad_z = eta_a(i)*((bx**2+by**2)*dxBy+by*bz*dxBz-(bx**2+by**2)*total_dust_current_z+bx*bz*total_dust_current_x+by*bz*total_dust_current_y)
+
+        E_i_x = (-q(i,ivy)*q(i,iBz)+q(i,ivz)*q(i,iBy))/clight
+        E_i_y = (-q(i,ivz)*q(i,iBx)+q(i,ivx)*q(i,iBz))/clight
+        E_i_z = (-q(i,ivx)*q(i,iBy)+q(i,ivy)*q(i,iBx))/clight
+
+        E_ohm_x = eta_o(i)*(-total_dust_current_x)/clight
+        E_ohm_y = eta_o(i)*(-dxBz-total_dust_current_y)/clight
+        E_ohm_z = eta_o(i)*(dxBy-total_dust_current_z)/clight
+
+        E_H_x = eta_H(i)*(-bz*dxBz-bz*total_dust_current_y)/clight
+        E_H_y = eta_H(i)*(-bx*dxBy-bx*total_dust_current_z+bz*total_dust_current_x)/clight
+        E_H_z = eta_H(i)*(bx*dxBz+bx*total_dust_current_y+by*total_dust_current_x)/clight
+
+        E_ad_x = eta_a(i)*(-(by**2+bz**2)*total_dust_current_x+bx*by*(dxBz+total_dust_current_y)+bx*bz*(total_dust_current_z-dxBy))/clight
+        E_ad_y = eta_a(i)*(-(bx**2+bz**2)*(dxBz+total_dust_current_y)-by*bz*dxBy+bx*by*total_dust_current_x+by*bz*total_dust_current_z)/clight
+        E_ad_z = eta_a(i)*((bx**2+by**2)*dxBy+by*bz*dxBz-(bx**2+by**2)*total_dust_current_z+bx*bz*total_dust_current_x+by*bz*total_dust_current_y)/clight
 
 
         E_x(i) = E_i_x + E_ohm_x + E_H_x + E_ad_x
@@ -591,13 +620,13 @@ subroutine electric_field
         v_i3y=(E_x(i)*bx+E_y(i)*by+E_z(i)*bz)*by
         v_i3z=(E_x(i)*bx+E_y(i)*by+E_z(i)*bz)*bz
 
-        v_e_x(i) = Hall_e(i)/B_norm*(v_e1x + v_e2x + v_e3x) + q(i,ivx)
-        v_e_y(i) = Hall_e(i)/B_norm*(v_e1y + v_e2y + v_e3y) + q(i,ivy)
-        v_e_z(i) = Hall_e(i)/B_norm*(v_e1z + v_e2z + v_e3z) + q(i,ivz)
+        v_e_x(i) = clight*Hall_e(i)/B_norm*(v_e1x + v_e2x + v_e3x) + q(i,ivx)
+        v_e_y(i) = clight*Hall_e(i)/B_norm*(v_e1y + v_e2y + v_e3y) + q(i,ivy)
+        v_e_z(i) = clight*Hall_e(i)/B_norm*(v_e1z + v_e2z + v_e3z) + q(i,ivz)
 
-        v_i_x(i) = Hall_i(i)/B_norm*(v_i1x + v_i2x + v_i3x) + q(i,ivx)
-        v_i_y(i) = Hall_i(i)/B_norm*(v_i1y + v_i2y + v_i3y) + q(i,ivy)
-        v_i_z(i) = Hall_i(i)/B_norm*(v_i1z + v_i2z + v_i3z) + q(i,ivz)
+        v_i_x(i) = clight*Hall_i(i)/B_norm*(v_i1x + v_i2x + v_i3x) + q(i,ivx)
+        v_i_y(i) = clight*Hall_i(i)/B_norm*(v_i1y + v_i2y + v_i3y) + q(i,ivy)
+        v_i_z(i) = clight*Hall_i(i)/B_norm*(v_i1z + v_i2z + v_i3z) + q(i,ivz)
 
 
 
@@ -605,10 +634,44 @@ subroutine electric_field
  end do
 
 
-
-
-
-
 end subroutine electric_field
+#endif 
+#endif
+
+
+#if MHD==1
+#if NDUST>0
+subroutine Lorentz_force
+  use parameters
+  use commons
+  use units
+  use OMP_LIB 
+
+  implicit none
+  integer :: i,idust
+
+
+!if (active_cell)
+  do i=1,ncells
+      do idust=1,ndust
+         FLor_x_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_x(i) + q(i,ivdy(idust))/clight*q(i,iBz) - q(i,ivdz(idust))/clight*q(i,iBy)) !Check expression
+         FLor_y_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_y(i) + q(i,ivdz(idust))/clight*q(i,iBx) - q(i,ivdx(idust))/clight*q(i,iBz))
+         FLor_z_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_z(i) + q(i,ivdx(idust))/clight*q(i,iBy) - q(i,ivdy(idust))/clight*q(i,iBx))
+
+      end do
+
+     FLor_x(i) = (e_el_stat/clight*ni(i)*(E_x(i) + v_i_y(i)/clight*q(i,iBz) - v_i_z(i)/clight*q(i,iBy)) - e_el_stat/clight*ne(i)*(E_x(i) + v_e_y(i)/clight*q(i,iBz) - v_e_z(i)/clight*q(i,iBy))) !ions + electrons. Check units
+     FLor_y(i) = (e_el_stat/clight*ni(i)*(E_y(i) + v_i_z(i)/clight*q(i,iBx) - v_i_x(i)/clight*q(i,iBz)) - e_el_stat/clight*ne(i)*(E_y(i) + v_e_z(i)/clight*q(i,iBx) - v_e_x(i)/clight*q(i,iBz))) !ions + electrons. Check units
+     FLor_z(i) = (e_el_stat/clight*ni(i)*(E_z(i) + v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx)) - e_el_stat/clight*ne(i)*(E_z(i) + v_e_x(i)/clight*q(i,iBy) - v_e_y(i)/clight*q(i,iBx)))!ions + electrons. Check units
+    ! FLor_x(i) = q(i,ivy)*q(i,iBz) - q(i,ivz)*q(i,iBy)
+    ! FLor_y(i) = q(i,ivz)*q(i,iBx) - q(i,ivx)*q(i,iBz)
+    ! FLor_z(i) = q(i,ivx)*q(i,iBy) - q(i,ivy)*q(i,iBx)
+
+
+
+  end do
+
+
+end subroutine Lorentz_force
 #endif 
 #endif

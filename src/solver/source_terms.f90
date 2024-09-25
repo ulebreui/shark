@@ -114,13 +114,13 @@ if (dusty_nonideal_MHD) then
     end do
 
 
-    call effective_diffusion_coef_induction !To compute effective diffusion coeffs
+    !call effective_diffusion_coef_induction !To compute effective diffusion coeffs
 
     ! print*, "eta_eff_yy=",eta_eff_yy
     ! print*, "eta_eff_yz=",eta_eff_yz
 
 
-    !!!Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
+    !!Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
 
     !Hyper diffusion term for By
     call hyper_diffusion_induction_eq(S_diff(:),eta_eff_yy(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) !!Resistivities must be in cm^2/s
@@ -138,18 +138,22 @@ if (dusty_nonideal_MHD) then
     S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
 
 
-    ! !Lorentz forces
+    !Lorentz forces
     ! call electric_field !Compute electrical current as well as ions and electrons velocity
-    ! do idust=1,ndust
-    !     S_U(i,ivdx(idust)) = zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_x(i) + q(i,ivdy(idust))*q(i,iBz) - q(i,ivdz(idust))*q(i,iBy))*dt !Check expression
-    !     S_U(i,ivdy(idust)) = zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_y(i) + q(i,ivdz(idust))*q(i,iBx) - q(i,ivdx(idust))*q(i,iBz))*dt
-    !     S_U(i,ivdz(idust)) = zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_z(i) + q(i,ivdx(idust))*q(i,iBy) - q(i,ivdy(idust))*q(i,iBx))*dt
-    ! end do
+    ! call Lorentz_force
 
-    ! !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
-    ! S_U(i,ivx) = (e_el_stat/clight*ni(i)*(E_x(i) + v_i_y(i)*q(i,iBz) - v_i_z(i)*q(i,iBy)) - e_el_stat/clight*ne(i)*(E_x(i) + v_e_y(i)*q(i,iBz) - v_e_z(i)*q(i,iBy)))*dt !ions + electrons. Check units
-    ! S_U(i,ivy) = (e_el_stat/clight*ni(i)*(E_y(i) + v_i_z(i)*q(i,iBx) - v_i_x(i)*q(i,iBz)) - e_el_stat/clight*ne(i)*(E_y(i) + v_e_z(i)*q(i,iBx) - v_e_x(i)*q(i,iBz)))*dt !ions + electrons. Check units
-    ! S_U(i,ivz) = (e_el_stat/clight*ni(i)*(E_z(i) + v_i_x(i)*q(i,iBy) - v_i_y(i)*q(i,iBx)) - e_el_stat/clight*ne(i)*(E_z(i) + v_e_x(i)*q(i,iBy) - v_e_y(i)*q(i,iBx)) )*dt!ions + electrons. Check units
+    do idust=1,ndust
+        S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 
+        S_U(i,ivdy(idust)) = S_U(i,ivdy(idust)) + FLor_y_d(i,idust)*dt
+        S_U(i,ivdz(idust)) = S_U(i,ivdz(idust)) + FLor_z_d(i,idust)*dt
+
+
+    end do
+
+    !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
+    S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
+    S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
+    S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
 
 
 

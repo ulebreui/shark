@@ -1127,16 +1127,15 @@ subroutine solver_induction_llf(qleft,qright,flx,csl,csr,idim,i)
             rho_lft   = qleft(i_rho)
 
 
-
             !!RQ: zd et eta are space dependent --> left and right components should be included. (maybe to do in the future)
 
-            total_dust_current_x_lft = total_dust_current_x_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_lft = total_dust_current_y_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
-            total_dust_current_z_lft = total_dust_current_z_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
+            total_dust_current_x_lft = total_dust_current_x_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_lft = total_dust_current_y_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
+            total_dust_current_z_lft = total_dust_current_z_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
 
-            total_dust_current_x_rgt = total_dust_current_x_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_rgt = total_dust_current_y_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
-            total_dust_current_z_rgt = total_dust_current_z_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
+            total_dust_current_x_rgt = total_dust_current_x_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_rgt = total_dust_current_y_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
+            total_dust_current_z_rgt = total_dust_current_z_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
 
           end do
 
@@ -1145,7 +1144,7 @@ subroutine solver_induction_llf(qleft,qright,flx,csl,csr,idim,i)
         B_norm_rgt = SQRT(Bx_rgt**2+By_rgt**2+Bz_rgt**2) 
 
 
-        !Beware: here signs are inverted with respect to predictor step (fluxes are defined in the left-hand side of the equation)  
+        !Beware: here signs are reversed with respect to predictor step (fluxes are defined in the left-hand side of the equation)  
         flx_By_lft = By_lft*qleft(index_vn(idim)) - Bx_lft*qleft(index_vt(idim))
         flx_By_rgt = By_rgt*qright(index_vn(idim)) - Bx_rgt*qright(index_vt(idim)) !!Velocity of the neutrals (gas)
 
@@ -1341,13 +1340,13 @@ subroutine solver_induction_Huang_Bai(qleft,qright,flx,idim,i)
 
             !!RQ: zd et eta are space dependent --> left and right components should be included. (maybe to do in the future)
 
-            total_dust_current_x_lft = total_dust_current_x_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_lft = total_dust_current_y_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
-            total_dust_current_z_lft = total_dust_current_z_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
+            total_dust_current_x_lft = total_dust_current_x_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_lft = total_dust_current_y_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
+            total_dust_current_z_lft = total_dust_current_z_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
 
-            total_dust_current_x_rgt = total_dust_current_x_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_rgt = total_dust_current_y_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
-            total_dust_current_z_rgt = total_dust_current_z_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
+            total_dust_current_x_rgt = total_dust_current_x_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_rgt = total_dust_current_y_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
+            total_dust_current_z_rgt = total_dust_current_z_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
 
           end do
 
@@ -1356,7 +1355,7 @@ subroutine solver_induction_Huang_Bai(qleft,qright,flx,idim,i)
         B_norm_rgt = SQRT(Bx_rgt**2+By_rgt**2+Bz_rgt**2) 
 
 
-        !Beware: here signs are inverted with respect to predictor step (fluxes are defined in the left-hand side of the equation)  
+        !Beware: here signs are reversed with respect to predictor step (fluxes are defined in the left-hand side of the equation)  
         flx_By_lft = By_lft*qleft(index_vn(idim)) - Bx_lft*qleft(index_vt(idim))
         flx_By_rgt = By_rgt*qright(index_vn(idim)) - Bx_rgt*qright(index_vt(idim)) !!Velocity of the neutrals (gas)
 
@@ -1482,12 +1481,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
     flx_Bx_lft = 0.0d0
     flx_Bx_rgt = 0.0d0
-
-    flx_By_lft = By_lft*u_lft - Bx_lft*v_lft
-    flx_By_rgt = By_rgt*u_rgt - Bx_rgt*v_rgt
-
-    flx_Bz_lft = Bz_lft*u_lft - Bx_lft*w_lft
-    flx_Bz_rgt = Bz_rgt*u_rgt - Bx_rgt*w_rgt    
+   
 
 
 
@@ -1537,13 +1531,13 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
             !!RQ: zd et eta are space dependent --> left and right components should be included. (maybe to do in the future)
 
-            total_dust_current_x_lft = total_dust_current_x_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_lft = total_dust_current_y_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
-            total_dust_current_z_lft = total_dust_current_z_lft + (rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
+            total_dust_current_x_lft = total_dust_current_x_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_lft = total_dust_current_y_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
+            total_dust_current_z_lft = total_dust_current_z_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
 
-            total_dust_current_x_rgt = total_dust_current_x_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_rgt = total_dust_current_y_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
-            total_dust_current_z_rgt = total_dust_current_z_rgt + (rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
+            total_dust_current_x_rgt = total_dust_current_x_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_rgt = total_dust_current_y_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
+            total_dust_current_z_rgt = total_dust_current_z_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
 
           end do
 
@@ -1553,13 +1547,13 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 
         !Beware: here signs are inverted with respect to predictor step (fluxes are defined in the left-hand side of the equation)  
-        flx_By_lft = By_lft*qleft(index_vn(idim)) - Bx_lft*qleft(index_vt(idim))
-        flx_By_rgt = By_rgt*qright(index_vn(idim)) - Bx_rgt*qright(index_vt(idim)) !!Velocity of the neutrals (gas)
+         flx_By_lft = By_lft*qleft(index_vn(idim)) - Bx_lft*qleft(index_vt(idim))
+         flx_By_rgt = By_rgt*qright(index_vn(idim)) - Bx_rgt*qright(index_vt(idim)) !!Velocity of the neutrals (gas)
 
-        flx_Bz_lft = Bz_lft*qleft(index_vn(idim)) - Bx_lft*qleft(ivz)
-        flx_Bz_rgt = Bz_rgt*qright(index_vn(idim)) - Bx_rgt*qright(ivz)
+         flx_Bz_lft = Bz_lft*qleft(index_vn(idim)) - Bx_lft*qleft(ivz)
+         flx_Bz_rgt = Bz_rgt*qright(index_vn(idim)) - Bx_rgt*qright(ivz)
 
-        !Additional terms (By)
+        ! !Additional terms (By)
         flx_By_lft = flx_By_lft + eta_o(i)*total_dust_current_z_lft 
         flx_By_rgt = flx_By_rgt + eta_o(i)*total_dust_current_z_rgt 
 
@@ -1579,7 +1573,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
         flx_Bz_lft = flx_Bz_lft + eta_a(i)*Bz_lft/B_norm_lft*By_lft/B_norm_lft*total_dust_current_z_lft - eta_a(i)*(Bx_lft/B_norm_lft)**2*total_dust_current_y_lft - eta_a(i)*(Bz_lft/B_norm_lft)**2*total_dust_current_y_lft + eta_a(i)*Bx_lft/B_norm_lft*By_lft/B_norm_lft*total_dust_current_x_lft
         flx_Bz_rgt = flx_Bz_rgt + eta_a(i)*Bz_rgt/B_norm_rgt*By_rgt/B_norm_rgt*total_dust_current_z_rgt - eta_a(i)*(Bx_rgt/B_norm_rgt)**2*total_dust_current_y_rgt - eta_a(i)*(Bz_rgt/B_norm_rgt)**2*total_dust_current_y_rgt + eta_a(i)*Bx_rgt/B_norm_rgt*By_rgt/B_norm_rgt*total_dust_current_x_rgt
-    endif 
+     endif 
 
 #endif
 

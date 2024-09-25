@@ -6,8 +6,8 @@
   logical             ::  charging_all_the_time = .false.   ! Charging is activated
   logical             :: res_Marchand = .true.   ! To compute charges within Marchand algorithm
   logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
-  logical             :: electrons = .false.   ! To include electrons in the resistivitiy computation
-  logical             :: ions = .false.   
+  logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
+  logical             :: ions = .true.   
   logical             :: dusty_nonideal_MHD = .false.   
 
 
@@ -45,12 +45,19 @@
   real(dp), dimension(:), allocatable      :: v_e_y
   real(dp), dimension(:), allocatable      :: v_e_z
 
+  real(dp), dimension(:), allocatable      :: FLor_x
+  real(dp), dimension(:), allocatable      :: FLor_y
+  real(dp), dimension(:), allocatable      :: FLor_z
+
 
 
   real(dp), dimension(:), allocatable      :: psi_old
 
 #if NDUST>0
   real(dp), dimension(:,:), allocatable    :: zd, gamma_d
+  real(dp), dimension(:,:), allocatable      :: FLor_x_d
+  real(dp), dimension(:,:), allocatable      :: FLor_y_d
+  real(dp), dimension(:,:), allocatable      :: FLor_z_d
 #endif
 
   real(dp) :: B_0_lee       = 3d-5   ! Value of the B field at 10^4
@@ -61,4 +68,8 @@
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations
   real(dp):: x              = 5d-17  ! CR Ionisation rate
 
+  real(dp):: dxBy              = 0.0d0  ! CR Ionisation rate
+  real(dp):: dxBz              = 0.0d0  ! CR Ionisation rate
+  real(dp):: dBy              = 1.0d0  ! CR Ionisation rate
+  real(dp):: dBz              = 1.0d0  ! CR Ionisation rate
 end module ionisation_commons

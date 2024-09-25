@@ -165,6 +165,11 @@ subroutine allocate_init
     allocate(v_i_x(1:ncells))
     allocate(v_i_y(1:ncells))
     allocate(v_i_z(1:ncells))
+    allocate(FLor_x(1:ncells))
+    allocate(FLor_y(1:ncells))
+    allocate(FLor_z(1:ncells))
+
+
 
 
     eta_a  =0.0d0
@@ -191,6 +196,10 @@ subroutine allocate_init
     v_i_x=0.0d0
     v_i_y=0.0d0
     v_i_z=0.0d0
+    FLor_x = 0.0d0
+    FLor_y = 0.0d0
+    FLor_z = 0.0d0
+
 
   endif
 

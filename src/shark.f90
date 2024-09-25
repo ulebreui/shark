@@ -7,6 +7,7 @@ program shark
   implicit none
   integer::clock_rate, clock_max,t1, t2
 
+  external :: electric_field
   ! Hello message to the user
   call prompt
 

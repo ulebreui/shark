@@ -259,18 +259,16 @@ subroutine predictor
             dwx   = dq(i,ivz_spe,1)
 
 
-
-
             !!RQ: zd et eta are space dependent and as such corresponding derivatives should be included. The current state of this routine is approximate. 
 
 
-            total_dust_current_x = total_dust_current_x + (r_rho/mdust(i,idust))*zd(i,idust)*(u-q(i,ivx)) !Total (relative to neutral velocity) dust current
-            total_dust_current_y = total_dust_current_y + (r_rho/mdust(i,idust))*zd(i,idust)*(v-q(i,ivy))
-            total_dust_current_z = total_dust_current_z + (r_rho/mdust(i,idust))*zd(i,idust)*(w-q(i,ivz))
+            total_dust_current_x = total_dust_current_x + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(u-q(i,ivx)) !Total (relative to neutral velocity) dust current
+            total_dust_current_y = total_dust_current_y + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(v-q(i,ivy))
+            total_dust_current_z = total_dust_current_z + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(w-q(i,ivz))
 
-            derivative_total_dust_current_x = total_dust_current_x + (r_rho/mdust(i,idust))*zd(i,idust)*(dux-dq(i,ivx,1)) 
-            derivative_total_dust_current_y = total_dust_current_y + (r_rho/mdust(i,idust))*zd(i,idust)*(dvx-dq(i,ivy,1))
-            derivative_total_dust_current_z = total_dust_current_z + (r_rho/mdust(i,idust))*zd(i,idust)*(dwx-dq(i,ivz,1))
+            derivative_total_dust_current_x = derivative_total_dust_current_x + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dux-dq(i,ivx,1)) 
+            derivative_total_dust_current_y = derivative_total_dust_current_y + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dvx-dq(i,ivy,1))
+            derivative_total_dust_current_z = derivative_total_dust_current_z + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dwx-dq(i,ivz,1))
 
           end do
       endif
@@ -320,35 +318,24 @@ subroutine predictor
         sw0    = sw0 - u*w    /radii_c(i)
 #endif
 #if MHD==1
-
-    if (idust==i_coupled_species .and. dusty_nonideal_MHD .eqv. .false.) then
+!Valid only for GEOM==0 since the s are overwritten
+    if (idust==i_coupled_species) then
+        if(dusty_nonideal_MHD .eqv. .false.) then
         sBy   = -u*dBy_x + Bx*dvx - By*dux
         sBz   = -u*dBz_x + Bx*dwx - Bz*dux
-    endif
+    
         su0   = -u*dux-v*duy - By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x
         sv0   = -u*dvx-v*dvy + Bx*dBy_x/r_rho
         sw0   = -u*dwx-v*dwy + Bx*dBz_x/r_rho
+        endif
 
-    if (dusty_nonideal_MHD .and. idust==1) then !Do it just once in the idust loop due to the summation 
+    endif
+
+    if (dusty_nonideal_MHD) then 
 
         su0   = -u*dux-v*duy !Lorentz forces are source terms --> do not appear here
         sv0   = -u*dvx-v*dvy
         sw0   = -u*dwx-v*dwy 
-
-        !There are more conservative terms in the induction equation (a lot more!)
-        !This part accounts for multiple dust species
-
-        sBy = -q(i,ivx)*dBy_x + Bx*dq(i,ivy,1) - By*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
-        sBy = sBy -eta_o(i)*derivative_total_dust_current_z !conservative term associated to Ohm resistivity
-        sBy = sBy + eta_H(i)*Bx/B_norm*derivative_total_dust_current_y + eta_H(i)*total_dust_current_y*dBx_over_Bnorm + eta_H(i)*By/B_norm*derivative_total_dust_current_x + eta_H(i)*total_dust_current_x*dBy_over_Bnorm !Hall related
-        sBy = sBy + eta_a(i)*dbybz*total_dust_current_y + eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_y - 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_z - eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_z - 2*eta_a(i)*By/B_norm*dBy_over_Bnorm*total_dust_current_z - eta_a(i)*(By/B_norm)**2*derivative_total_dust_current_z + eta_a(i)*dbxbz*total_dust_current_x + eta_a(i)*Bx/B_norm*Bz/B_norm*derivative_total_dust_current_x
-
-        !sBz --> substitute y and z indices + change signs for AD terms
-        sBz = -q(i,ivx)*dBz_x + Bx*dq(i,ivz,1) - Bz*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
-        sBz = sBz -eta_o(i)*derivative_total_dust_current_y !conservative term associated to Ohm resistivity
-        sBz = sBz + eta_H(i)*Bx/B_norm*derivative_total_dust_current_z + eta_H(i)*total_dust_current_z*dBx_over_Bnorm + eta_H(i)*Bz/B_norm*derivative_total_dust_current_x + eta_H(i)*total_dust_current_x*dBz_over_Bnorm !Hall related
-        sBz = sBz - eta_a(i)*dbybz*total_dust_current_z - eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_z + 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_y + eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_y + 2*eta_a(i)*Bz/B_norm*dBz_over_Bnorm*total_dust_current_y + eta_a(i)*(Bz/B_norm)**2*derivative_total_dust_current_y - eta_a(i)*dbybx*total_dust_current_x - eta_a(i)*Bx/B_norm*By/B_norm*derivative_total_dust_current_x
-
 
     endif
 
@@ -423,10 +410,30 @@ subroutine predictor
 #endif
     end do
 #endif
-      end do
+      end do !dust loop
 #endif
 
 #if MHD==1
+
+
+    if (dusty_nonideal_MHD) then
+        !There are more conservative terms in the induction equation (a lot more!)
+        !This part accounts for multiple dust species
+
+        sBy = -q(i,ivx)*dBy_x + Bx*dq(i,ivy,1) - By*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
+        sBy = sBy -eta_o(i)*derivative_total_dust_current_z !conservative term associated to Ohm resistivity
+        sBy = sBy + eta_H(i)*Bx/B_norm*derivative_total_dust_current_y + eta_H(i)*total_dust_current_y*dBx_over_Bnorm + eta_H(i)*By/B_norm*derivative_total_dust_current_x + eta_H(i)*total_dust_current_x*dBy_over_Bnorm !Hall related
+        sBy = sBy + eta_a(i)*dbybz*total_dust_current_y + eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_y - 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_z - eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_z - 2*eta_a(i)*By/B_norm*dBy_over_Bnorm*total_dust_current_z - eta_a(i)*(By/B_norm)**2*derivative_total_dust_current_z + eta_a(i)*dbxbz*total_dust_current_x + eta_a(i)*Bx/B_norm*Bz/B_norm*derivative_total_dust_current_x
+
+        !sBz --> substitute y and z indices + change signs for AD terms
+        sBz = -q(i,ivx)*dBz_x + Bx*dq(i,ivz,1) - Bz*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
+        sBz = sBz -eta_o(i)*derivative_total_dust_current_y !conservative term associated to Ohm resistivity
+        sBz = sBz + eta_H(i)*Bx/B_norm*derivative_total_dust_current_z + eta_H(i)*total_dust_current_z*dBx_over_Bnorm + eta_H(i)*Bz/B_norm*derivative_total_dust_current_x + eta_H(i)*total_dust_current_x*dBz_over_Bnorm !Hall related
+        sBz = sBz - eta_a(i)*dbybz*total_dust_current_z - eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_z + 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_y + eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_y + 2*eta_a(i)*Bz/B_norm*dBz_over_Bnorm*total_dust_current_y + eta_a(i)*(Bz/B_norm)**2*derivative_total_dust_current_y - eta_a(i)*dbybx*total_dust_current_x - eta_a(i)*Bx/B_norm*By/B_norm*derivative_total_dust_current_x
+    
+    endif
+
+
     do idim=1,ndim
         ddxm = dx(i,idim)
         ddxp = dx(i,idim)
@@ -556,7 +563,7 @@ subroutine add_delta_u
           
         endif
 
-        call solve_wrapper(qleft,qright,flx,csl,csr,2)
+        call solve_wrapper(qleft,qright,flx,csl,csr,2,i)
 
         do ivar=1,nvar
             flux(i,ivar,2)=flx(ivar) 

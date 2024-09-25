@@ -31,8 +31,24 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
+
   if(charging)   call charge !Set res_Marchand=True to compute charges AND res
-  if(dust_inertia) call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
+  if(dust_inertia) then
+    call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
+    ! print *,'eta_o=', eta_o(i)
+    ! print *,'eta_a=',eta_a(i)
+    ! print *,'eta_h=',eta_h(i)
+
+    call res_units !Needed for the resistivities to be in cm^2/s
+    call effective_diffusion_coef_induction
+    ! print *,'eta_eff_yz=', eta_eff_yz(i)
+    ! print *,'eta_eff_zz=',eta_eff_zz(i)
+
+   call electric_field
+   call Lorentz_force
+
+  endif
+
   call system_clock ( t4, clock_rate, clock_max )
 
   ! We compute the stability timestep
@@ -51,7 +67,19 @@ subroutine solve(verbose,outputing)
 
 
   ! Source terms are computed and added to u_prim
+  call effective_diffusion_coef_induction !To compute effective diffusion coeffs
+  call electric_field
+
   call source_terms
+     ! print*, 'dxBy=', dxBy
+     ! print*, 'dxBz=', dxBz
+    ! print *, 'Ex=', E_x(:)
+    ! print *, 'Ey=', E_y(:)
+  ! print *, 'Ez=', E_z(:)
+    ! print*, 'By=', q(:,iBy)
+    ! print*, 'Bz=', q(:,iBz)
+     ! print*, 'FL=', FLor_x_d(:,:)
+     ! print*, 'FL=', FLor_x_d(:,:)
 
 
   if(fargo) call fargo_scheme
