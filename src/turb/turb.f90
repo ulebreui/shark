@@ -154,12 +154,12 @@ subroutine compute_rms_velocity
 
   implicit none
 
-  real(dp) :: mass 
+  real(dp) :: lenght 
   real (dp) :: vx_mean,vy_mean,vz_mean
   integer :: i
 
 
-  mass = 0.0d0 !To be reset to 0
+  lenght = 0.0d0 !To be reset to 0
   vx_mean=0.0d0
   vy_mean=0.0d0
   vz_mean=0.0d0
@@ -174,7 +174,7 @@ subroutine compute_rms_velocity
   do i=1,ncells
     if(active_cell(i)==1)then !Exclude ghost cells
 
-    mass = mass + q(i,irho)  !Here we assume delta_x to be constant 
+    lenght = lenght + dx(i,1)  !Here we assume delta_x to be constant 
 
     endif
   end do
@@ -183,9 +183,9 @@ subroutine compute_rms_velocity
   do i=1,ncells
     if(active_cell(i)==1)then
 
-    vx_mean = vx_mean + q(i,ivx)/mass
-    vy_mean = vy_mean + q(i,ivy)/mass   
-    vz_mean = vz_mean + q(i,ivz)/mass
+    vx_mean = vx_mean + q(i,ivx)*dx(i,1)/lenght
+    vy_mean = vy_mean + q(i,ivy)*dx(i,1)/lenght   
+    vz_mean = vz_mean + q(i,ivz)*dx(i,1)/lenght
 
     endif
   end do
@@ -193,9 +193,9 @@ subroutine compute_rms_velocity
   do i=1,ncells
     if(active_cell(i)==1)then
 
-    V_rms = V_rms + (q(i,ivx)-vx_mean)**2/mass !This is V_rms**2
-    Vy_rms = Vy_rms + (q(i,ivy)-vy_mean)**2/mass
-    Vz_rms = Vz_rms + (q(i,ivz)-vz_mean)**2/mass
+    V_rms = V_rms + (q(i,ivx)-vx_mean)**2*dx(i,1)/lenght !This is V_rms**2
+    Vy_rms = Vy_rms + (q(i,ivy)-vy_mean)**2*dx(i,1)/lenght
+    Vz_rms = Vz_rms + (q(i,ivz)-vz_mean)**2*dx(i,1)/lenght
 
     endif
   end do

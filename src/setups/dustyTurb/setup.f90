@@ -178,7 +178,7 @@ subroutine setup
 #if MHD==1
 if(beta_0>0) then
 
-     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
+     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/dsqrt(beta_0) !todo : display
 
 endif
 #endif
