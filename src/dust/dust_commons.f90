@@ -69,6 +69,8 @@ module dust_parameters
   real(dp):: slope_mono  = 3.5d0   ! Index of power law monomer size distribution
   real(dp):: alpha_turb  = 1.5d0
   real(dp):: sminstep    = 1d-5
+
+  real(dp):: dv_coll = 0.0d0
 end module dust_parameters
 
 module dust_commons
@@ -88,6 +90,7 @@ module dust_commons
   real(dp), dimension(:,:), allocatable    :: tstop
   real(dp), dimension(:,:), allocatable    :: tcoag
   real(dp), dimension(:,:), allocatable    :: St
+
 
 
   ! Indices of the variables

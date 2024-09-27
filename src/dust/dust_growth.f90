@@ -133,6 +133,8 @@ subroutine dust_growth(verbose)
            if (charging) then !Else, eta_a is not allocated
                if(ambigrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_ad**2.)
            end if
+
+           dv_coll = max(dv_coll,dvij(idust,jdust)) !for printing
         end do
      end do
 
@@ -167,7 +169,11 @@ subroutine dust_growth(verbose)
                     f_frag = max(min((Ecol-0.1d0*Ebr)/(4.9d0*Ebr),1.0d0),0.0d0)
 
                     if (SI) then
-                     f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/(0.9*vfrag),1.0d0),0.0d0) ! velocity threshold
+                     !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/(0.9d0*vfrag),1.0d0),0.0d0) ! velocity threshold
+                     if (dvij(idust,jdust) < vfrag) f_frag = 0.0d0
+                     if (dvij(idust,jdust) > vfrag) f_frag = 1.0d0
+
+
                     endif
 
                  endif

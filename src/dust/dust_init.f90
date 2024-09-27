@@ -120,6 +120,7 @@ subroutine allocate_dust
   allocate(St(1:ncells,1:ndust))
 
 
+
   allocate(force_dust(1:ncells,1:3,1:ndust))
   allocate(irhod(1:ndust))
   allocate(ivdx(1:ndust))
@@ -144,6 +145,7 @@ subroutine allocate_dust
   tstop = 0.0d0
   tcoag = 0.0d0
   St = 0.0d0
+
   force_dust=0.0d0
 
   if(charging) then

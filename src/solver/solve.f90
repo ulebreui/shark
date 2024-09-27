@@ -72,6 +72,8 @@ subroutine solve(verbose,outputing)
 
       endif
     endif
+    !print *, 'v_coll=', dv_coll !To print collisional velocities if needed
+
    endif
 
 #if NDUSTPSCAL > 0 
