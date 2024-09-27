@@ -262,13 +262,13 @@ subroutine predictor
             !!RQ: zd et eta are space dependent and as such corresponding derivatives should be included. The current state of this routine is approximate. 
 
 
-            total_dust_current_x = total_dust_current_x + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(u-q(i,ivx)) !Total (relative to neutral velocity) dust current
-            total_dust_current_y = total_dust_current_y + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(v-q(i,ivy))
-            total_dust_current_z = total_dust_current_z + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(w-q(i,ivz))
+            total_dust_current_x = total_dust_current_x + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(u-q(i,ivx)) !Total (relative to neutral velocity) dust current
+            total_dust_current_y = total_dust_current_y + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(v-q(i,ivy))
+            total_dust_current_z = total_dust_current_z + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(w-q(i,ivz))
 
-            derivative_total_dust_current_x = derivative_total_dust_current_x + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dux-dq(i,ivx,1)) 
-            derivative_total_dust_current_y = derivative_total_dust_current_y + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dvx-dq(i,ivy,1))
-            derivative_total_dust_current_z = derivative_total_dust_current_z + (4*pi/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dwx-dq(i,ivz,1))
+            derivative_total_dust_current_x = derivative_total_dust_current_x + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dux-dq(i,ivx,1)) 
+            derivative_total_dust_current_y = derivative_total_dust_current_y + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dvx-dq(i,ivy,1))
+            derivative_total_dust_current_z = derivative_total_dust_current_z + (1/clight)*(e_el_stat/clight)*(r_rho/mdust(i,idust))*zd(i,idust)*(dwx-dq(i,ivz,1))
 
           end do
       endif

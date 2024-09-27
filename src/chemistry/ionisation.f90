@@ -654,15 +654,15 @@ subroutine Lorentz_force
 !if (active_cell)
   do i=1,ncells
       do idust=1,ndust
-         FLor_x_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_x(i) + q(i,ivdy(idust))/clight*q(i,iBz) - q(i,ivdz(idust))/clight*q(i,iBy)) !Check expression
-         FLor_y_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_y(i) + q(i,ivdz(idust))/clight*q(i,iBx) - q(i,ivdx(idust))/clight*q(i,iBz))
-         FLor_z_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_z(i) + q(i,ivdx(idust))/clight*q(i,iBy) - q(i,ivdy(idust))/clight*q(i,iBx))
+         FLor_x_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_x(i) + (q(i,ivdy(idust))-q(i,ivy))/clight*q(i,iBz) - (q(i,ivdz(idust))-q(i,ivz))/clight*q(i,iBy)) !Check expression
+         FLor_y_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_y(i) + (q(i,ivdz(idust))-q(i,ivz))/clight*q(i,iBx) - (q(i,ivdx(idust))-q(i,ivx))/clight*q(i,iBz))
+         FLor_z_d(i,idust)=zd(i,idust)*e_el_stat/clight*(q(i,irhod(idust))/mdust(i,idust))*(E_z(i) + (q(i,ivdx(idust))-q(i,ivx))/clight*q(i,iBy) - (q(i,ivdy(idust))-q(i,ivy))/clight*q(i,iBx))
 
       end do
 
-     FLor_x(i) = (e_el_stat/clight*ni(i)*(E_x(i) + v_i_y(i)/clight*q(i,iBz) - v_i_z(i)/clight*q(i,iBy)) - e_el_stat/clight*ne(i)*(E_x(i) + v_e_y(i)/clight*q(i,iBz) - v_e_z(i)/clight*q(i,iBy))) !ions + electrons. Check units
-     FLor_y(i) = (e_el_stat/clight*ni(i)*(E_y(i) + v_i_z(i)/clight*q(i,iBx) - v_i_x(i)/clight*q(i,iBz)) - e_el_stat/clight*ne(i)*(E_y(i) + v_e_z(i)/clight*q(i,iBx) - v_e_x(i)/clight*q(i,iBz))) !ions + electrons. Check units
-     FLor_z(i) = (e_el_stat/clight*ni(i)*(E_z(i) + v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx)) - e_el_stat/clight*ne(i)*(E_z(i) + v_e_x(i)/clight*q(i,iBy) - v_e_y(i)/clight*q(i,iBx)))!ions + electrons. Check units
+     FLor_x(i) = (e_el_stat/clight*ni(i)*(E_x(i) + (v_i_y(i)-q(i,ivy))/clight*q(i,iBz) - (v_i_z(i)-q(i,ivz))/clight*q(i,iBy)) - e_el_stat/clight*ne(i)*(E_x(i) + (v_e_y(i)-q(i,ivy))/clight*q(i,iBz) - (v_e_z(i)-q(i,ivz))/clight*q(i,iBy))) !ions + electrons. Check units
+     FLor_y(i) = (e_el_stat/clight*ni(i)*(E_y(i) + (v_i_z(i)-q(i,ivz))/clight*q(i,iBx) - (v_i_x(i)-q(i,ivx))/clight*q(i,iBz)) - e_el_stat/clight*ne(i)*(E_y(i) + (v_e_z(i)-q(i,ivz))/clight*q(i,iBx) - (v_e_x(i)-q(i,ivx))/clight*q(i,iBz))) !ions + electrons. Check units
+     FLor_z(i) = (e_el_stat/clight*ni(i)*(E_z(i) + (v_i_x(i)-q(i,ivx))/clight*q(i,iBy) - (v_i_y(i)-q(i,ivy))/clight*q(i,iBx)) - e_el_stat/clight*ne(i)*(E_z(i) + (v_e_x(i)-q(i,ivx))/clight*q(i,iBy) - (v_e_y(i)-q(i,ivy))/clight*q(i,iBx)))!ions + electrons. Check units
     ! FLor_x(i) = q(i,ivy)*q(i,iBz) - q(i,ivz)*q(i,iBy)
     ! FLor_y(i) = q(i,ivz)*q(i,iBx) - q(i,ivx)*q(i,iBz)
     ! FLor_z(i) = q(i,ivx)*q(i,iBy) - q(i,ivy)*q(i,iBx)

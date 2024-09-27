@@ -1531,13 +1531,13 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
             !!RQ: zd et eta are space dependent --> left and right components should be included. (maybe to do in the future)
 
-            total_dust_current_x_lft = total_dust_current_x_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_lft = total_dust_current_y_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
-            total_dust_current_z_lft = total_dust_current_z_lft + (4*pi/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
+            total_dust_current_x_lft = total_dust_current_x_lft + (1/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(u_lft-qleft(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_lft = total_dust_current_y_lft + (1/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(v_lft-qleft(index_vt(idim)))
+            total_dust_current_z_lft = total_dust_current_z_lft + (1/clight)*e_el_stat/clight*(rho_lft/mdust(i,idust))*zd(i,idust)*(w_lft-qleft(ivz))
 
-            total_dust_current_x_rgt = total_dust_current_x_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
-            total_dust_current_y_rgt = total_dust_current_y_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
-            total_dust_current_z_rgt = total_dust_current_z_rgt + (4*pi/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
+            total_dust_current_x_rgt = total_dust_current_x_rgt + (1/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(u_rgt-qright(index_vn(idim))) !Total (relative to neutral velocity) dust current
+            total_dust_current_y_rgt = total_dust_current_y_rgt + (1/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(v_rgt-qright(index_vt(idim)))
+            total_dust_current_z_rgt = total_dust_current_z_rgt + (1/clight)*e_el_stat/clight*(rho_rgt/mdust(i,idust))*zd(i,idust)*(w_rgt-qright(ivz))
 
           end do
 
