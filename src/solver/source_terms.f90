@@ -114,13 +114,13 @@ if (dusty_nonideal_MHD) then
     end do
 
 
-    !call effective_diffusion_coef_induction !To compute effective diffusion coeffs
+    call effective_diffusion_coef_induction !To compute effective diffusion coeffs
 
     ! print*, "eta_eff_yy=",eta_eff_yy
     ! print*, "eta_eff_yz=",eta_eff_yz
 
 
-    !!Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
+    !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
 
     !Hyper diffusion term for By
     call hyper_diffusion_induction_eq(S_diff(:),eta_eff_yy(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) !!Resistivities must be in cm^2/s
@@ -136,28 +136,61 @@ if (dusty_nonideal_MHD) then
 
     call hyper_diffusion_induction_eq(S_diff(:),eta_eff_zz(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz)
     S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
+endif
+
+if (dusty_nonideal_MHD_no_electron) then
 
 
-    !Lorentz forces
-    ! call electric_field !Compute electrical current as well as ions and electrons velocity
-    ! call Lorentz_force
-
-    do idust=1,ndust
-        S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 
-        S_U(i,ivdy(idust)) = S_U(i,ivdy(idust)) + FLor_y_d(i,idust)*dt
-        S_U(i,ivdz(idust)) = S_U(i,ivdz(idust)) + FLor_z_d(i,idust)*dt
-
-
+    do ivar=1,nvar
+        S_diff(ivar)=0.0d0
     end do
 
-    !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
-    S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
-    S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
-    S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
+
+    call effective_diffusion_coef_induction !To compute effective diffusion coeffs
 
 
+
+    !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
+
+    !Hyper diffusion term for By
+    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
+    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
+
+    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
+    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
+
+
+    !Hyper diffusion term for Bz
+    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
+    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
+
+    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBz)
+    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
+ endif
+
+
+if (dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
+
+        !Lorentz forces
+        call electric_field !Compute electrical current as well as ions and electrons velocity
+        call Lorentz_force
+
+        do idust=1,ndust
+            S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 
+            S_U(i,ivdy(idust)) = S_U(i,ivdy(idust)) + FLor_y_d(i,idust)*dt
+            S_U(i,ivdz(idust)) = S_U(i,ivdz(idust)) + FLor_z_d(i,idust)*dt
+            !print *,'FLor_x_d(i,idust)',FLor_x_d(i,idust)
+
+
+         end do
+
+        ! ! ! !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
+        ! S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
+        ! S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
+        ! S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
 
 endif
+
 #endif
 #endif
 #endif

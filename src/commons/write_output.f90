@@ -123,6 +123,7 @@ subroutine output(iout)
    end do
    close(ilun)
 
+if (charging) then
   open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
    do i = 1,ncells
       !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
@@ -142,6 +143,7 @@ subroutine output(iout)
 
    end do
    close(ilun)
+endif
 #endif 
 
 #if NDUST>0

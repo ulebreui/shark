@@ -32,22 +32,38 @@ subroutine solve(verbose,outputing)
   call compute_tstop  !Re-calc distribution
 #endif
 
-  if(charging)   call charge !Set res_Marchand=True to compute charges AND res
+  if(charging) then
+    if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
+
+    if(analytical_charging) call analytical_charge
+  endif
+
+#if MHD==1
+#if NDUST>0
   if(dust_inertia) then
-    call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
-    ! print *,'eta_o=', eta_o(i)
-    ! print *,'eta_a=',eta_a(i)
-    ! print *,'eta_h=',eta_h(i)
 
-    call res_units !Needed for the resistivities to be in cm^2/s
-    call effective_diffusion_coef_induction
-    ! print *,'eta_eff_yz=', eta_eff_yz(i)
-    ! print *,'eta_eff_zz=',eta_eff_zz(i)
+    if(dusty_nonideal_MHD) then
+        call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
+        ! print *,'eta_o=', eta_o(i)
+        ! print *,'eta_a=',eta_a(i)
+        ! print *,'eta_h=',eta_h(i)
+! 
+        call res_units !Needed for the resistivities to be in cm^2/s
+        call effective_diffusion_coef_induction
 
-   call electric_field
-   call Lorentz_force
+    endif
+! 
+    if(dusty_nonideal_MHD_no_electron) then
+        call effective_diffusion_coef_induction
+
+
+       ! call electric_field
+       ! call Lorentz_force
+    endif
 
   endif
+#endif
+#endif
 
   call system_clock ( t4, clock_rate, clock_max )
 
@@ -67,8 +83,6 @@ subroutine solve(verbose,outputing)
 
 
   ! Source terms are computed and added to u_prim
-  call effective_diffusion_coef_induction !To compute effective diffusion coeffs
-  call electric_field
 
   call source_terms
      ! print*, 'dxBy=', dxBy

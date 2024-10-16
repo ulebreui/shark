@@ -5,7 +5,7 @@ subroutine read_ionisation_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/ionisation_params/charging,charging_all_the_time,B_0_lee,B_threshold,res_Marchand,dust_inertia,electrons,ions,dusty_nonideal_MHD
+  namelist/ionisation_params/charging,charging_all_the_time,B_0_lee,B_threshold,res_Marchand,dust_inertia,electrons,ions,dusty_nonideal_MHD,x,analytical_charging,dusty_nonideal_MHD_no_electron
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "ionisation_params namelist reading  !"
@@ -19,3 +19,7 @@ subroutine read_ionisation_params(ilun,nmlfile)
    end if
    
  end subroutine read_ionisation_params
+
+
+
+

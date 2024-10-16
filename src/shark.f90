@@ -7,7 +7,6 @@ program shark
   implicit none
   integer::clock_rate, clock_max,t1, t2
 
-  external :: electric_field
   ! Hello message to the user
   call prompt
 
@@ -57,7 +56,13 @@ subroutine time_loop
   continue_sim = .true.
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
-  if(charging) call charge
+  if(charging) then
+    if (analytical_charging .eqv. .false.) call charge
+
+#if NDUST>0
+    if (analytical_charging) call analytical_charge
+  endif
+#endif
 
   !if (dust_inertia) call resistivities_with_dust_inertia
 

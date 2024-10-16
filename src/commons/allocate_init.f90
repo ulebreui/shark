@@ -168,6 +168,11 @@ subroutine allocate_init
     allocate(FLor_x(1:ncells))
     allocate(FLor_y(1:ncells))
     allocate(FLor_z(1:ncells))
+    allocate(eta_eff_ohm(1:ncells))
+    allocate(eta_eff_Hall_y(1:ncells))
+    allocate(eta_eff_Hall_z(1:ncells))
+
+
 
 
 
@@ -185,8 +190,8 @@ subroutine allocate_init
     eta_eff_yz=0.0d0
     eta_eff_zy=0.0d0
     eta_eff_zz=0.0d0
-    Hall_i     =0.0d0
-    Hall_e     =0.0d0
+    Hall_i     =1.0d0 !Appears in denominators in godunov --> initialize at 1.0d0
+    Hall_e     =1.0d0
     E_x=0.0d0
     E_y=0.0d0
     E_z=0.0d0
@@ -199,6 +204,11 @@ subroutine allocate_init
     FLor_x = 0.0d0
     FLor_y = 0.0d0
     FLor_z = 0.0d0
+    eta_eff_ohm = 0.0d0
+    eta_eff_Hall_y = 0.0d0
+    eta_eff_Hall_z = 0.0d0
+
+
 
 
   endif

@@ -4,11 +4,14 @@
 
   logical             ::  charging              = .false.   ! Charging is activated
   logical             ::  charging_all_the_time = .false.   ! Charging is activated
+  logical             ::  analytical_charging = .false.   ! Prescription from (Fujii et. al 2011) and see Lebreuilly 2020.
   logical             :: res_Marchand = .true.   ! To compute charges within Marchand algorithm
   logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
   logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
   logical             :: ions = .true.   
-  logical             :: dusty_nonideal_MHD = .false.   
+  logical             :: dusty_nonideal_MHD = .false.
+  logical             :: dusty_nonideal_MHD_no_electron = .false.   
+   
 
 
 
@@ -22,6 +25,11 @@
   real(dp), dimension(:), allocatable      :: eta_eff_yz
   real(dp), dimension(:), allocatable      :: eta_eff_zy
   real(dp), dimension(:), allocatable      :: eta_eff_zz
+
+  real(dp), dimension(:), allocatable      :: eta_eff_ohm
+  real(dp), dimension(:), allocatable      :: eta_eff_Hall_y
+  real(dp), dimension(:), allocatable      :: eta_eff_Hall_z
+
 
 
   real(dp), dimension(:), allocatable      :: sigma_o
@@ -68,8 +76,8 @@
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations
   real(dp):: x              = 5d-17  ! CR Ionisation rate
 
-  real(dp):: dxBy              = 0.0d0  ! CR Ionisation rate
-  real(dp):: dxBz              = 0.0d0  ! CR Ionisation rate
-  real(dp):: dBy              = 1.0d0  ! CR Ionisation rate
-  real(dp):: dBz              = 1.0d0  ! CR Ionisation rate
+
+  real(dp) :: f_dust_charge = 0.0d0 !Derivative of function to solve in analytical charge scheme
+  real(dp) :: fprime_dust_charge = 0.0d0 !function to solve in analytical charge scheme
+
 end module ionisation_commons

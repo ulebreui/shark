@@ -262,6 +262,8 @@ subroutine add_driven_turb_kick
 
       u_prim(i,ivx) = mom_x + rho*ax_kick*dt
 
+#if NDUST>0
+
       if (turb_dust) then
 
         do idust=1,ndust
@@ -273,7 +275,7 @@ subroutine add_driven_turb_kick
 
         end do
       end if
-
+#endif
 
 
 
@@ -293,6 +295,7 @@ subroutine add_driven_turb_kick
       u_prim(i,ivy) = mom_y + rho*ay_kick*dt
       u_prim(i,ivz) = mom_z + rho*az_kick*dt
 
+#if NDUST>0
       if (turb_dust) then
 
         do idust=1,ndust
@@ -307,7 +310,7 @@ subroutine add_driven_turb_kick
 
         end do
       end if
-
+#endif
 
     end if 
 
