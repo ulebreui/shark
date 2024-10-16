@@ -711,12 +711,12 @@ subroutine electric_field
         dxBy=(Bym(i)-Byp(i))/dx(i,1)
         dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
 
-        ! E_x(i) = 1/(4*pi*e_el_stat*ni(i))*half*(2*q(i,iBz)*dxBz+2*q(i,iBy)*dxBy) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdy(idust))*q(i,iBz)-q(i,ivdz(idust))*q(i,iBy)) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdx(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivx)
-        ! E_y(i) = 1/(4*pi*e_el_stat*ni(i))*(-q(i,iBx)*dxBy) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdz(idust))*q(i,iBx)-q(i,ivdx(idust))*q(i,iBz)) + B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBz + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdy(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivy)
-        ! E_z(i) = 1/(4*pi*e_el_stat*ni(i))*(-q(i,iBx)*dxBz) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdx(idust))*q(i,iBy)-q(i,ivdy(idust))*q(i,iBx)) - B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBy + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdz(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivz)
-        E_x(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdy(idust))*q(i,iBz)-q(i,ivdz(idust))*q(i,iBy)) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdx(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivx)
-        E_y(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdz(idust))*q(i,iBx)-q(i,ivdx(idust))*q(i,iBz)) + B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBz + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdy(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivy)
-        E_z(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdx(idust))*q(i,iBy)-q(i,ivdy(idust))*q(i,iBx)) - B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBy + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdz(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivz)
+        E_x(i) = 1/(4*pi*e_el_stat*(ni(i)+ne(i)))*half*(2*q(i,iBz)*dxBz+2*q(i,iBy)*dxBy) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdy(idust))*q(i,iBz)-q(i,ivdz(idust))*q(i,iBy)) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdx(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivx)
+        E_y(i) = 1/(4*pi*e_el_stat*(ni(i)+ne(i)))*(-q(i,iBx)*dxBy) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdz(idust))*q(i,iBx)-q(i,ivdx(idust))*q(i,iBz)) + B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBz + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdy(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivy)
+        E_z(i) = 1/(4*pi*e_el_stat*(ni(i)+ne(i)))*(-q(i,iBx)*dxBz) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdx(idust))*q(i,iBy)-q(i,ivdy(idust))*q(i,iBx)) - B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBy + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdz(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivz)
+        ! E_x(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdy(idust))*q(i,iBz)-q(i,ivdz(idust))*q(i,iBy)) + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdx(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivx)
+        ! E_y(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdz(idust))*q(i,iBx)-q(i,ivdx(idust))*q(i,iBz)) + B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBz + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdy(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivy)
+        ! E_z(i) =  (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/clight/(ni(i)+ne(i))*(q(i,ivdx(idust))*q(i,iBy)-q(i,ivdy(idust))*q(i,iBx)) - B_norm/(4*pi*Hall_i(i)*e_el_stat*(ni(i)+ne(i)))*dxBy + (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)*B_norm/(clight*Hall_i(i)*(ni(i)+ne(i)))*q(i,ivdz(idust)) + B_norm/(clight*Hall_i(i))*q(i,ivz)
 
 
         v_i_x(i) =  -(q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/(ni(i)+ne(i))*q(i,ivdx(idust))
@@ -882,6 +882,7 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
             endif
 
 
+#if MHD==1
 
              !Hall factors
 
@@ -910,6 +911,7 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
              Hall_e(i) = omegas_el*t_sel
              Hall_i(i) = omegas_ions*t_sions
 
+#endif
 
 
         end do

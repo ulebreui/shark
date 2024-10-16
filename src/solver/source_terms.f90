@@ -184,10 +184,10 @@ if (dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
 
          end do
 
-        ! ! ! !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
-        ! S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
-        ! S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
-        ! S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
+        ! ! !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
+        S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
+        S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
+        S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
 
 endif
 
