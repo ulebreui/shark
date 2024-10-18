@@ -34,13 +34,13 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-
+#if NDUST>0
   if(charging) then
     if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
 
     if(analytical_charging) call analytical_charge
   endif
-
+#endif
 #if MHD==1
 #if NDUST>0
   if(dust_inertia) then
