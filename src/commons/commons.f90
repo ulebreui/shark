@@ -44,6 +44,7 @@ module commons
   real(dp), dimension(:), allocatable :: dx_l_cell
 #endif
 #endif
+
 #if GEOM==4
   ! 2D cylindrical geometry
   real(dp), dimension(:), allocatable :: height

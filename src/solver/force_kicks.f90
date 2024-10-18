@@ -39,3 +39,39 @@ end do
   !$OMP END PARALLEL 
 
 end subroutine kick
+
+
+! Force kick (if applicable)
+subroutine kick_q(coeffdt)
+  use parameters
+  use commons
+  use OMP_LIB
+  use units
+  implicit none
+  integer :: i,idust
+  real(dp) :: coeffdt
+
+  if(static) return
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
+  do i=1,ncells
+    if(active_cell(i)==1) then
+        q(i,ivx)  = q(i,ivx)  + coeffdt*dt*force(i,1)
+        q(i,ivy)  = q(i,ivy)  + coeffdt*dt*force(i,2)
+        q(i,ivz)  = q(i,ivz)  + coeffdt*dt*force(i,3)
+
+#if NDUST>0
+  do idust=1,ndust
+        q(i,ivdx(idust))            = q(i,ivdx(idust)) + coeffdt*dt*force_dust(i,1,idust)
+        q(i,ivdy(idust))            = q(i,ivdy(idust)) + coeffdt*dt*force_dust(i,2,idust)
+        q(i,ivdz(idust))            = q(i,ivdz(idust)) + coeffdt*dt*force_dust(i,3,idust)    
+  end do
+#endif
+  endif
+end do
+  !$OMP END DO
+  !$OMP END PARALLEL 
+
+end subroutine kick_q

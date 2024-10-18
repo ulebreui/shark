@@ -43,9 +43,9 @@ subroutine setup
       cs(icell(ix,iy))                        = cs0
 #if NDUST>0
      do idust=1,ndust
-        q(icell(ix,iy),irhod(idust))   = dust2gas*q(icell(ix,iy),irho)
-        epsilondust(icell(ix,iy),idust)= dust2gas
-        sdust(icell(ix,iy),idust)      = scut/unit_l ! The 2H term comes from the vertical integration 
+        q(icell(ix,iy),irhod(idust))    = dust2gas*q(icell(ix,iy),irho)
+        epsilondust(icell(ix,iy),idust) = dust2gas
+        sdust(icell(ix,iy),idust)       = scut/unit_l ! The 2H term comes from the vertical integration 
         sminstep=scut
 #if NDUSTPSCAL>0
         if(growth_step)  q(icell(ix,iy),idust_pscal(idust,1)) = scut/unit_l
@@ -134,12 +134,14 @@ subroutine read_setup_params(ilun,nmlfile)
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
+
    read(13,setup_params,IOSTAT=io)
    rewind(13)
    if (io/=0) then
       write(*,*) 'Invalid line in the setup namelist'
       stop
    end if
+
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
 
@@ -206,7 +208,7 @@ subroutine setup_inloop
    real(dp)::rho_old,vx_old,vy_old,vz_old
    real(dp)::rho_init,vx_init,vy_init,vz_init
 
-
+   return
 
    !Relaxation in the inner boundary
   !$OMP PARALLEL &
@@ -217,18 +219,18 @@ subroutine setup_inloop
     if(active_cell(i)==1) then
             if(radii_c(i)<r_relax) then
                 t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3)) ! Relaxation timescale
-                rho_init= uprim_condinit(i,irho)
-                vx_init = uprim_condinit(i,ivx)/rho_init
-                vy_init = uprim_condinit(i,ivy)/rho_init
-                vz_init = uprim_condinit(i,ivz)/rho_init
-                rho_old = u_prim(i,irho)
-                vx_old  = u_prim(i,ivx)/rho_old
-                vy_old  = u_prim(i,ivy)/rho_old
-                vz_old  = u_prim(i,ivz)/rho_old
-                rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
-                vx_new  = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
-                vy_new  = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
-                vz_new  = ( vz_init)  * (1.0d0-exp(-dt/t_rel)) +  vz_old*exp(-dt/t_rel)
+                rho_init = uprim_condinit(i,irho)
+                vx_init  = uprim_condinit(i,ivx)/rho_init
+                vy_init  = uprim_condinit(i,ivy)/rho_init
+                vz_init  = uprim_condinit(i,ivz)/rho_init
+                rho_old  = u_prim(i,irho)
+                vx_old   = u_prim(i,ivx)/rho_old
+                vy_old   = u_prim(i,ivy)/rho_old
+                vz_old   = u_prim(i,ivz)/rho_old
+                rho_new  = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
+                vx_new   = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
+                vy_new   = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
+                vz_new   = ( vz_init)  * (1.0d0-exp(-dt/t_rel)) +  vz_old*exp(-dt/t_rel)
                 u_prim(i,irho) = rho_new
                 u_prim(i,ivx)  = rho_new*vx_new
                 u_prim(i,ivy)  = rho_new*vy_new

@@ -99,7 +99,15 @@ subroutine output(iout)
    close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
   do i = 1,ncells
+#if GEOM<2
    if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
+#endif
+#if GEOM==2
+   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P*unit_l
+#endif
+#if GEOM>2
+   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
+#endif
   end do
   close(ilun)
 #if MHD==1

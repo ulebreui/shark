@@ -177,11 +177,11 @@ subroutine predictor
 #endif
 #endif      
     
-    ! if(force_kick) then
-    !     su0    = su0 + force(i,1)
-    !     sv0    = sv0 + force(i,2)
-    !     sw0    = sw0 + force(i,3)
-    ! endif
+    if(force_kick) then
+        su0    = su0 + force(i,1)
+        sv0    = sv0 + force(i,2)
+        sw0    = sw0 + force(i,3)
+    endif
 
 
     !direction x
@@ -276,11 +276,11 @@ subroutine predictor
 #endif
 #endif   
 
-    ! if(force_kick) then
-    !     su0    = su0 + force_dust(i,1,idust)
-    !     sv0    = sv0 + force_dust(i,2,idust)
-    !     sw0    = sw0 + force_dust(i,3,idust)
-    ! endif
+    if(force_kick) then
+        su0    = su0 + force_dust(i,1,idust)
+        sv0    = sv0 + force_dust(i,2,idust)
+        sw0    = sw0 + force_dust(i,3,idust)
+    endif
 
     !Direction x
     dx_loc=dx(i,1)
@@ -326,14 +326,14 @@ subroutine predictor
         ! Direction x
 
         dx_loc=dx(i,1)
-        qm(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  + half*drx   *dx_loc
-        qp(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   *dx_loc
+        qm(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  + half*drx   * dx_loc
+        qp(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   * dx_loc
         
         ! Direction y
 #if NY>1
        dx_loc=radius_polar*dx(i,2)
-       qm(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   *dx_loc
-       qp(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   *dx_loc
+       qm(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   * dx_loc
+       qp(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   * dx_loc
 #endif
     end do
 #endif
@@ -567,6 +567,9 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
     call solver_dust_hll(qleft,qright,flx,idim)
 #endif
 
+#if SOLVERDUST==3
+    call solver_hllc_dust(qleft,qright,flx,csl,csr,idim)
+#endif
 #endif
 
 ! Then te magnetic field

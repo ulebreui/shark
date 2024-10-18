@@ -18,8 +18,11 @@ subroutine solve(verbose,outputing)
   call system_clock ( t1, clock_rate, clock_max )
 
   call apply_boundaries !Boundaries are applied here.
-  if(force_kick) call kick(0.5d0)
+  !if(force_kick) call kick(0.5d0)
+
   call ctoprim
+
+
   call system_clock ( t2, clock_rate, clock_max )
 
 
@@ -38,7 +41,8 @@ subroutine solve(verbose,outputing)
 
   ! We compute the stability timestep
   call courant
-
+  if(force_kick) call kick(1.0d0)
+  !if(force_kick) call kick_q(0.5d0)
   call system_clock ( t5, clock_rate, clock_max )
   
   ! Predictor step. Variables are estimated at cell interfaces and half dt
@@ -67,8 +71,8 @@ subroutine solve(verbose,outputing)
 #endif
   call system_clock ( t9, clock_rate, clock_max )
 
-  ! if(force_kick) call kick(1.0d0)
-  if(force_kick) call kick(0.5d0)
+ !if(force_kick) call kick(1.0d0)
+ !if(force_kick) call kick(0.5d0)
 
 #if TURB>0
 !Maybe to put in force_kick

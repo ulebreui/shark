@@ -215,7 +215,7 @@ subroutine gridinit_disk_log(rmax_x,inner_r)
 #if GRIDSPACE==1
   print *,'You are using a log space cylindrical grid.'
 
-  zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx))
+  zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx-1))
   do iy = 1, ny_max
     do ix = 1, nx_max
       radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))

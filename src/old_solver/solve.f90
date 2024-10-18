@@ -155,7 +155,7 @@ subroutine ctoprim
     if(iso_cs.ge.0) q(i,iP)  =  u_prim(i,irho)*cs(i)**2
 #if NDUST>0
     do idust = 1,ndust
-        q(i,irhod(idust)) = u_prim(i,irhod(idust))
+        q(i,irhod(idust))  = u_prim(i,irhod(idust))
         q(i,ivdx(idust))   = u_prim(i,ivdx(idust))/u_prim(i,irhod(idust))
 #if NY>1       
         q(i,ivdy(idust))  = u_prim(i,ivdy(idust))/u_prim(i,irhod(idust))

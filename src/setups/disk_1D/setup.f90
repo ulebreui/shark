@@ -203,7 +203,7 @@ subroutine setup_inloop
 
    implicit none
    integer :: i,ix,iy,idust,icell,ivar,ixx,iyy,ipscal
-   real(dp):: unit_lout,sigma_out,t_rel,vrout,maccreted
+   real(dp):: unit_lout,sigma_out,t_rel,vrout,maccreted,expe
    real(dp)::rho_new,vx_new,vy_new
    real(dp)::rho_old,vx_old,vy_old
    real(dp)::rho_init,vx_init,vy_init
@@ -218,7 +218,7 @@ subroutine setup_inloop
    do i=1,ncells
     if(active_cell(i)==1) then
             if(radii_c(i)<r_relax) then
-                t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3)) ! Relaxation timescale
+                t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3))-n_rel*2.0d0*pi/(dsqrt(Mstar/(smooth_r)**3)) ! Relaxation timescale
                 rho_init= uprim_condinit(i,irho)
                 vx_init = uprim_condinit(i,ivx)/rho_init
                 vy_init = uprim_condinit(i,ivy)/rho_init

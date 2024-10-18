@@ -6,7 +6,7 @@ subroutine setup
 
   real(dp) :: rho_cloud,r_cloud,mcloud,perturbation,cs0,rr,r_cyl
   real(dp) :: rmax,vol_tot,xx,yy,x_soft,y_soft,Omega,H,cutoff,T_100
-  real(dp) :: B_field,vfarg
+  real(dp) :: B_field,vfarg,ts_loc,eta_drift,Stokes_num
   integer  :: i,idust,imax,ix,iy,icell,ivar
 
   call allocate_init
@@ -36,7 +36,7 @@ subroutine setup
         vfarg = -omega*rr
         fargo_velocity(icell(ix,iy))=vfarg
       endif
-      q(icell(ix,iy),irho)                    = sigma_R0*(R0_disk/rr)*exp(-rr/R_out_disk)
+      q(icell(ix,iy),irho)                      = sigma_R0*(R0_disk/rr)*exp(-rr/R_out_disk)
       if(test_planet_disk) q(icell(ix,iy),irho) = sigma_R0*(rr/R0_disk)**(-0.5d0)
 
       !if(rr>R_out_disk) q(icell(ix,iy),irho)  = sigma_R0*(R0_disk/rr)*decrease_density
@@ -57,7 +57,10 @@ subroutine setup
 #if NDUSTPSCAL>0
         if(growth_step)  q(icell(ix,iy),idust_pscal(idust,1)) = scut/unit_l
 #endif
-        q(icell(ix,iy),ivdx(idust))    = 0.0d0
+        ts_loc=  sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(icell(ix,iy),idust)/(q(icell(ix,iy),irho)/(sqrt(2.0d0*pi)*H)*cs(icell(ix,iy)))
+        eta_drift = sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))-1.0d0
+        Stokes_num= ts_loc * omega
+        q(icell(ix,iy),ivdx(idust))    = eta_drift*omega*rr/(Stokes_num+1.0d0/Stokes_num)
         q(icell(ix,iy),ivdy(idust))    = omega*rr+vfarg
      end do
 #endif
@@ -223,7 +226,7 @@ subroutine setup_inloop
    do i=1,ncells
     if(active_cell(i)==1) then
             if(radii_c(i)<r_relax) then
-                t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3)) ! Relaxation timescale
+                t_rel=n_rel*2.0d0*pi/(sqrt(Mstar/(radii_c(i))**3))-n_rel*2.0d0*pi/(sqrt(Mstar/smooth_r**3))! Relaxation timescale
                 rho_init= uprim_condinit(i,irho)
                 vx_init = uprim_condinit(i,ivx)/rho_init
                 vy_init = uprim_condinit(i,ivy)/rho_init
@@ -277,39 +280,6 @@ subroutine setup_inloop
         end do
     end do
 
-
-   ! This is now done in the boundary routine
-   ! !Accretion in the outer boundary
-   ! if(accretion) then
-   ! ix = last_active
-   !  do iy=first_active_y,last_active_y
-   !      if(phi(icell(ix,iy))<phi_mom*pi) then
-   !          maccreted = (M_acc/(365.25*24.*3600.)*unit_t)
-   !          vrout     = cs(icell(ix,iy))
-   !          sigma_out = maccreted/vrout/phi_mom/pi
-   !          !print *, sigma_out
-   !          u_prim(icell(ix,iy),irho) = u_prim(icell(ix,iy),irho) + sigma_out
-   !          u_prim(icell(ix,iy),ivx)  = u_prim(icell(ix,iy),ivx)  - sigma_out*vrout
-   !          u_prim(icell(ix,iy),ivy)  = u_prim(icell(ix,iy),ivy)  + sigma_out*L_out*unit_lout/R_out_disk
-   !      endif
-   ! end do
-   ! endif
-     !Accretion in the outer boundary
-   ! if(accretion) then
-   !  ix = last_active
-   !  do iy=first_active_y,last_active_y
-   !      if(phi(icell(ix,iy))<phi_mom*pi) then
-   !          maccreted = M_acc/(365.25*24.*3600.)*unit_t
-   !          vrout     = cs(icell(ix,iy))
-   !          sigma_out = maccreted/vrout/phi_mom/pi/box_l
-
-   !          u_prim(icell(ix,iy),irho) =  sigma_out
-   !          u_prim(icell(ix,iy),ivx)  =- sigma_out*vrout
-   !          u_prim(icell(ix,iy),ivy)  =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
-   !      endif
-   ! end do
-   ! endif
-   ! call apply_boundaries !Boundaries are applied here.
 
 end subroutine setup_inloop
 
@@ -445,12 +415,12 @@ subroutine compute_tstop
 
   implicit none
   integer :: i,idust
-  real(dp):: xx, yy, H,rr,sloc,x_stokes,f_Stokes,St1,vdrift_turb,sd,nd,t_L
+  real(dp):: xx, yy, H,rr,sloc,x_stokes,f_Stokes,St1,vdrift_turb,sd,nd,t_L,Hd
   !Re-calc distribution
 
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,idust,H,rr,sloc,x_stokes,f_Stokes,St1,vdrift_turb,sd,nd,t_L)
+  !$OMP PRIVATE(i,idust,H,rr,sloc,x_stokes,f_Stokes,St1,vdrift_turb,sd,nd,t_L,Hd)
   !$OMP DO
   do i=1,ncells
    if(active_cell(i)==1) then
@@ -464,13 +434,18 @@ subroutine compute_tstop
         if(growth_step) sloc = q(i,idust_pscal(idust,1)) 
 #endif    
         tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)/(sqrt(2.0d0*pi)*H)*cs(i))
-        x_stokes       = 1.0d0
-        f_Stokes       = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
-        St1            = tstop(i,idust)/t_l
-        vdrift_turb    = sqrt(alpha_turb)*cs(i)*dsqrt(f_Stokes*St1)
-        sd             = q(i,idust_pscal(idust,1))
-        nd             = q(i,irhod(idust))/(4./3.*pi*sd**3*rhograin/unit_d)/(sqrt(2.0d0*pi)*H)
-        tcoag(i,idust) = 3.0d0/(pi*sd**2*nd*vdrift_turb)/min(1.0d0,-log10(vdrift_turb*unit_v/vfrag)/log10(5.))
+        if(growth_step) then
+
+            x_stokes       = 1.0d0
+            f_Stokes       = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
+            St1            = tstop(i,idust)/t_l
+            vdrift_turb    = sqrt(alpha_turb)*cs(i)*dsqrt(f_Stokes*St1)
+            sd             = q(i,idust_pscal(idust,1))
+            Hd             = H*min(1.0d0,sqrt(alpha_turb/(min(St1,0.5d0/(1.0d0+St1**2)))))
+            nd             = q(i,irhod(idust))/(4./3.*pi*sd**3*rhograin/unit_d)/(sqrt(2.0d0*pi)*Hd)
+            tcoag(i,idust) = 3.0d0/(pi*sd**2*nd*vdrift_turb)/min(1.0d0,-log10(vdrift_turb*unit_v/vfrag)/log10(5.))
+
+        endif
         end do
      end if
   end do

@@ -129,7 +129,7 @@ subroutine predictor
 #endif
       !First, we take care of the 1D terms 
       qpred(i,irho) = qpred(i,irho)   + half*dt*sr0
-      qpred(i,ivx)   = qpred(i,ivx)   + half*dt*su0
+      qpred(i,ivx)  = qpred(i,ivx)   + half*dt*su0
       qpred(i,iP)   = qpred(i,iP)     + half*dt*sP0
       !We now add the terms that are specific to 2D problems
 #if NY>1

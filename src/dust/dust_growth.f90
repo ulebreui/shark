@@ -69,14 +69,17 @@ subroutine dust_growth(verbose)
      ! Cell by cell-cycling
      time_growth  = 0.0d0
      niter_growth = 0
-     T            = barotrop(q(i,irho))
-     lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs_eos(T)*unit_v
-     vambi        = delta_vambi*clight**2*eta_a(i)/lambJ/(4.0d0*pi)
-     Reynolds     = 6.2d7*dsqrt(q(i,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
-     t_L          = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))/unit_t
-     t_eta        = t_L/dsqrt(Reynolds)
-     t_stop_loc   = 0.0d0
-
+     if(.not.dust_growth_disk) then
+      T            = barotrop(q(i,irho))
+      lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs_eos(T)*unit_v
+      vambi        = delta_vambi*clight**2*eta_a(i)/lambJ/(4.0d0*pi)
+      Reynolds     = 6.2d7*dsqrt(q(i,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
+      t_L          = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))/unit_t
+      t_eta        = t_L/dsqrt(Reynolds)
+      t_stop_loc   = 0.0d0
+     else
+      ! Add here the necessary to grow dust in the disk
+     endif
      do idust=1,ndust
         t_stop_loc(idust)=tstop(i,idust)
      end do

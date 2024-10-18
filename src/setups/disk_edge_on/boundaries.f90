@@ -32,15 +32,15 @@ subroutine apply_boundaries
          u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) 
          u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
       end do
-      u_prim(ibound_right,ivy)  = min(u_prim(ibound_right,ivy),0.0d0)
-      u_prim(ibound_left,ivy)   = max(u_prim(ibound_left,ivy) ,0.0d0)
+!       u_prim(ibound_right,ivy)  = min(u_prim(ibound_right,ivy),0.0d0)
+!       u_prim(ibound_left,ivy)   = max(u_prim(ibound_left,ivy) ,0.0d0)
 
-#if NDUST>0
-        do idust=1,ndust
-           u_prim(ibound_right,ivdy(idust))  = min(u_prim(ibound_right,ivdy(idust)),0.0d0)
-           u_prim(ibound_left,ivdy(idust))   = max(u_prim(ibound_left,ivdy(idust)) ,0.0d0)      
-        end do
-#endif
+! #if NDUST>0
+!         do idust=1,ndust
+!            u_prim(ibound_right,ivdy(idust))  = min(u_prim(ibound_right,ivdy(idust)),0.0d0)
+!            u_prim(ibound_left,ivdy(idust))   = max(u_prim(ibound_left,ivdy(idust)) ,0.0d0)      
+!         end do
+! #endif
    end do
 
    !stop
@@ -57,14 +57,14 @@ subroutine apply_boundaries
             u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) 
             u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
          end do     
-         u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
-         u_prim(ibound_left,ivx)   = max(u_prim(ibound_left,ivx) ,0.0d0)
-#if NDUST>0
-        do idust=1,ndust
-           u_prim(ibound_right,ivdx(idust))  = min(u_prim(ibound_right,ivdx(idust)),0.0d0)
-           u_prim(ibound_left,ivdx(idust))   = max(u_prim(ibound_left,ivdx(idust)) ,0.0d0)      
-        end do
-#endif
+!          u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
+!          u_prim(ibound_left,ivx)   = max(u_prim(ibound_left,ivx) ,0.0d0)
+! #if NDUST>0
+!         do idust=1,ndust
+!            u_prim(ibound_right,ivdx(idust))  = min(u_prim(ibound_right,ivdx(idust)),0.0d0)
+!            u_prim(ibound_left,ivdx(idust))   = max(u_prim(ibound_left,ivdx(idust)) ,0.0d0)      
+!         end do
+! #endif
       end do
       !stop
   end do
