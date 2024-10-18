@@ -18,7 +18,11 @@ subroutine predictor
   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,dcen,dsgn,dlim,slop,radius_polar
 
 
-  real(dp) :: dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz
+  real(dp) :: dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z
+  real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd
+  real(dp) :: total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd
+  real(dp) :: vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a
+  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni
   integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
@@ -36,8 +40,7 @@ subroutine predictor
   ! Computes primitive variables
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz)
-  
+  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z,dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd,total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd,vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a,nd_zd_over_ni,dHall_i,dni,dne,dB_over_hall,dndzd_over_ni)
   drx   = 0.0d0 
   dpx   = 0.0d0  
   dry   = 0.0d0 
@@ -59,6 +62,29 @@ subroutine predictor
   sBx   = 0.0d0
   sBy   = 0.0d0
   sBz   = 0.0d0
+  B_norm = 0.0d0
+  dB_norm = 0.0d0
+  dBx_over_Bnorm = 0.0d0
+  dBy_over_Bnorm = 0.0d0
+  dBz_over_Bnorm = 0.0d0
+  dbybz = 0.0d0
+  dbybx = 0.0d0
+  dbxbz = 0.0d0
+  deta_a = 0.0d0
+  deta_h = 0.0d0
+  deta_o = 0.0d0
+  dzd = 0.0d0
+  vz_derivative_total_nd_zd_eta_o = 0.0d0
+  vy_derivative_total_nd_zd_eta_o = 0.0d0
+  vx_derivative_total_nd_zd_eta_h = 0.0d0
+  vy_derivative_total_nd_zd_eta_h = 0.0d0
+  vz_derivative_total_nd_zd_eta_h = 0.0d0
+  vx_derivative_total_nd_zd_eta_a = 0.0d0
+  vy_derivative_total_nd_zd_eta_a = 0.0d0
+  vz_derivative_total_nd_zd_eta_a = 0.0d0
+
+
+
 
   !$OMP DO
   do i=1,ncells
@@ -119,6 +145,43 @@ subroutine predictor
       dBx_x    = dq(i,iBx,1)
       dBy_x    = dq(i,iBy,1)
       dBz_x    = dq(i,iBz,1)
+      B_norm = dsqrt(Bx**2+By**2+Bz**2)
+      dB_norm = (2*Bx*dBx_x+2*By*dBy_x+2*Bz*dBz_x)/(2*SQRT(Bx**2+By**2+Bz**2))
+      dBx_over_Bnorm = (dBx_x*B_norm-Bx*dB_norm)/B_norm**2
+      dBy_over_Bnorm = (dBy_x*B_norm-By*dB_norm)/B_norm**2
+      dBz_over_Bnorm = (dBz_x*B_norm-Bz*dB_norm)/B_norm**2
+      dbybz = dBy_over_Bnorm*Bz/B_norm + By/B_norm*dBz_over_Bnorm
+      dbybx = dBy_over_Bnorm*Bx/B_norm + By/B_norm*dBx_over_Bnorm
+      dbxbz = dBx_over_Bnorm*Bz/B_norm + Bx/B_norm*dBz_over_Bnorm
+
+      if (dusty_nonideal_MHD) then
+          deta_o = slope_limit(2.0d0*(eta_o(i) - eta_o(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_o(ir) - eta_o(i))/(dx(ir,1)+dx(i,1)))
+          deta_h = slope_limit(2.0d0*(eta_h(i) - eta_h(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_h(ir) - eta_h(i))/(dx(ir,1)+dx(i,1)))
+          deta_a = slope_limit(2.0d0*(eta_a(i) - eta_a(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_a(ir) - eta_a(i))/(dx(ir,1)+dx(i,1)))
+      endif
+
+       if (dusty_nonideal_MHD_no_electron) then
+          dHall_i = slope_limit(2.0d0*(Hall_i(i) - Hall_i(il))/(dx(i,1)+dx(il,1)),2.0d0*(Hall_i(ir) - Hall_i(i))/(dx(ir,1)+dx(i,1)))
+          dni = slope_limit(2.0d0*(ni(i) - ni(il))/(dx(i,1)+dx(il,1)),2.0d0*(ni(ir) - ni(i))/(dx(ir,1)+dx(i,1)))
+          dne = slope_limit(2.0d0*(ne(i) - ne(il))/(dx(i,1)+dx(il,1)),2.0d0*(ne(ir) - ne(i))/(dx(ir,1)+dx(i,1)))
+          if(electrons .eqv. .false.) dne = 0.0d0  
+
+          idust = i_coupled_species
+
+          dzd = slope_limit(2.0d0*(zd(i,idust) - zd(il,idust))/(dx(i,1)+dx(il,1)),2.0d0*(zd(ir,idust) - zd(i,idust))/(dx(ir,1)+dx(i,1)))
+          dB_over_hall = (dB_norm*Hall_i(i)-B_norm*dHall_i)/Hall_i(i)**2 !Initialize Hall_i =/ 0 to avoid Nan at first timestep
+          dndzd_over_ni = ((dq(i,irhod(idust),1)/mdust(i,idust)*zd(i,idust)+q(i,irhod(idust))/mdust(i,idust)*dzd)*(ni(i)+ne(i)) - (q(i,irhod(idust))/mdust(i,idust)*zd(i,idust))*(dni+dne))/(ni(i)+ne(i))**2
+          ! print *,'dzd',dzd
+          ! print *,'dni',dni
+          ! print *,'dne',dne
+          ! print *,'dHall_i',dHall_i
+          ! print *,'dB_over_hall',dB_over_hall
+
+
+
+      endif
+           
+
 
 #endif
 
@@ -161,7 +224,7 @@ subroutine predictor
 
 #if MHD==1
 !If no dust, couple B to the gas
-#if NDUST==0 
+#if NDUST==0
     sBy   = -u*dBy_x + Bx*dvx - By*dux
     sBz   = -u*dBz_x + Bx*dwx - Bz*dux
     su0   = su0 - By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x/r_rho 
@@ -215,6 +278,77 @@ subroutine predictor
 
     ! Dust terms: same remark as for the gas
 #if NDUST>0
+
+      total_dust_current_x = 0.0d0
+      total_dust_current_y = 0.0d0
+      total_dust_current_z = 0.0d0
+      derivative_total_dust_current_x = 0.0d0
+      derivative_total_dust_current_y = 0.0d0
+      derivative_total_dust_current_z = 0.0d0
+
+      total_nd_zd_vx = 0.0d0
+      total_nd_zd_vy = 0.0d0
+      total_nd_zd_vz = 0.0d0
+
+      vx_derivative_total_nd_zd = 0.0d0
+      vy_derivative_total_nd_zd = 0.0d0
+      vz_derivative_total_nd_zd = 0.0d0
+
+
+      if (dusty_nonideal_MHD) then    
+          do idust=1,ndust  !!Quantities needed for non-ideal dusty MHD (1D only) 
+            irho_spe = irhod(idust)
+            ivx_spe  = ivdx(idust)
+            ivy_spe  = ivdy(idust) 
+            ivz_spe  = ivdz(idust)
+            r_rho = q(i,irho_spe)
+            u     = q(i,ivx_spe)
+            v     = q(i,ivy_spe)
+            w     = q(i,ivz_spe)
+            drx   = dq(i,irho_spe,1)
+            dux   = dq(i,ivx_spe,1)
+            dvx   = dq(i,ivy_spe,1)
+            dwx   = dq(i,ivz_spe,1)
+
+            dzd = slope_limit(2.0d0*(zd(i,idust) - zd(il,idust))/(dx(i,1)+dx(il,1)),2.0d0*(zd(ir,idust) - zd(i,idust))/(dx(ir,1)+dx(i,1)))
+
+
+            !!RQ: zd et eta are space dependent and as such corresponding derivatives should be included. The current state of this routine is approximate. 
+
+
+            total_dust_current_x = total_dust_current_x + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(u-q(i,ivx)) !Total (relative to neutral velocity) dust current
+            total_dust_current_y = total_dust_current_y + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(v-q(i,ivy))
+            total_dust_current_z = total_dust_current_z + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(w-q(i,ivz))
+
+            derivative_total_dust_current_x = derivative_total_dust_current_x + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(dux-dq(i,ivx,1)) 
+            derivative_total_dust_current_y = derivative_total_dust_current_y + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(dvx-dq(i,ivy,1))
+            derivative_total_dust_current_z = derivative_total_dust_current_z + (1/clight)*(e_el_stat)*(r_rho/mdust(i,idust))*zd(i,idust)*(dwx-dq(i,ivz,1))
+
+            total_nd_zd_vx = total_nd_zd_vx + (r_rho/mdust(i,idust))*zd(i,idust)*(e_el_stat)*(u-q(i,ivx))
+            total_nd_zd_vy = total_nd_zd_vy + (r_rho/mdust(i,idust))*zd(i,idust)*(e_el_stat)*(v-q(i,ivy))
+            total_nd_zd_vz = total_nd_zd_vz + (r_rho/mdust(i,idust))*zd(i,idust)*(e_el_stat)*(w-q(i,ivz))
+
+            vx_derivative_total_nd_zd = vx_derivative_total_nd_zd + ( (e_el_stat)*dzd*(r_rho/mdust(i,idust)) + (e_el_stat)*zd(i,idust)*drx/mdust(i,idust) )*(u-q(i,ivx)) 
+            vy_derivative_total_nd_zd = vy_derivative_total_nd_zd + ( (e_el_stat)*dzd*(r_rho/mdust(i,idust)) + (e_el_stat)*zd(i,idust)*drx/mdust(i,idust) )*(v-q(i,ivy)) 
+            vz_derivative_total_nd_zd = vz_derivative_total_nd_zd + ( (e_el_stat)*dzd*(r_rho/mdust(i,idust)) + (e_el_stat)*zd(i,idust)*drx/mdust(i,idust) )*(w-q(i,ivz))
+
+          end do
+
+          vy_derivative_total_nd_zd_eta_o = (1/clight)*(deta_o*total_nd_zd_vy + eta_o(i)*vy_derivative_total_nd_zd)
+          vz_derivative_total_nd_zd_eta_o = (1/clight)*(deta_o*total_nd_zd_vz + eta_o(i)*vz_derivative_total_nd_zd)
+
+          vx_derivative_total_nd_zd_eta_h = (1/clight)*(deta_h*total_nd_zd_vx + eta_h(i)*vx_derivative_total_nd_zd)
+          vy_derivative_total_nd_zd_eta_h = (1/clight)*(deta_h*total_nd_zd_vy + eta_h(i)*vy_derivative_total_nd_zd)
+          vz_derivative_total_nd_zd_eta_h = (1/clight)*(deta_h*total_nd_zd_vz + eta_h(i)*vz_derivative_total_nd_zd)
+
+
+          vx_derivative_total_nd_zd_eta_a = (1/clight)*(deta_a*total_nd_zd_vx + eta_a(i)*vx_derivative_total_nd_zd)
+          vy_derivative_total_nd_zd_eta_a = (1/clight)*(deta_a*total_nd_zd_vy + eta_a(i)*vy_derivative_total_nd_zd)
+          vz_derivative_total_nd_zd_eta_a = (1/clight)*(deta_a*total_nd_zd_vz + eta_a(i)*vz_derivative_total_nd_zd)
+
+      endif
+
+
       do idust=1,ndust
         irho_spe = irhod(idust)
         ivx_spe  = ivdx(idust)
@@ -259,14 +393,37 @@ subroutine predictor
         sw0    = sw0 - u*w    /radii_c(i)
 #endif
 #if MHD==1
-
+!Valid only for GEOM==0 since the s are overwritten
     if (idust==i_coupled_species) then
+        if(dusty_nonideal_MHD .eqv. .false.) then
+        if(dusty_nonideal_MHD_no_electron .eqv. .false.) then
         sBy   = -u*dBy_x + Bx*dvx - By*dux
         sBz   = -u*dBz_x + Bx*dwx - Bz*dux
-    endif
+
         su0   = -u*dux-v*duy - By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x
         sv0   = -u*dvx-v*dvy + Bx*dBy_x/r_rho
         sw0   = -u*dwx-v*dwy + Bx*dBz_x/r_rho
+
+
+
+        endif
+        endif
+
+    endif
+
+    if (dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then 
+
+        su0   = -u*dux-v*duy !Lorentz forces are source terms --> do not appear here
+        sv0   = -u*dvx-v*dvy
+        sw0   = -u*dwx-v*dwy 
+
+
+        ! su0   = -u*dux-v*duy - By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x
+        ! sv0   = -u*dvx-v*dvy + Bx*dBy_x/r_rho
+        ! sw0   = -u*dwx-v*dwy + Bx*dBz_x/r_rho
+    endif
+
+
 
 #endif
 #if GRAVITY==1
@@ -337,10 +494,81 @@ subroutine predictor
 #endif
     end do
 #endif
-      end do
+      end do !dust loop
 #endif
 
 #if MHD==1
+
+
+    if (dusty_nonideal_MHD) then
+        !There are more conservative terms in the induction equation (a lot more!)
+        !This part accounts for multiple dust species
+
+
+        sBy = q(i,ivx)*dBy_x + Bx*dq(i,ivy,1) - By*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
+        ! sBy = sBy - eta_o(i)*derivative_total_dust_current_z - vz_derivative_total_nd_zd_eta_o!conservative term associated to Ohm resistivity
+        ! sBy = sBy + eta_H(i)*Bx/B_norm*derivative_total_dust_current_y + eta_H(i)*total_dust_current_y*dBx_over_Bnorm + bx*vy_derivative_total_nd_zd_eta_h + eta_H(i)*By/B_norm*derivative_total_dust_current_x + eta_H(i)*total_dust_current_x*dBy_over_Bnorm + by*vx_derivative_total_nd_zd_eta_h !Hall related
+        ! sBy = sBy + eta_a(i)*dbybz*total_dust_current_y + eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_y + by*bz*vy_derivative_total_nd_zd_eta_a - 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_z - eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_z  - bx**2*vz_derivative_total_nd_zd_eta_a - 2*eta_a(i)*By/B_norm*dBy_over_Bnorm*total_dust_current_z - eta_a(i)*(By/B_norm)**2*derivative_total_dust_current_z - by**2*vz_derivative_total_nd_zd_eta_a + eta_a(i)*dbxbz*total_dust_current_x + eta_a(i)*Bx/B_norm*Bz/B_norm*derivative_total_dust_current_x + bx*bz*vx_derivative_total_nd_zd_eta_a
+
+        !sBz --> substitute y and z indices + change signs for AD and Ohm terms and second Hall term
+        sBz = -q(i,ivx)*dBz_x + Bx*dq(i,ivz,1) - Bz*dq(i,ivx,1) !"ideal term" --> features gas velocity and not dust velocity
+        ! sBz = sBz + eta_o(i)*derivative_total_dust_current_y + vy_derivative_total_nd_zd_eta_o!conservative term associated to Ohm resistivity
+        ! sBz = sBz + eta_H(i)*Bx/B_norm*derivative_total_dust_current_z + eta_H(i)*total_dust_current_z*dBx_over_Bnorm + bx*vz_derivative_total_nd_zd_eta_h - eta_H(i)*Bz/B_norm*derivative_total_dust_current_x - eta_H(i)*total_dust_current_x*dBz_over_Bnorm - bz*vx_derivative_total_nd_zd_eta_h!Hall related
+        ! sBz = sBz - eta_a(i)*dbybz*total_dust_current_z - eta_a(i)*By/B_norm*Bz/B_norm*derivative_total_dust_current_z + bz*by*vz_derivative_total_nd_zd_eta_a + 2*eta_a(i)*(Bx/B_norm)*dBx_over_Bnorm*total_dust_current_y + eta_a(i)*(Bx/B_norm)**2*derivative_total_dust_current_y + bx**2*vy_derivative_total_nd_zd_eta_a + 2*eta_a(i)*Bz/B_norm*dBz_over_Bnorm*total_dust_current_y + eta_a(i)*(Bz/B_norm)**2*derivative_total_dust_current_y + bz**2*vy_derivative_total_nd_zd_eta_a - eta_a(i)*dbybx*total_dust_current_x - eta_a(i)*Bx/B_norm*By/B_norm*derivative_total_dust_current_x - bx*by*vx_derivative_total_nd_zd_eta_a
+    
+    endif
+
+
+    if (dusty_nonideal_MHD_no_electron) then !A single grain only
+
+        sBy   = -u*dBy_x + Bx*dvx - By*dux
+        sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+
+        idust = i_coupled_species
+        nd_zd_over_ni = (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/(ni(i)+ne(i))
+
+        ! print *, 'nd_zd', nd_zd_over_ni
+        ! print *, 'dnd_zd', dndzd_over_ni
+        !   print *,'rhod',q(i,irhod(:))
+        !   print *,'zd',zd(i,:)
+        !   print *,'ni(:)',ni(i)
+        !   print *,'ne(:)',ne(i)
+           ! print *,'Hall',Hall_i(i)
+           ! print *,'dB_Hall',dB_over_hall
+           ! print *,'dHall',dHall_i
+           ! print *,'B_norm',B_norm
+           ! print *,'dB_norm',dB_norm
+
+           ! print *,'u',u
+           ! print *,'v',v
+           ! print *,'w',w
+           ! print *,'dux',dux
+           ! print *,'dvx',dvx
+           ! print *,'dq(i,ivz,1)',dq(i,ivz,1)
+           ! print *,'dq(i,ivz,1)',dq(i,ivz,1)
+
+
+
+        sBy = dndzd_over_ni*u*By + nd_zd_over_ni*(u*dBy_x + By*dux) - Bx*v*dndzd_over_ni - nd_zd_over_ni*Bx*dvx !"ideal term" 
+        sBy = sBy + dB_over_hall*(nd_zd_over_ni*w + q(i,ivz)) + B_norm/Hall_i(i)*(dndzd_over_ni*w + nd_zd_over_ni*dwx + dq(i,ivz,1)) 
+
+        ! !!change signs for extra non-ideal term
+        sBz = dndzd_over_ni*u*Bz + nd_zd_over_ni*(u*dBz_x + Bz*dux) - Bx*w*dndzd_over_ni - nd_zd_over_ni*Bx*dwx !"ideal term" 
+        sBz = sBz - dB_over_hall*(nd_zd_over_ni*v + q(i,ivy)) - B_norm/Hall_i(i)*(dndzd_over_ni*v + nd_zd_over_ni*dvx + dq(i,ivy,1))
+
+        ! nd_zd_over_ni = (q(i,irhod(idust))/mdust(i,idust))*zd(i,idust)/(ni(i)+ne(i))
+        !sBy = nd_zd_over_ni*(u*dBy_x + By*dux) - nd_zd_over_ni*Bx*dvx !"ideal term" 
+        ! !sBy = sBy + dB_over_hall*(nd_zd_over_ni*w + q(i,ivz)) + B_norm/Hall_i(i)*(dndzd_over_ni*w + nd_zd_over_ni*dwx + dq(i,ivz,1)) 
+
+        ! !!change signs for extra non-ideal term
+        !sBz =  nd_zd_over_ni*(u*dBz_x + Bz*dux) - nd_zd_over_ni*Bx*dwx !"ideal term" 
+        ! !sBz = sBz - dB_over_hall*(nd_zd_over_ni*v + q(i,ivy)) - B_norm/Hall_i(i)*(dndzd_over_ni*v + nd_zd_over_ni*dvx + dq(i,ivy,1))  
+
+    endif
+
+
+
+
     do idim=1,ndim
         ddxm = dx(i,idim)
         ddxp = dx(i,idim)
@@ -439,7 +667,7 @@ subroutine add_delta_u
           csr=sqrt(gamma*qright(iP)/qright(irho))
       endif
 
-      call solve_wrapper(qleft,qright,flx,csl,csr,1)
+      call solve_wrapper(qleft,qright,flx,csl,csr,1,i)
 
       do ivar=1,nvar
             flux(i,ivar,1)=flx(ivar) 
@@ -470,7 +698,7 @@ subroutine add_delta_u
           
         endif
 
-        call solve_wrapper(qleft,qright,flx,csl,csr,2)
+        call solve_wrapper(qleft,qright,flx,csl,csr,2,i)
 
         do ivar=1,nvar
             flux(i,ivar,2)=flx(ivar) 
@@ -524,7 +752,7 @@ end subroutine add_delta_u
 
 
 
-subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
+subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
  use hydro_solvers
  use parameters
  use commons
@@ -535,18 +763,18 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
  real(dp),dimension(1:nvar),intent(inout) :: flx
  real(dp) :: csl,csr
 
- integer  :: idim
+ integer  :: idim,i
 
 
  ! First the gas
 #if SOLVER==0        
-    call solver_llf(qleft,qright,flx,csl,csr,idim)
+    call solver_llf(qleft,qright,flx,csl,csr,idim,i)
 #endif
 #if SOLVER==1       
-    call solver_hll(qleft,qright,flx,csl,csr,idim)
+    call solver_hll(qleft,qright,flx,csl,csr,idim,i)
 #endif
 #if SOLVER==2        
-    call solver_hllc(qleft,qright,flx,csl,csr,idim)
+    call solver_hllc(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
  ! Then the dust
@@ -555,16 +783,16 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
 
 #if SOLVERDUST==0
 
-    call solver_dust_Huang_Bai(qleft,qright,flx,idim)
+    call solver_dust_Huang_Bai(qleft,qright,flx,idim,i)
 
 #endif
 
 #if SOLVERDUST==1
-    call solver_dust_llf(qleft,qright,flx,idim)
+    call solver_dust_llf(qleft,qright,flx,idim,i)
 #endif
 
 #if SOLVERDUST==2
-    call solver_dust_hll(qleft,qright,flx,idim)
+    call solver_dust_hll(qleft,qright,flx,idim,i)
 #endif
 
 #if SOLVERDUST==3
@@ -576,16 +804,16 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
 #if MHD==1
      
 #if SOLVERB==0
-    call solver_induction_llf(qleft,qright,flx,csl,csr,idim)
+    call solver_induction_llf(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 #if SOLVERB==1
 
-    call solver_induction_Huang_Bai(qleft,qright,flx,idim)
+    call solver_induction_Huang_Bai(qleft,qright,flx,idim,i)
 #endif
 
 #if SOLVERB==2
-    call solver_induction_hll(qleft,qright,flx,csl,csr,idim)
+    call solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 #endif

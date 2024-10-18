@@ -13,7 +13,6 @@ NDUST=0
 GEOM=0
 GRIDSPACE=0 #0 = linear, 1 = log ! Only for 2D disk
 TURB=0
-
 MHD = 0
 NDUSTPSCAL = 0 # number of dust passive scalars
 GRAVITY    = 0
@@ -68,14 +67,14 @@ BINDIR = .
 VPATH  = ../src:../src/commons:../src/grid:../src/turb:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/chemistry:../src/:../src/dust
 #############################################################################
 # All objects
-MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o 
+MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o newton_raphson.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
 ifeq ($(TURB),1)
 MODOBJ+=turb_commons.o
 endif
-MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o solvers.o allocate_init.o ionisation_utils.o ionisation.o grid.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o
+MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif

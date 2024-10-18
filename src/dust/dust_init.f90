@@ -146,8 +146,16 @@ subroutine allocate_dust
   if(charging) then
     allocate(gamma_d(1:ncells,1:ndust))
     allocate(zd(1:ncells,1:ndust))
+    allocate(FLor_x_d(1:ncells,1:ndust))
+    allocate(FLor_y_d(1:ncells,1:ndust))
+    allocate(FLor_z_d(1:ncells,1:ndust))
+
     gamma_d = 0.0d0
     zd      = 0.0d0
+    FLor_x_d = 0.0d0
+    FLor_y_d = 0.0d0
+    FLor_z_d = 0.0d0
+
   endif
 
 end subroutine allocate_dust

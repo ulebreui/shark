@@ -139,6 +139,7 @@ subroutine allocate_init
 #endif
 
 
+
   if(charging) then
     allocate(eta_a(1:ncells))
     allocate(eta_h(1:ncells))
@@ -149,6 +150,32 @@ subroutine allocate_init
     allocate(ni(1:ncells))
     allocate(ne(1:ncells))
     allocate(psi_old(1:ncells))
+    allocate(eta_eff_yy(1:ncells))
+    allocate(eta_eff_yz(1:ncells))
+    allocate(eta_eff_zy(1:ncells))
+    allocate(eta_eff_zz(1:ncells))
+    allocate(Hall_e(1:ncells))
+    allocate(Hall_i(1:ncells))
+    allocate(E_x(1:ncells))
+    allocate(E_y(1:ncells))
+    allocate(E_z(1:ncells))
+    allocate(v_e_x(1:ncells))
+    allocate(v_e_y(1:ncells))
+    allocate(v_e_z(1:ncells))
+    allocate(v_i_x(1:ncells))
+    allocate(v_i_y(1:ncells))
+    allocate(v_i_z(1:ncells))
+    allocate(FLor_x(1:ncells))
+    allocate(FLor_y(1:ncells))
+    allocate(FLor_z(1:ncells))
+    allocate(eta_eff_ohm(1:ncells))
+    allocate(eta_eff_Hall_y(1:ncells))
+    allocate(eta_eff_Hall_z(1:ncells))
+
+
+
+
+
 
     eta_a  =0.0d0
     eta_h  =0.0d0
@@ -159,6 +186,30 @@ subroutine allocate_init
     ni     =0.0d0
     ne     =0.0d0
     psi_old=0.0d0
+    eta_eff_yy=0.0d0
+    eta_eff_yz=0.0d0
+    eta_eff_zy=0.0d0
+    eta_eff_zz=0.0d0
+    Hall_i     =1.0d0 !Appears in denominators in godunov --> initialize at 1.0d0
+    Hall_e     =1.0d0
+    E_x=0.0d0
+    E_y=0.0d0
+    E_z=0.0d0
+    v_e_x=0.0d0
+    v_e_y=0.0d0
+    v_e_z=0.0d0
+    v_i_x=0.0d0
+    v_i_y=0.0d0
+    v_i_z=0.0d0
+    FLor_x = 0.0d0
+    FLor_y = 0.0d0
+    FLor_z = 0.0d0
+    eta_eff_ohm = 0.0d0
+    eta_eff_Hall_y = 0.0d0
+    eta_eff_Hall_z = 0.0d0
+
+
+
 
   endif
 

@@ -13,16 +13,16 @@ force_kick=.false.
 &SETUP_PARAMS
 M_cloud=1
 more_outputs=.true.
-ntimes_part=3430
+ntimes_part=3400
 /
 
 &DUST_PARAMS
 drag                = .true.  ! DUST DYNAMICS PARAMS
 dust_distribution   = 'mrn'   ! DUST DISTRIBUTION PARAMS
-smin     = 5d-7
-scutmin  = 1d-7
-scut     = 250d-7
-smax     = 1.0d0
+smin     = 1d-3
+scutmin  = 1d-3
+scut     = 1.1d-3
+smax     = 1.1d-3
 rhograin = 2.3d0
 dust2gas = 0.01d0
 mrn      = 3.5d0
@@ -54,6 +54,7 @@ res_Marchand=.false.
 dust_inertia=.true.
 electrons=.true.
 ions=.true.
+analytical_charging=.true.
 /
 
 

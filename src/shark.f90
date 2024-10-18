@@ -56,8 +56,16 @@ subroutine time_loop
   continue_sim = .true.
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
-  if(charging) call charge
-  if (dust_inertia) call resistivities_with_dust_inertia
+  if(charging) then
+    if (analytical_charging .eqv. .false.) call charge
+
+#if NDUST>0
+    if (analytical_charging) call analytical_charge
+  endif
+#endif
+
+  !if (dust_inertia) call resistivities_with_dust_inertia
+
   !Actual time loop, continues until continue_sim=.false.
   call flag_continue(continue_sim)
 
@@ -96,6 +104,7 @@ subroutine time_loop
 
 
      !New time
+     !print*, 'dt=', dt
      time = time +dt
      call flag_continue(continue_sim)
 

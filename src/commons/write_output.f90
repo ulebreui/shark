@@ -130,6 +130,28 @@ subroutine output(iout)
 
    end do
    close(ilun)
+
+if (charging) then
+  open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
+   do i = 1,ncells
+      !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
+      if(active_cell(i)==1) write(ilun) E_x(i)*unit_v*unit_B !
+   end do
+   close(ilun)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/Ey'), form=format_out,access='stream')
+   do i = 1,ncells
+      !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
+      if(active_cell(i)==1) write(ilun) E_y(i)*unit_v*unit_B
+   end do
+   close(ilun)
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Ez'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) E_z(i)*unit_v*unit_B
+      !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
+
+   end do
+   close(ilun)
+endif
 #endif 
 
 #if NDUST>0

@@ -20,6 +20,9 @@ module setup_parameters
   real(dp) :: delta_B = 1.0d-2
   real(dp) :: k_mag = 2.0*3.141592653589793238462643383279d0/1.0d0
 
+  real(dp) :: delta_vdy = 0.0d0
+  real(dp) :: delta_vdz = 0.0d0
+
 
 
   logical :: decaying_turb_compressive = .false.   ! Initialize compressive modes for decaying turbulence

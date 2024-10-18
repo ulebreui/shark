@@ -13,7 +13,7 @@ subroutine solve(verbose,outputing)
   use units
   implicit none
   logical :: verbose,outputing
-  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10
+  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
 
@@ -34,8 +34,39 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-  if(charging)   call charge !Set res_Marchand=True to compute charges and res
-  if(dust_inertia) call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
+
+  if(charging) then
+    if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
+
+    if(analytical_charging) call analytical_charge
+  endif
+
+#if MHD==1
+#if NDUST>0
+  if(dust_inertia) then
+
+    if(dusty_nonideal_MHD) then
+        call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
+        ! print *,'eta_o=', eta_o(i)
+        ! print *,'eta_a=',eta_a(i)
+        ! print *,'eta_h=',eta_h(i)
+! 
+        call res_units !Needed for the resistivities to be in cm^2/s
+        call effective_diffusion_coef_induction
+
+    endif
+! 
+    if(dusty_nonideal_MHD_no_electron) then
+        call effective_diffusion_coef_induction
+
+
+       ! call electric_field
+       ! call Lorentz_force
+    endif
+
+  endif
+#endif
+#endif
 
   call system_clock ( t4, clock_rate, clock_max )
 
@@ -43,6 +74,9 @@ subroutine solve(verbose,outputing)
   call courant
   if(force_kick) call kick(1.0d0)
   !if(force_kick) call kick_q(0.5d0)
+
+
+
   call system_clock ( t5, clock_rate, clock_max )
   
   ! Predictor step. Variables are estimated at cell interfaces and half dt
@@ -55,7 +89,18 @@ subroutine solve(verbose,outputing)
 
 
   ! Source terms are computed and added to u_prim
+
   call source_terms
+     ! print*, 'dxBy=', dxBy
+     ! print*, 'dxBz=', dxBz
+    ! print *, 'Ex=', E_x(:)
+    ! print *, 'Ey=', E_y(:)
+  ! print *, 'Ez=', E_z(:)
+    ! print*, 'By=', q(:,iBy)
+    ! print*, 'Bz=', q(:,iBz)
+     ! print*, 'FL=', FLor_x_d(:,:)
+     ! print*, 'FL=', FLor_x_d(:,:)
+
 
   if(fargo) call fargo_scheme
 

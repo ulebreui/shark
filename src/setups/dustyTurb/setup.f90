@@ -93,6 +93,21 @@ subroutine setup
 
     call distribution_dust(.true.)
 
+    do i=1,ncells
+      do idust=1,ndust
+        sdust(i,idust)    = smax/unit_l !if a single grain
+        q(i,ivdy(idust)) = delta_vdy/unit_v*(sin(position(i,1)*k_mag)) 
+        q(i,ivdz(idust)) = delta_vdz/unit_v*(cos(position(i,1)*k_mag)) !Alfven perturbation
+
+
+      end do
+    end do  
+
+
+
+
+
+
 #endif
 
   do i = 1,ncells
@@ -163,7 +178,7 @@ subroutine setup
 #if MHD==1
 if(beta_0>0) then
 
-     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/sqrt(beta_0) !todo : display
+     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/dsqrt(beta_0) !todo : display
 
 endif
 #endif
@@ -218,7 +233,7 @@ endif
   end do
 
 
-!!!Correct initial velocity to meet desired Mach!!!
+!!!Correct initial velocity to meet desired initial Mach!!!
 #if TURB>0
 
   print *,'rndom_vy', random_array_vy
@@ -336,7 +351,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,beta_0,cs_0,k_mag,delta_B,T_cloud
+  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,beta_0,cs_0,k_mag,delta_B,T_cloud,delta_vdy,delta_vdz
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

@@ -48,7 +48,9 @@ subroutine setup
 #if GRAVITY==1  
   call mtot
 #endif 
-  if(charging) call charge
+  !if(charging) call charge
+  if(charging) call analytical_charge
+
   if (dust_inertia) call resistivities_with_dust_inertia
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
 #else
@@ -69,7 +71,7 @@ subroutine setup
   close(15)
   close(16)
   times_particles=times_particles/unit_t
-  rho_particles  =rho_particles/(mu_gas*mH)
+  rho_particles  =rho_particles
 
   print *, times_particles
   print *, rho_particles
@@ -96,7 +98,9 @@ subroutine setup
 #endif     
   end do
   call primtoc
-  if(charging) call charge
+  !if(charging) call charge
+  if(charging) call analytical_charge
+
   if (dust_inertia) call resistivities_with_dust_inertia
 #endif
 end subroutine setup
