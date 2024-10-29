@@ -137,6 +137,13 @@ subroutine predictor
       endif
 #endif
       
+    
+    if(force_kick) then
+        u    = u + force(i,1)*half*dt
+        v    = v + force(i,2)*half*dt
+        w    = w + force(i,3)*half*dt
+    endif
+
 
 #if MHD==1
       Bx       = q(i,iBx)
@@ -240,11 +247,11 @@ subroutine predictor
 #endif
 #endif      
     
-    if(force_kick) then
-        su0    = su0 + force(i,1)
-        sv0    = sv0 + force(i,2)
-        sw0    = sw0 + force(i,3)
-    endif
+    ! if(force_kick) then
+    !     su0    = su0 + force(i,1)
+    !     sv0    = sv0 + force(i,2)
+    !     sw0    = sw0 + force(i,3)
+    ! endif
 
 
     !direction x
@@ -369,6 +376,12 @@ subroutine predictor
         dvy   = dq(i,ivy_spe,2)
         dwy   = dq(i,ivz_spe,2)
 #endif
+    if(force_kick) then
+        u    = u + force_dust(i,1,idust)*half*dt
+        v    = v + force_dust(i,2,idust)*half*dt
+        w    = w + force_dust(i,3,idust)*half*dt
+    endif
+
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
 #if GEOM==1
         !Spherical geometry source term
@@ -433,11 +446,11 @@ subroutine predictor
 #endif
 #endif   
 
-    if(force_kick) then
-        su0    = su0 + force_dust(i,1,idust)
-        sv0    = sv0 + force_dust(i,2,idust)
-        sw0    = sw0 + force_dust(i,3,idust)
-    endif
+    ! if(force_kick) then
+    !     su0    = su0 + force_dust(i,1,idust)
+    !     sv0    = sv0 + force_dust(i,2,idust)
+    !     sw0    = sw0 + force_dust(i,3,idust)
+    ! endif
 
     !Direction x
     dx_loc=dx(i,1)
