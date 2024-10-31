@@ -78,29 +78,29 @@ subroutine setup
         yy=position(i,2)-half*box_l_y
 
         q(i,irho)  = rho_init
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(i,ivx)    = vx_nak + perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(i,ivy)   = perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
         q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
         q(i,iP)    =  q(i,irho)*cs0**2.0
 #if NDUST>0
      do idust=1,ndust
 
-        q(i,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
+        q(i,irhod(idust))    = dust2gas_species(idust)*rho_init
         epsilondust(i,idust) = dust2gas_species(idust)
 
         if(.not. stokes_distrib) sdust(i,idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(i,ivdx(idust))      = perturbation+ux_nak(idust)
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(i,ivdy(idust))     =  perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
         q(i,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
      end do
 #endif
@@ -219,7 +219,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species, theta_dust,Stokes_min,  Stokes_max,  Stokes_cut,stokes_distrib 
+  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

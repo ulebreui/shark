@@ -12,6 +12,8 @@ module setup_parameters
   real(dp) :: HoverR      = 0.1d0
   real(dp) :: eta_stream  = 0.005d0
   real(dp) :: rad0        = 1.0d0
+  real(dp) :: mag_pert        = 2.0d-2 !fraction of the soundspeed to be used for initial density perturbation
+
 
   real(dp), dimension(1:NDUST):: Stokes_species   = 0.2d0
   real(dp), dimension(1:NDUST):: dust2gas_species = 1.0d0

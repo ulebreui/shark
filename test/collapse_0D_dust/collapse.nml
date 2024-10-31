@@ -54,6 +54,7 @@ res_Marchand=.false.
 dust_inertia=.true.
 electrons=.true.
 ions=.true.
+analytical_charging=.true.
 /
 
 
