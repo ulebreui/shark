@@ -87,12 +87,6 @@ subroutine allocate_init
   allocate(force(1:ncells,1:3))
   allocate(flux(1:ncells,1:nvar,1:ndim))
   flux=0.0d0
-  !Gravitational potential
-  allocate(phi_sg(1:ncells))
-  allocate(grad_phi_sg(1:ncells,1:2))
-  phi_sg=0.0d0
-  grad_phi_sg=0.0d0
-
 
   allocate(cs(1:ncells))
 
@@ -101,24 +95,13 @@ subroutine allocate_init
   call allocate_dust
 #endif
 
-#if GRAVITY==1  
-  allocate(Mc(1:ncells))
-  Mc= 0.0d0
-#endif  
-
-  if(fargo) then
-    allocate(fargo_velocity(1:ncells))
-    fargo_velocity = 0.0d0
-  endif
-
   u_prim = 0.0d0
   q      = 0.0d0
   qm     = 0.0d0
   qp     = 0.0d0
   force  = 0.0d0
   cs     = 0.0d0
-  allocate(eta_visc(1:ncells))
-  eta_visc=0.0d0
+
   !Indexation of variables /!\ Every index must be unique but the order does not matter
   irho = 1
   ivx  = 2

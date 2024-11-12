@@ -52,11 +52,6 @@ subroutine courant
 #endif
    !print(vmax)
    dt = min(dt,CFL*dxx/abs(vmax))
-
-#if GRAVITY==1   
-      dt = min(dt,CFL*dxx/sqrt(Mc(i)/sqrt(radii_c(i)**2.+(l_soft/unit_l)**2.)))
-#endif
-
 if(force_kick) then
 
    force_max= sqrt(force(i,1)**2+force(i,2)**2+force(i,3)**2)

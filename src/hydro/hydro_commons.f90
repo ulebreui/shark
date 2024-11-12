@@ -4,12 +4,9 @@ module hydro_commons
   real(dp), dimension(:,:),   allocatable :: u_prim
   real(dp), dimension(:),     allocatable :: cs
   real(dp), dimension(:,:),   allocatable :: q
-  real(dp), dimension(:) ,    allocatable :: eta_visc
   real(dp), dimension(:,:,:), allocatable :: qm
   real(dp), dimension(:,:,:), allocatable :: qp
   real(dp), dimension(:,:),   allocatable :: force
-  real(dp), dimension(:) , allocatable    :: phi_sg
-  real(dp), dimension(:,:), allocatable   :: grad_phi_sg
   real(dp), dimension(:,:,:), allocatable  :: flux
 
   real(dp) :: gamma           = 1.66667d0   ! Adiabatic index
@@ -35,6 +32,5 @@ module hydro_commons
   integer, dimension(1:2) :: index_vn
   integer, dimension(1:2) :: index_vt
 
-  real(dp), dimension(:) , allocatable    :: fargo_velocity
 
 end module hydro_commons

@@ -4,7 +4,6 @@ module commons
 #if NDUST>0
   use dust_commons
 #endif
-  use gravity_commons
   use OMP_LIB
   implicit none
 
@@ -13,15 +12,6 @@ module commons
   real(dp), dimension(:,:), allocatable :: position
   real(dp), dimension(:), allocatable   :: radii
   real(dp), dimension(:), allocatable   :: radii_c
-
-#if GEOM==1
-  real(dp), dimension(:), allocatable :: theta
-  real(dp), dimension(:), allocatable :: dx_l
-  real(dp), dimension(:), allocatable :: dx_r
-  real(dp), dimension(:), allocatable :: dx_c
-  real(dp), dimension(:), allocatable :: dx_r_cell
-  real(dp), dimension(:), allocatable :: dx_l_cell
-#endif
 
 #if GEOM==2
   ! Disk face-on geometry /!\ Phi is the azimuthal angle here it ranges from 0 to 2pi
@@ -54,7 +44,6 @@ module commons
   real(dp), dimension(:), allocatable   :: vol
   real(dp), dimension(:), allocatable   :: active_cell
   real(dp), dimension(:), allocatable   :: active_cell_predictor
-  
   
   real(dp):: time 
   real(dp):: tend

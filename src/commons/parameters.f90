@@ -45,8 +45,6 @@ module parameters
 
   logical             ::  static            = .false.
   logical             ::  force_kick        = .false.
-  logical             ::  viscosity         = .false.
-  logical             ::  fargo             = .false.
 
   integer             ::  freq_out          = 1000    ! Output frequency
   real(dp)            ::  rin = 0.0d0  ! Inner radius boundary for cylindrical geometry

@@ -7,7 +7,7 @@ subroutine read_params
   character(len=70):: nmlfile,infile
   integer :: io
   logical::nml_ok
-  namelist/grid_params/tend,rin,freq_out,fargo,static,CFL,nrestart,gamma,force_kick,slope_type,viscosity,smallr,smallc,smallP
+  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma,force_kick,slope_type,viscosity,smallr,smallc,smallP
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -42,8 +42,6 @@ subroutine read_params
    print *, "Dust namelist reading  !"
    call read_dust_params(13,nmlfile)
 #endif
-   print *, "Gravity namelist reading  !"
-   call read_gravity_params(13,nmlfile)
    print *, "Setup namelist reading  !"
    call read_setup_params(13,nmlfile)
    close(13)

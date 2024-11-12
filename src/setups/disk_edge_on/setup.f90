@@ -31,11 +31,7 @@ subroutine setup
       H        = HoverR*rr
       Omega    = sqrt(Mstar/rr**3)
       cs0      = Omega*H
-      vfarg    = 0.0d0
-      if(fargo) then
-        vfarg = -omega*rr
-        fargo_velocity(icell(ix,iy))=vfarg
-      endif
+
       q(icell(ix,iy),irho)                    = (sigma_R0/sqrt(2.0*pi*H))*(R0_disk/rr)*max(exp(-rr/R_out_disk)*exp(-yy**2/(2.0d0*H**2)),1e-3)
       q(icell(ix,iy),ivx)                     = 0.0
       q(icell(ix,iy),ivz)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
@@ -51,7 +47,7 @@ subroutine setup
         if(growth_step)  q(icell(ix,iy),idust_pscal(idust,1)) = scut/unit_l
 #endif
         q(icell(ix,iy),ivdx(idust))    = 0.0d0
-        q(icell(ix,iy),ivdz(idust))    = omega*rr+vfarg
+        q(icell(ix,iy),ivdz(idust))    = omega*rr
      end do
 #endif
   eta_visc(icell(ix,iy)) = alpha_visc*H*cs(icell(ix,iy))
@@ -290,7 +286,6 @@ end subroutine setup_inloop
    use commons
    use units
    use OMP_LIB
-   use gravity_commons
    use slope_limiter
    implicit none
 

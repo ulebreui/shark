@@ -9,20 +9,18 @@ NGHOST=2
 
 #Number of dust species
 NDUST=0
-#Geometry (0 == Cartesian, 1 == spherical,2 == 2D-disk)
-GEOM=0
-GRIDSPACE=0 #0 = linear, 1 = log ! Only for 2D disk
+#Geometry (0 == Cartesian, 2 == 2D-disk)
+GEOM      = 0
+GRIDSPACE = 0 #0 = linear, 1 = log ! Only for 2D disk
 
 
 NDUSTPSCAL = 0 # number of dust passive scalars
-GRAVITY    = 0
 
 #Solver 
 SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
 #Solver dust
 SOLVERDUST=0 #0=Huang & Bai, 1=LLF, 2=HLL
-#Solver induction equation
-SOLVERB=1 #0=LLF, 1=H&B, 2=HLL
+
 #Number of zones
 NX=128 # In X direction
 NY=1   # In Y direction
@@ -34,7 +32,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DNGHOST=$(NGHOST) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DNGHOST=$(NGHOST) -DNDUSTPSCAL=$(NDUSTPSCAL)
 
 #############################################################################
 # Fortran compiler options and directives
@@ -65,20 +63,19 @@ endif
 #############################################################################m
 # Sources directories are searched in this exact order
 BINDIR = .
-VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/:../src/dust
+VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/hydro:../src/:../src/dust
 #############################################################################
 # All objects
-MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o random.o newton_raphson.o 
+MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o random.o newton_raphson.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
-MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
+MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif
 OBJS= solve.o read_params.o
-MODOBJ+= gravity_utils.o
-#############################################################################
+##################################################
 all:
 	for file in $(MODOBJ); do unset MAKELEVEL ; $(MAKE) $$file; done
 	$(MAKE) shark

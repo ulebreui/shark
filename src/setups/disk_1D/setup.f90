@@ -277,7 +277,6 @@ end subroutine setup_inloop
    use commons
    use units
    use OMP_LIB
-   use gravity_commons
    use slope_limiter
    implicit none
 
