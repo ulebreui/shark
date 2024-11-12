@@ -111,37 +111,6 @@ subroutine allocate_init
     fargo_velocity = 0.0d0
   endif
 
-
-
-
-  if(charging) then
-    allocate(eta_a(1:ncells))
-    allocate(eta_h(1:ncells))
-    allocate(eta_o(1:ncells))
-    allocate(sigma_o(1:ncells))
-    allocate(sigma_p(1:ncells))
-    allocate(sigma_h(1:ncells))
-    allocate(ni(1:ncells))
-    allocate(ne(1:ncells))
-    allocate(psi_old(1:ncells))
-
-
-
-    eta_a  =0.0d0
-    eta_h  =0.0d0
-    eta_o  =0.0d0
-    sigma_o=0.0d0
-    sigma_p=0.0d0
-    sigma_h=0.0d0
-    ni     =0.0d0
-    ne     =0.0d0
-    psi_old=0.0d0
-
-
-
-
-  endif
-
   u_prim = 0.0d0
   q      = 0.0d0
   qm     = 0.0d0
@@ -152,14 +121,11 @@ subroutine allocate_init
   eta_visc=0.0d0
   !Indexation of variables /!\ Every index must be unique but the order does not matter
   irho = 1
-  ivx = 2
-  ivy = 3  
-  ivz = 4
- 
-  iP  = 5 ! Energy equation
+  ivx  = 2
+  ivy  = 3  
+  ivz  = 4
+  iP   = 5 ! Energy equation
   print *,'Are the indices in order ? '
-
-!To display B TODO
   print *,'irho =', irho
   print *,'ivx   =', ivx
   print *,'ivy  =', ivy

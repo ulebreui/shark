@@ -65,14 +65,14 @@ endif
 #############################################################################m
 # Sources directories are searched in this exact order
 BINDIR = .
-VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/chemistry:../src/:../src/dust
+VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/:../src/dust
 #############################################################################
 # All objects
-MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o newton_raphson.o 
+MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o random.o newton_raphson.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
-MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
+MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif

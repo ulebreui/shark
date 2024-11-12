@@ -31,13 +31,6 @@ subroutine output(iout)
   write(ilun,'("unit_l        =",E23.15)')unit_l
   write(ilun,'("unit_v        =",E23.15)')unit_v
   write(ilun,'("unit_p        =",E23.15)')unit_p
-
-  if(charging) then
-   write(ilun,'("charging       =",I11)')1
-  else
-   write(ilun,'("charging       =",I11)')0
-  endif 
-
   !call write_setup_info(ilun)
   close(ilun)
   
@@ -184,47 +177,6 @@ subroutine output(iout)
   end do
   close(ilun)
 #endif
-
-
-
-
-if(charging) then
-  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_a(i)
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_o(i)
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_h(i)
-   end do
-  close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/ni'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ni(i)
-   end do
-  close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/ne'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) ne(i)
-   end do
-  close(ilun)
-#if NDUST>0
-  open(ilun,file=trim(path) // trim(nchar)//trim('/zd'), form=format_out,access='stream')
-  do idust=1,ndust
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) zd(i,idust)
-   end do
-  end do
-  close(ilun)
-#endif
-
-endif
 
  end subroutine output
 

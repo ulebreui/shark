@@ -34,14 +34,6 @@ subroutine solve(verbose,outputing)
   call distribution_dust(.false.)
   call compute_tstop  !Re-calc distribution
 #endif
-#if NDUST>0
-  if(charging) then
-    if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
-
-    if(analytical_charging) call analytical_charge
-  endif
-#endif
-
 
   call system_clock ( t4, clock_rate, clock_max )
 

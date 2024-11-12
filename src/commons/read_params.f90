@@ -44,7 +44,6 @@ subroutine read_params
 #endif
    print *, "Gravity namelist reading  !"
    call read_gravity_params(13,nmlfile)
-   call read_ionisation_params(13,nmlfile)
    print *, "Setup namelist reading  !"
    call read_setup_params(13,nmlfile)
    close(13)

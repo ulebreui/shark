@@ -4,11 +4,7 @@ module commons
 #if NDUST>0
   use dust_commons
 #endif
-#if TURB>0
-  use turb_commons
-#endif
   use gravity_commons
-  use ionisation_commons
   use OMP_LIB
   implicit none
 

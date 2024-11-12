@@ -48,10 +48,7 @@ subroutine setup
 #if GRAVITY==1  
   call mtot
 #endif 
-  if(charging) call charge
-#if NDUST>0
-  if(charging.and.analytical_charging) call analytical_charge
-#endif
+
   !if (dust_inertia) call resistivities_with_dust_inertia
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
 #else
