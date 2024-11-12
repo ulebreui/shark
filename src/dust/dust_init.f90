@@ -142,15 +142,6 @@ subroutine allocate_dust
   tstop = 0.0d0
   tcoag = 0.0d0
   force_dust=0.0d0
-
-  if(charging) then
-    allocate(gamma_d(1:ncells,1:ndust))
-    allocate(zd(1:ncells,1:ndust))
-    gamma_d = 0.0d0
-    zd      = 0.0d0
-
-  endif
-
 end subroutine allocate_dust
 
 
@@ -413,11 +404,6 @@ subroutine read_dust_params(ilun,nmlfile)
      if(drift_in_growth) print*, "Growth by drift activated"
      if(turb_in_growth) print*,  "Growth by turbulence (Ormel) activated"
      if(brownian_in_growth)  print*,  "Growth by brownian motion activated"
-     if(ambipolar_in_growth) then
-        charging             = .true.
-        charging_all_the_time= .true.
-        print*,  "Growth by ambipolar diffusion activated delta_vambi=",delta_vambi
-     endif
   else
      print *, "Growth is deactivated"
   endif
@@ -431,12 +417,6 @@ subroutine read_dust_params(ilun,nmlfile)
   else
      print *, "Fragmentation is deactivated"
   endif
-  if(charging) then
-     print *, "charging is computed"
-     if(charging_all_the_time)   print *, "charging is computed all the time"
-  else
-     print *, "charging is not computed"
-  end if
   if(kernel_type==0) print*, 'physical kernel'
   if(kernel_type==1) then
      print*, 'Constant kernel'

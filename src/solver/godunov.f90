@@ -116,14 +116,6 @@ subroutine predictor
       sw0    = -u*dwx-v*dwy
 #endif
 
-!Spherical geometry
-#if GEOM==1
-      sr0    = -u*drx-v*dry - (dux+dvy)*r_rho     - r_rho*u/radii_c(i)
-      sp0    = -u*dpx-v*dpy - (dux+dvy)*gamma*p
-      su0    = -u*dux-v*duy - (dpx        )/r_rho
-      sv0    = -u*dvx-v*dvy - (dpy        )/r_rho
-      sw0    = -u*dwx-v*dwy
-#endif       
 
 !Disk (face-on) geometry
 #if GEOM==2
@@ -143,20 +135,6 @@ subroutine predictor
       sv0    = -u*dvx-v*dvy - (dpy        )/r_rho  
       sw0    = -u*dwx-v*dwy - u*w        / radii_c(i)
 #endif
-
-
-#if GRAVITY==1
-#if NY==1
-     !Gravity source term in 1D
-     su0 = su0 + (-Mc(i)/(radii_c(i)**2.+(l_soft/unit_l)**2.))
-#endif
-#endif      
-    
-    ! if(force_kick) then
-    !     su0    = su0 + force(i,1)
-    !     sv0    = sv0 + force(i,2)
-    !     sw0    = sw0 + force(i,3)
-    ! endif
 
 
     !direction x
@@ -219,11 +197,6 @@ subroutine predictor
     endif
 
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
-#if GEOM==1
-        !Spherical geometry source term
-        sr0    = sr0-r_rho*u/radii_c(i)
-#endif
-
         su0    = -u*dux-v*duy       
         sv0    = -u*dvx-v*dvy 
         sw0    = -u*dwx-v*dwy
@@ -241,19 +214,6 @@ subroutine predictor
         su0    = su0 + w**2.  /radii_c(i)
         sw0    = sw0 - u*w    /radii_c(i)
 #endif
-
-#if GRAVITY==1
-#if NY==1
-        !Gravity source term in 1D
-        su0=su0+(-Mc(i)/(radii_c(i)**2.+(l_soft/unit_l)**2.))
-#endif
-#endif   
-
-    ! if(force_kick) then
-    !     su0    = su0 + force_dust(i,1,idust)
-    !     sv0    = sv0 + force_dust(i,2,idust)
-    !     sw0    = sw0 + force_dust(i,3,idust)
-    ! endif
 
     !Direction x
     dx_loc=dx(i,1)
@@ -333,10 +293,6 @@ end do !End of very first do loop (i)
   !$OMP END PARALLEL
   deallocate(dq)
 
-#if GRAVITY==1  
-  call mtot
-#endif 
-
 end subroutine predictor
 
 
@@ -358,10 +314,6 @@ subroutine add_delta_u
   if(static) return
 
   flux       = 0.0d0
-! #if GEOM==2
-!     allocate(source_loc(1:ncells,1:nvar))
-!     source_loc=0.0d0
-! #endif
 
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
