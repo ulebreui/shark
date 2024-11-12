@@ -9,7 +9,7 @@ subroutine setup
 
   integer :: i,idust,imax,ix,iy,icell
 
-box_l = box_l/unit_l
+  box_l = box_l/unit_l
 
 
   call allocate_init
@@ -62,12 +62,6 @@ box_l = box_l/unit_l
 
 #endif
 
-#if MHD==1
-  q(i,iBx)=0.0d0
-  q(i,iBy)=0.0d0
-  q(i,iBz)=0.0d0
-
-#endif
 
   end do
 

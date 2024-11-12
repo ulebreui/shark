@@ -41,16 +41,10 @@ subroutine courant
    vv   = abs(q(i,ivx)) + abs(q(i,ivy))+ abs(q(i,ivz))
    vmax = cs(i)+vv
 
-#if MHD==1
-      magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho))))
-      vmax=  max(vmax,magnetosonic_fast+abs(q(i,ivx)))
-#endif
+
 
 #if NDUST>0     
    do idust=1,ndust
-#if MHD==1
-      ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irhod(idust))) !TODO , to modify when accounting for a dust distribution
-#endif
       vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust)))
       vmax =  max(vmax,ca+vv)
    enddo
@@ -74,42 +68,6 @@ if(force_kick) then
 
    end do
 #endif 
-
-#if MHD==1
-if (dusty_nonideal_MHD) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
-
-   ! call effective_diffusion_coef_induction
-   D_max = max(eta_eff_yy(i),eta_eff_yz(i),eta_eff_zy(i),eta_eff_zz(i)) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
-   !print *, D_max
-   dt = min(dt,CFL*dxx**2/D_max)
-
-    ! call electric_field
-    ! call Lorentz_force
-endif
-
-if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
-
-   ! call effective_diffusion_coef_induction
-   D_max = max(eta_eff_ohm(i),eta_eff_Hall_y(i),eta_eff_Hall_z(i)) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
-   !print *, D_max
-   dt = min(dt,CFL*dxx**2/D_max)
-
-    ! call electric_field
-    ! call Lorentz_force
-endif
-
-#if NDUST>0
-if(dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
-   do idust=1,ndust
-      dt = min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x_d(i,idust)**2+FLor_y_d(i,idust)**2+FLor_z_d(i,idust)**2)/q(i,irhod(idust))))
-   end do
-#endif
-
-   dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
-
-end if
-
-#endif
 
    if(vv.ne.0.0d0) then
       fratio = max(force_max*dxx/vv**2,1d-3)

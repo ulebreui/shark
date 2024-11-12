@@ -111,32 +111,6 @@ subroutine allocate_init
     fargo_velocity = 0.0d0
   endif
 
-#if TURB>0
-
-  allocate(k_turb_driven(1:nb_turb_modes_driven))
-  allocate(random_array_ax(1:nb_turb_modes_driven))
-  allocate(random_array_ay(1:nb_turb_modes_driven))
-  allocate(random_array_az(1:nb_turb_modes_driven))
-  allocate(random_array_vx(1:nb_turb_modes_driven))
-  allocate(random_array_vy(1:nb_turb_modes_driven))
-  allocate(random_array_vz(1:nb_turb_modes_driven))
-  allocate(random_array_phix(1:nb_turb_modes_driven))
-  allocate(random_array_phiy(1:nb_turb_modes_driven))
-  allocate(random_array_phiz(1:nb_turb_modes_driven))
-  k_turb_driven=0.0d0
-  random_array_ax=0.0d0
-  random_array_ay=0.0d0
-  random_array_az=0.0d0
-  random_array_vx=0.0d0
-  random_array_vy=0.0d0
-  random_array_vz=0.0d0
-  random_array_phix=0.0d0
-  random_array_phiy=0.0d0
-  random_array_phiz=0.0d0
-
-
-
-#endif
 
 
 
@@ -150,30 +124,6 @@ subroutine allocate_init
     allocate(ni(1:ncells))
     allocate(ne(1:ncells))
     allocate(psi_old(1:ncells))
-    allocate(eta_eff_yy(1:ncells))
-    allocate(eta_eff_yz(1:ncells))
-    allocate(eta_eff_zy(1:ncells))
-    allocate(eta_eff_zz(1:ncells))
-    allocate(Hall_e(1:ncells))
-    allocate(Hall_i(1:ncells))
-    allocate(E_x(1:ncells))
-    allocate(E_y(1:ncells))
-    allocate(E_z(1:ncells))
-    allocate(v_e_x(1:ncells))
-    allocate(v_e_y(1:ncells))
-    allocate(v_e_z(1:ncells))
-    allocate(v_i_x(1:ncells))
-    allocate(v_i_y(1:ncells))
-    allocate(v_i_z(1:ncells))
-    allocate(FLor_x(1:ncells))
-    allocate(FLor_y(1:ncells))
-    allocate(FLor_z(1:ncells))
-    allocate(eta_eff_ohm(1:ncells))
-    allocate(eta_eff_Hall_y(1:ncells))
-    allocate(eta_eff_Hall_z(1:ncells))
-
-
-
 
 
 
@@ -186,27 +136,6 @@ subroutine allocate_init
     ni     =0.0d0
     ne     =0.0d0
     psi_old=0.0d0
-    eta_eff_yy=0.0d0
-    eta_eff_yz=0.0d0
-    eta_eff_zy=0.0d0
-    eta_eff_zz=0.0d0
-    Hall_i     =1.0d0 !Appears in denominators in godunov --> initialize at 1.0d0
-    Hall_e     =1.0d0
-    E_x=0.0d0
-    E_y=0.0d0
-    E_z=0.0d0
-    v_e_x=0.0d0
-    v_e_y=0.0d0
-    v_e_z=0.0d0
-    v_i_x=0.0d0
-    v_i_y=0.0d0
-    v_i_z=0.0d0
-    FLor_x = 0.0d0
-    FLor_y = 0.0d0
-    FLor_z = 0.0d0
-    eta_eff_ohm = 0.0d0
-    eta_eff_Hall_y = 0.0d0
-    eta_eff_Hall_z = 0.0d0
 
 
 
@@ -226,12 +155,8 @@ subroutine allocate_init
   ivx = 2
   ivy = 3  
   ivz = 4
-#if MHD==1
-  iBx=5
-  iBy=6
-  iBz=7
-#endif  
-  iP  = 5 + Nmhd! Energy equation
+ 
+  iP  = 5 ! Energy equation
   print *,'Are the indices in order ? '
 
 !To display B TODO
@@ -239,12 +164,6 @@ subroutine allocate_init
   print *,'ivx   =', ivx
   print *,'ivy  =', ivy
   print *,'ivz  =', ivz
-#if MHD==1
-  print *,'iBx  =', iBx
-  print *,'iBy  =', iBy
-  print *,'iBz  =', iBz
-#endif
-
   print *,'iP   =', iP
   index_vn(1) = ivx  
   index_vt(1) = ivy

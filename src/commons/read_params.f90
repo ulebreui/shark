@@ -42,10 +42,6 @@ subroutine read_params
    print *, "Dust namelist reading  !"
    call read_dust_params(13,nmlfile)
 #endif
-#if TURB>0
-   print *, "Turb namelist reading  !"
-   call read_turb_params(13,nmlfile)
-#endif
    print *, "Gravity namelist reading  !"
    call read_gravity_params(13,nmlfile)
    call read_ionisation_params(13,nmlfile)

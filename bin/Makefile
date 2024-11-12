@@ -12,10 +12,11 @@ NDUST=0
 #Geometry (0 == Cartesian, 1 == spherical,2 == 2D-disk)
 GEOM=0
 GRIDSPACE=0 #0 = linear, 1 = log ! Only for 2D disk
-TURB=0
-MHD = 0
+
+
 NDUSTPSCAL = 0 # number of dust passive scalars
 GRAVITY    = 0
+
 #Solver 
 SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
 #Solver dust
@@ -33,7 +34,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DMHD=$(MHD) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DSOLVERB=$(SOLVERB) -DNGHOST=$(NGHOST) -DTURB=$(TURB) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DNGHOST=$(NGHOST) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL)
 
 #############################################################################
 # Fortran compiler options and directives
@@ -64,24 +65,18 @@ endif
 #############################################################################m
 # Sources directories are searched in this exact order
 BINDIR = .
-VPATH  = ../src:../src/commons:../src/grid:../src/turb:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/chemistry:../src/:../src/dust
+VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/chemistry:../src/:../src/dust
 #############################################################################
 # All objects
 MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o newton_raphson.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
-ifeq ($(TURB),1)
-MODOBJ+=turb_commons.o
-endif
 MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif
 OBJS= solve.o read_params.o
-ifeq ($(TURB),1)
-MODOBJ+= turb_utils.o turb.o
-endif
 MODOBJ+= gravity_utils.o
 #############################################################################
 all:

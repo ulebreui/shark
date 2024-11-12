@@ -41,32 +41,7 @@ subroutine solve(verbose,outputing)
     if(analytical_charging) call analytical_charge
   endif
 #endif
-#if MHD==1
-#if NDUST>0
-  if(dust_inertia) then
 
-    if(dusty_nonideal_MHD) then
-        call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
-        ! print *,'eta_o=', eta_o(i)
-        ! print *,'eta_a=',eta_a(i)
-        ! print *,'eta_h=',eta_h(i)
-! 
-        call res_units !Needed for the resistivities to be in cm^2/s
-        call effective_diffusion_coef_induction
-
-    endif
-! 
-    if(dusty_nonideal_MHD_no_electron) then
-        call effective_diffusion_coef_induction
-
-
-       ! call electric_field
-       ! call Lorentz_force
-    endif
-
-  endif
-#endif
-#endif
 
   call system_clock ( t4, clock_rate, clock_max )
 
@@ -91,16 +66,6 @@ subroutine solve(verbose,outputing)
   ! Source terms are computed and added to u_prim
 
   call source_terms
-     ! print*, 'dxBy=', dxBy
-     ! print*, 'dxBz=', dxBz
-    ! print *, 'Ex=', E_x(:)
-    ! print *, 'Ey=', E_y(:)
-  ! print *, 'Ez=', E_z(:)
-    ! print*, 'By=', q(:,iBy)
-    ! print*, 'Bz=', q(:,iBz)
-     ! print*, 'FL=', FLor_x_d(:,:)
-     ! print*, 'FL=', FLor_x_d(:,:)
-
 
   if(fargo) call fargo_scheme
 
@@ -116,38 +81,6 @@ subroutine solve(verbose,outputing)
 #endif
   call system_clock ( t9, clock_rate, clock_max )
 
- !if(force_kick) call kick(1.0d0)
- !if(force_kick) call kick(0.5d0)
-
-#if TURB>0
-!Maybe to put in force_kick
-
-  call compute_rms_velocity
-
-  if(driven_turb) then
-    !!Initialization of velocity/acceleration modes to be done within setup
-#if NY==1
-     !call driven_turbulence !works only in 1D - 1.5D
-     if (phase_drift) then
-        call kick_phase_drift
-        iseed_phase_drift = iseed_phase_drift + 1
-     end if 
-
-     !count = count + 1
-     !if (count_bis==0 .or. count == count_bis + 20) then
-        !call adjust_yz_kick_intensity
-        !count_bis = count
-        !print *, 'Vyz_rms', Vyz_rms
-        !print *, 'ay', random_array_ay
-
-     !end if
-
-     call add_driven_turb_kick
-#endif
-  end if
-
-
-#endif 
   ! Setup related modifs
   call setup_inloop
   call system_clock ( t10,  clock_rate, clock_max )
@@ -214,12 +147,8 @@ subroutine ctoprim
     q(i,ivz)              = u_prim(i,ivz)/u_prim(i,irho)
     
     ekin = half*u_prim(i,irho)*((u_prim(i,ivx)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivy)/u_prim(i,irho))**2.0) + half*u_prim(i,irho)*((u_prim(i,ivz)/u_prim(i,irho))**2.0)
-
-    emag=0.0d0
-#if MHD==1   
-    emag                  = half*(u_prim(i,iBx)**2.0+u_prim(i,iBy)**2.0+u_prim(i,iBz)**2.0)
-#endif    
-    q(i,iP)               = max((gamma-1.0d0)*(u_prim(i,iP)-ekin-emag),smallp) !TODO : substract magnetic nrj
+  
+    q(i,iP)               = max((gamma-1.0d0)*(u_prim(i,iP)-ekin),smallp) !TODO : substract magnetic nrj
 
     if(iso_cs<1)              cs(i) = sqrt(gamma*q(i,iP)/q(i,irho))
     if(non_standard_eos == 1) cs(i) = cs_eos(barotrop(q(i,irho)))
@@ -238,11 +167,7 @@ subroutine ctoprim
 #endif             
      end do
 #endif
-#if MHD==1
-      q(i,iBx)              = u_prim(i,iBx)
-      q(i,iBy)              = u_prim(i,iBy)
-      q(i,iBz)              = u_prim(i,iBz)
-#endif
+
   end do
   !$OMP END DO
   !$OMP END PARALLEL
@@ -269,7 +194,10 @@ subroutine primtoc
   use OMP_LIB
 
   implicit none
-  integer :: i,idust,ipscal
+  integer :: i,idust
+#if NDUSTPSCAL>0
+  integer :: ipscal
+#endif
 
   do i = 1 ,ncells
      u_prim(i,irho)              = q(i,irho)
@@ -290,12 +218,7 @@ subroutine primtoc
 #endif
      end do
 #endif    
-#if MHD==1
-      u_prim(i,iBx)              = q(i,iBx)
-      u_prim(i,iBy)              = q(i,iBy)
-      u_prim(i,iBz)              = q(i,iBz)
-      u_prim(i,iP)               = u_prim(i,iP) + half*(q(i,iBx)**2.0+q(i,iBy)**2.0+q(i,iBz)**2.0)
-#endif 
+
   end do
 
 

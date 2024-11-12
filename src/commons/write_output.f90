@@ -23,9 +23,7 @@ subroutine output(iout)
   write(ilun,'("ndustpscal   =",I11)')NDUSTPSCAL
   write(ilun,'("NX        =",I11)')NX
   write(ilun,'("NY        =",I11)')NY
-  write(ilun,'("MHD        =",I11)')MHD
   write(ilun,'("GEOM        =",I11)')GEOM
-  write(ilun,'("TURB        =",I11)')TURB
   write(ilun,'("GRIDSPACE       =",I11)')GRIDSPACE
   write(ilun,'("time        =",E23.15)')time
   write(ilun,'("unit_t        =",E23.15)')unit_t
@@ -110,49 +108,6 @@ subroutine output(iout)
 #endif
   end do
   close(ilun)
-#if MHD==1
-  open(ilun,file=trim(path) // trim(nchar)//trim('/Bx'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
-      if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B !
-   end do
-   close(ilun)
-  open(ilun,file=trim(path) // trim(nchar)//trim('/By'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
-      if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Bz'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
-      !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
-
-   end do
-   close(ilun)
-
-if (charging) then
-  open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
-      if(active_cell(i)==1) write(ilun) E_x(i)*unit_v*unit_B !
-   end do
-   close(ilun)
-  open(ilun,file=trim(path) // trim(nchar)//trim('/Ey'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
-      if(active_cell(i)==1) write(ilun) E_y(i)*unit_v*unit_B
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Ez'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) E_z(i)*unit_v*unit_B
-      !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
-
-   end do
-   close(ilun)
-endif
-#endif 
 
 #if NDUST>0
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod_tot'), form=format_out,access='stream')
@@ -230,32 +185,6 @@ endif
   close(ilun)
 #endif
 
-#if TURB>0
-   open(ilun,file=trim(path) // trim(nchar)//trim('/V_rms'), form=format_out,access='stream')
-   write(ilun) V_rms
-   close(ilun)
-
-
-
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vy_rms'), form=format_out,access='stream')
-   write(ilun) Vy_rms
-   close(ilun)
-
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vz_rms'), form=format_out,access='stream')
-   write(ilun) Vz_rms
-   close(ilun)
-
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vyz_rms'), form=format_out,access='stream')
-   write(ilun) Vyz_rms
-   close(ilun)
-
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vtot_rms'), form=format_out,access='stream')
-   write(ilun) Vtot_rms
-   close(ilun)
-
-
-
-#endif
 
 
 

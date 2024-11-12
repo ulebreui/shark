@@ -6,8 +6,7 @@ subroutine boundary_collapse_1D
   use commons
   use units
   implicit none
-  real(dp) :: cs_eos,barotrop
-  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount,ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer :: idust,ighost,ix,iy,icell,ibound_left, ibound_right, i_active_left, i_active_right, ivar
 
    do ix=1,nghost 
      do iy=1,ny_max
@@ -50,8 +49,7 @@ subroutine zero_gradients
   use commons
   use units
   implicit none
-  integer  :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
-  real(dp) :: total_energy,ekin_old,ekin_new,pm
+  integer  :: idust,ighost,ix,iy,icell,ibound_left, ibound_right, i_active_left, i_active_right,ivar
 
   if(ndim==1) then
    do ix = 1,nghost
@@ -59,13 +57,10 @@ subroutine zero_gradients
       u_prim(nx_max+1-ix,:) = u_prim(last_active,:)
    end do
   else
-  !icount=0
   do ix = first_active,last_active  
    do iy = 1,nghost
       ibound_left   = icell(ix,iy)
       ibound_right  = icell(ix,ny_max+1-iy)
-      !i_active_left = icell(ix,last_active_y-nghost+iy)
-      !i_active_right= icell(ix,first_active_y+nghost-iy)
 
       i_active_left = first_active_y
       i_active_right= last_active_y      
@@ -74,17 +69,12 @@ subroutine zero_gradients
          u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
       end do
 
-       !  u_prim(ibound_left,ivy)  = max(u_prim(ibound_left,ivy),0.0d0)
    end do
-
-   !stop
   end do
    do ix=1,nghost 
      do iy=1,ny_max
          ibound_left    = icell(ix,iy)
          ibound_right   = icell(nx_max+1-ix,iy)
-         !i_active_left  = icell(last_active-nghost+ix,iy)
-         !i_active_right = icell(first_active+nghost-ix,iy)
          i_active_left = first_active!
          i_active_right= last_active!    
          do ivar =1,nvar
@@ -93,7 +83,6 @@ subroutine zero_gradients
          end do     
 
       end do
-      !stop
   end do
   endif
 
@@ -104,10 +93,9 @@ subroutine disk_boundaries
   use commons
   use units
   implicit none
-  integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer :: idust,ighost,ix,iy,icell, ibound_left, ibound_right, i_active_left, i_active_right,ivar
 
 
-  !icount=0
   do ix = first_active,last_active  
    do iy = 1,nghost
       ibound_left    = icell(ix,iy)
@@ -122,16 +110,13 @@ subroutine disk_boundaries
 
    end do
 
-   !stop
   end do
    do ix= 1,nghost 
      do iy= 1,ny_max
          ibound_left    = icell(ix,iy)
          ibound_right   = icell(nx_max+1-ix,iy)
-         !i_active_left  = icell(last_active-nghost+ix,iy)
-         !i_active_right = icell(first_active+nghost-ix,iy)
-         i_active_left  = first_active!
-         i_active_right = last_active!    
+         i_active_left  = first_active
+         i_active_right = last_active   
          do ivar = 1,nvar
             u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) 
             u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
@@ -140,7 +125,6 @@ subroutine disk_boundaries
          u_prim(ibound_left,ivx)   = max(u_prim(ibound_left,ivx) ,0.0d0)
  
       end do
-      !stop
   end do
 
 end subroutine disk_boundaries
@@ -151,8 +135,7 @@ subroutine periodic_boundaries
   use commons
   use units
   implicit none
-  integer  :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
-  real(dp) :: total_energy,ekin_old,ekin_new,pm
+  integer  :: idust,ighost,ix,iy,icell, ibound_left, ibound_right, i_active_left, i_active_right,ivar
 
   do ix = first_active,last_active  
    do iy = 1,nghost
@@ -165,7 +148,6 @@ subroutine periodic_boundaries
          u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
       end do
    end do
-   !stop
   end do
    do ix= 1,nghost 
      do iy= 1,ny_max
@@ -191,10 +173,9 @@ subroutine shear_boundaries(vel_shear)
   use commons
   use units
   implicit none
-  integer  :: idust,ighost,nn,nn2,ix,iy,icell,ii,icount, ibound_left, ibound_right, i_active_left, i_active_right,ivar
-  real(dp) :: total_energy,ekin_old,ekin_new,pm,mom_new,vel_shear
+  integer  :: idust,ighost,ix,iy,icell, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  real(dp) :: pm,mom_new,vel_shear
 
-!vel_shear=q_shear*Omega_shear*box_l
    do ix  = first_active,last_active
    do iy  = 1, nghost
         !print *,'is it a boundary ? ', active_cell(icell(ix,iy))
