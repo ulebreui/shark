@@ -16,7 +16,7 @@ subroutine setup
   integer :: ind_ux,ind_uy,info
 
 
-  integer :: i,idust,jdust,imax,ix,iy,icell
+  integer :: i,idust,jdust,imax,ix,iy,icell,ixx,iyy
   call allocate_init
 
 
@@ -74,86 +74,41 @@ subroutine setup
   q = 0.0d0
   iso_cs = 1
   do i =1,ncells
-        xx=position(i,1)-half*box_l  ! Boxlen already in pc
-        yy=position(i,2)-half*box_l_y
+        ix=ixx(i)
+        iy=iyy(i)
+        xx=position(ix,iy,1)-half*box_l  ! Boxlen already in pc
+        yy=position(ix,iy,2)-half*box_l_y
 
-        q(i,irho)  = rho_init
+        q(ix,iy,irho)  = rho_init
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(i,ivx)    = vx_nak + perturbation
+        q(ix,iy,ivx)    = vx_nak + perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(i,ivy)   = perturbation
+        q(ix,iy,ivy)   = perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
-        q(i,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-        q(i,iP)    =  q(i,irho)*cs0**2.0
+        q(ix,iy,ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
+        q(ix,iy,iP)    =  q(ix,iy,irho)*cs0**2.0
 #if NDUST>0
      do idust=1,ndust
 
-        q(i,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
+        q(ix,iy,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
         epsilondust(i,idust) = dust2gas_species(idust)
 
         if(.not. stokes_distrib) sdust(i,idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(i,ivdx(idust))      = perturbation+ux_nak(idust)
+        q(ix,iy,ivdx(idust))      = perturbation+ux_nak(idust)
         call get_rhoturb(2d-2*cs0,perturbation)
 
-        q(i,ivdy(idust))     =  perturbation
+        q(ix,iy,ivdy(idust))     =  perturbation
         call get_rhoturb(2d-2*cs0,perturbation)
-        q(i,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
+        q(ix,iy,ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
      end do
 #endif
   end do
   cs=cs0
 
-  ! ux_nak  = -(2.0d0*stokes_species(1)/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep ! Dust velocity
-  ! vx_nak  = -dust2gas_species(1)*ux_nak ! Gas velocity
-  ! uy_nak  = -(1.0d0-stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
-  ! vy_nak  = -(1.0d0+dust2gas_species(1)*stokes_species(1)**2/((1.0d0+dust2gas_species(1))**2+stokes_species(1)**2))*eta_stream*vkep/(1.0d0+dust2gas_species(1))
-  ! call gridinit(box_l,box_l_y)
-  ! q=0.0d0
-  ! iso_cs = 1
-  ! do iy = 1,ny_max
-  !   do ix = 1,nx_max
-  !       xx=position(icell(ix,iy),1)-half*box_l  ! Boxlen already in pc
-  !       yy=position(icell(ix,iy),2)-half*box_l_y
-  !       q(icell(ix,iy),irho)  = rho_init
-  !       call get_rhoturb(2d-2*cs0,perturbation)
-
-  !       q(icell(ix,iy),ivx)  = vx_nak + perturbation
-  !       call get_rhoturb(2d-2*cs0,perturbation)
-
-  !       q(icell(ix,iy),ivy)   = perturbation
-  !    call get_rhoturb(2d-2*cs0,perturbation)
-  !     q(icell(ix,iy),ivz)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
-  !     q(icell(ix,iy),iP)    = q(icell(ix,iy),irho)*cs0**2.0
-  !     !cs(icell(ix,iy)) = cs0
-  ! enddo
-  ! enddo
-  ! cs =cs0
-! #if NDUST>0
-!    do iy = 1,ny_max
-!     do ix = 1,nx_max
-!      do idust=1,ndust
-!         q(icell(ix,iy),irhod(idust))    = dust2gas_species(1)*rho_init!+ perturbation
-!         epsilondust(icell(ix,iy),idust) = dust2gas_species(1)
-!         !sdust(icell(ix,iy),idust)       = Stokes_species(1)
-!         if(.not. stokes_distrib) sdust(icell(ix,iy),idust)       = Stokes_species(idust)!*rho_init*cs0/rhograin/omega_shear
-
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(icell(ix,iy),ivdx(idust))      = perturbation+ux_nak
-!         call get_rhoturb(2d-2*cs0,perturbation)
-
-!         q(icell(ix,iy),ivdy(idust))     =  perturbation
-!         xx=position(icell(ix,iy),1)  -half*box_l  ! Boxlen already in pc
-!         call get_rhoturb(2d-2*cs0,perturbation)
-!         q(icell(ix,iy),ivdz(idust))     = perturbation+ q_shear*Omega_shear*xx + uy_nak
-!      end do
-!   end do
-!   end do
-! #endif
 
 call primtoc
 call apply_boundaries
@@ -251,7 +206,7 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
-   integer :: icount,iout,i,idust
+   integer :: icount,iout,i,idust,iy,ix
    real(dp):: mtot,mdtot
    logical :: outputing,verbose
 
@@ -271,13 +226,13 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing) then
         mtot=0.0d0
         mdtot=0.0d0
-        do i=1,ncells
-          if(active_cell(i)==1) then
-          mtot=mtot+u_prim(i,irho)
+        do iy = first_active_y,last_active_y
+          do ix = first_active,last_active
+          mtot=mtot+u_prim(ix,iy,irho)
           do idust=1,ndust
-            mdtot=mdtot+u_prim(i,irhod(idust))
+            mdtot=mdtot+u_prim(ix,iy,irhod(idust))
           end do
-          endif
+          end do
         end do
      end if
 
@@ -301,33 +256,34 @@ subroutine setup_inloop
    use commons
    use units
    implicit none
-   integer :: i,idust
+   integer :: i,idust,icell,ix,iy
    real(dp) :: u, v,Ohmdt, AA, BB,d,old_ek,new_ek
    
    if(force_kick) return
 
-    do i=1,ncells
-    if(active_cell(i)==1)then
-    !Crank nicholson scheme
-        u = u_prim(i,ivz)/u_prim(i,irho) 
-        v = u_prim(i,ivx)/u_prim(i,irho) 
-        d = u_prim(i,irho) 
-        Ohmdt = Omega_shear*dt
-        AA    = 2.0d0*q_shear*Omega_shear*(position(i,1)-half*box_l)-2.0d0*rad0*eta_stream 
-        u_prim(i,ivz)  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
-        u_prim(i,ivx)  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt ) / (1.+Ohmdt**2) 
+    do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+          i = icell(ix,iy)
+          !Crank nicholson scheme
+          u = u_prim(ix,iy,ivz)/u_prim(ix,iy,irho) 
+          v = u_prim(ix,iy,ivx)/u_prim(ix,iy,irho) 
+          d = u_prim(ix,iy,irho) 
+          Ohmdt = Omega_shear*dt
+          AA    = 2.0d0*q_shear*Omega_shear*(position(ix,iy,1)-half*box_l)-2.0d0*rad0*eta_stream 
+          u_prim(ix,iy,ivz)  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
+          u_prim(ix,iy,ivx)  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt ) / (1.+Ohmdt**2) 
 #if NDUST>0
-        Ohmdt = Omega_shear*dt
-        AA    = 2.0d0*q_shear*Omega_shear*(position(i,1)-half*box_l)
-        do idust=1,ndust
-          u = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust)) 
-          v = u_prim(i,ivdx(idust))/u_prim(i,irhod(idust)) 
-          d = u_prim(i,irhod(idust)) 
-          u_prim(i,ivdz(idust))  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
-          u_prim(i,ivdx(idust))  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt )    / (1.+Ohmdt**2) 
-        end do
+          Ohmdt = Omega_shear*dt
+          AA    = 2.0d0*q_shear*Omega_shear*(position(ix,iy,1)-half*box_l)
+          do idust=1,ndust
+            u = u_prim(ix,iy,ivdz(idust))/u_prim(ix,iy,irhod(idust)) 
+            v = u_prim(ix,iy,ivdx(idust))/u_prim(ix,iy,irhod(idust)) 
+            d = u_prim(ix,iy,irhod(idust)) 
+            u_prim(ix,iy,ivdz(idust))  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
+            u_prim(ix,iy,ivdx(idust))  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt )    / (1.+Ohmdt**2) 
+          end do
 #endif
-    endif
+     end do
    end do
 end subroutine setup_inloop
 
@@ -338,32 +294,32 @@ end subroutine setup_inloop
    use units
    implicit none
 
-   integer :: i,idust
+   integer :: i,idust,icell,ix,iy
 
 
-   do i=1,ncells
-    if(active_cell(i)==1)then
-        force(i,1)  = 2.0d0*q_shear*Omega_shear**2.*(position(i,1)-half*box_l) -2.0d0*Omega_shear*q(i,ivz) -  2.0d0*rad0*Omega_shear*eta_stream
+    do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+        i = icell(ix,iy)
+        force(i,1)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ix,iy,ivz) -  2.0d0*rad0*Omega_shear*eta_stream
         force(i,2)  = 0.0d0
-        force(i,3)  = 2.0d0*Omega_shear*q(i,ivx)
+        force(i,3)  = 2.0d0*Omega_shear*q(ix,iy,ivx)
 #if NDUST>0
         do idust=1,ndust
-         force_dust(i,1,idust)  = 2.0d0*q_shear*Omega_shear**2.*(position(i,1)-half*box_l) -2.0d0*Omega_shear*q(i,ivdz(idust))
+         force_dust(i,1,idust)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ix,iy,ivdz(idust))
          force_dust(i,2,idust)  = 0.0d0
-         force_dust(i,3,idust)  = 2.0d0*Omega_shear*q(i,ivdx(idust))
+         force_dust(i,3,idust)  = 2.0d0*Omega_shear*q(ix,iy,ivdx(idust))
 
          if(.not. drag) then
-          force(i,1)  = force(i,1)  - q(i,irhod(idust))/q(i,irho)*(q(i,ivx) - q(i,ivdx(idust)))/tstop(i,idust)
-          force(i,2)  = force(i,2)  - q(i,irhod(idust))/q(i,irho)*(q(i,ivy) - q(i,ivdy(idust)))/tstop(i,idust)
-          force(i,3)  = force(i,3)  - q(i,irhod(idust))/q(i,irho)*(q(i,ivz) - q(i,ivdz(idust)))/tstop(i,idust)
-          force_dust(i,1,idust)  = force_dust(i,1,idust)  + (q(i,ivx) - q(i,ivdx(idust)))/tstop(i,idust)
-          force_dust(i,2,idust)  = force_dust(i,2,idust)  + (q(i,ivy) - q(i,ivdy(idust)))/tstop(i,idust)
-          force_dust(i,3,idust)  = force_dust(i,3,idust)  + (q(i,ivz) - q(i,ivdz(idust)))/tstop(i,idust)
+          force(i,1)  = force(i,1)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivx) - q(ix,iy,ivdx(idust)))/tstop(i,idust)
+          force(i,2)  = force(i,2)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivy) - q(ix,iy,ivdy(idust)))/tstop(i,idust)
+          force(i,3)  = force(i,3)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivz) - q(ix,iy,ivdz(idust)))/tstop(i,idust)
+          force_dust(i,1,idust)  = force_dust(i,1,idust)  + (q(ix,iy,ivx) - q(ix,iy,ivdx(idust)))/tstop(i,idust)
+          force_dust(i,2,idust)  = force_dust(i,2,idust)  + (q(ix,iy,ivy) - q(ix,iy,ivdy(idust)))/tstop(i,idust)
+          force_dust(i,3,idust)  = force_dust(i,3,idust)  + (q(ix,iy,ivz) - q(ix,iy,ivdz(idust)))/tstop(i,idust)
          endif
         end do
 #endif
-    endif
-
+    end do
    end do
 end subroutine update_force_setup
 

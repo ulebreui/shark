@@ -29,11 +29,6 @@ subroutine predictor
   dq    = 0.0d0
   qp    = 0.0d0
   qm    = 0.0d0
-
-  ! Computes primitive variables
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar)
   drx   = 0.0d0 
   dpx   = 0.0d0  
   dry   = 0.0d0 
@@ -47,13 +42,9 @@ subroutine predictor
   v     = 0.0d0
   w     = 0.0d0
 
-
-  !$OMP DO
-  do i=1,ncells
-    if(active_cell_predictor(i)==1) then
-      ix=ixx(i)
-      iy=iyy(i)
-
+  do iy=2,ny_max-1
+    do ix= 2,nx_max-1
+        i=icell(ix,iy)
       radius_polar=1.0d0     
 #if GEOM==2
       radius_polar=radii_c(i)
@@ -63,29 +54,25 @@ subroutine predictor
 #endif  
     if(slope_type>0) then
     do ivar = 1, nvar
-            il = icell(ix-1,iy)
-            ir = icell(ix+1,iy)
-            dq(i,ivar,1) = slope_limit(2.0d0*(q(i,ivar) - q(il,ivar))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,ivar) - q(i,ivar))/(dx(ir,1)+dx(i,1)))
+            dq(i,ivar,1) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix-1,iy,ivar))/(dx(ix,iy,1)+dx(ix-1,iy,1)),2.0d0*(q(ix+1,iy,ivar) - q(ix,iy,ivar))/(dx(ix+1,iy,1)+dx(ix,iy,1)))
 #if NY>1
-            il = icell(ix,iy-1)
-            ir = icell(ix,iy+1)
-            dq(i,ivar,2) = slope_limit(2.0d0*(q(i,ivar) - q(il,ivar))/(dx(i,2)+dx(il,2)),2.0d0*(q(ir,ivar) - q(i,ivar))/(dx(ir,2)+dx(i,2)))/radius_polar
+            dq(i,ivar,2) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix,iy-1,ivar))/(dx(ix,iy,2)+dx(ix,iy-1,2)),2.0d0*(q(ix,iy+1,ivar) - q(ix,iy,ivar))/(dx(ix,iy+1,2)+dx(ix,iy,2)))/radius_polar
 #endif   
     end do
     endif
 
-      r_rho = q(i,irho)
-      u     = q(i,ivx)
+      r_rho = q(ix,iy,irho)
+      u     = q(ix,iy,ivx)
       dux   = dq(i,ivx,1)
       drx   = dq(i,irho,1)
-      w     = q(i,ivz)
+      w     = q(ix,iy,ivz)
       dwx   = dq(i,ivz,1)
-      v     = q(i,ivy)
+      v     = q(ix,iy,ivy)
       dvx   = dq(i,ivy,1)
-      p     = q(i,iP)
+      p     = q(ix,iy,iP)
       dPx   = dq(i,iP,1)
       if(iso_cs==1) then
-       P     = q(i,irho)*cs(i)**2
+       P     = q(ix,iy,irho)*cs(i)**2
        dPx   = dq(i,irho,1)*cs(i)**2
       endif 
 #if NY>1
@@ -138,31 +125,31 @@ subroutine predictor
 
 
     !direction x
-    dx_loc=dx(i,1)
-    qm(i,irho,1)   = r_rho     + half*dt*sr0  + half*drx   *dx_loc
-    qm(i,ivx,1)    = u         + half*dt*su0  + half*dux   *dx_loc
-    qm(i,iP,1)     = max(p     + half*dt*sP0  + half*dpx   *dx_loc,smallP)
-    qm(i,ivy,1)    = v         + half*dt*sv0  + half*dvx   *dx_loc
-    qm(i,ivz,1)    = w         + half*dt*sw0  + half*dwx   *dx_loc 
-    qp(i,irho,1)   =r_rho      + half*dt*sr0  - half*drx   *dx_loc
-    qp(i,ivx,1)    = u         + half*dt*su0  - half*dux   *dx_loc
-    qp(i,iP,1)     = max(p     + half*dt*sP0  - half*dpx   *dx_loc,smallP)
-    qp(i,ivy,1)    = v         + half*dt*sv0  - half*dvx   *dx_loc
-    qp(i,ivz,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
+    dx_loc=dx(ix,iy,1)
+    qm(ix,iy,irho,1)   = r_rho     + half*dt*sr0  + half*drx   *dx_loc
+    qm(ix,iy,ivx,1)    = u         + half*dt*su0  + half*dux   *dx_loc
+    qm(ix,iy,iP,1)     = max(p     + half*dt*sP0  + half*dpx   *dx_loc,smallP)
+    qm(ix,iy,ivy,1)    = v         + half*dt*sv0  + half*dvx   *dx_loc
+    qm(ix,iy,ivz,1)    = w         + half*dt*sw0  + half*dwx   *dx_loc 
+    qp(ix,iy,irho,1)   =r_rho      + half*dt*sr0  - half*drx   *dx_loc
+    qp(ix,iy,ivx,1)    = u         + half*dt*su0  - half*dux   *dx_loc
+    qp(ix,iy,iP,1)     = max(p     + half*dt*sP0  - half*dpx   *dx_loc,smallP)
+    qp(ix,iy,ivy,1)    = v         + half*dt*sv0  - half*dvx   *dx_loc
+    qp(ix,iy,ivz,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
 
     ! direction y
 #if NY>1
-    dx_loc=radius_polar*dx(i,2)
-    qm(i,irho,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
-    qm(i,ivx,2)    = u         + half*dt*su0  + half*duy   *dx_loc
-    qm(i,iP,2)     = max(p     + half*dt*sP0  + half*dpy   *dx_loc,smallP)
-    qm(i,ivy,2)    = v         + half*dt*sv0  + half*dvy   *dx_loc
-    qm(i,ivz,2)    = w         + half*dt*sw0  + half*dwy   *dx_loc 
-    qp(i,irho,2)   = r_rho     + half*dt*sr0  - half*dry   *dx_loc
-    qp(i,ivx,2)    = u         + half*dt*su0  - half*duy   *dx_loc
-    qp(i,iP,2)     = max(p     + half*dt*sP0  - half*dpy   *dx_loc,smallP)
-    qp(i,ivy,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
-    qp(i,ivz,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
+    dx_loc=radius_polar*dx(ix,iy,2)
+    qm(ix,iy,irho,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
+    qm(ix,iy,ivx,2)    = u         + half*dt*su0  + half*duy   *dx_loc
+    qm(ix,iy,iP,2)     = max(p     + half*dt*sP0  + half*dpy   *dx_loc,smallP)
+    qm(ix,iy,ivy,2)    = v         + half*dt*sv0  + half*dvy   *dx_loc
+    qm(ix,iy,ivz,2)    = w         + half*dt*sw0  + half*dwy   *dx_loc 
+    qp(ix,iy,irho,2)   = r_rho     + half*dt*sr0  - half*dry   *dx_loc
+    qp(ix,iy,ivx,2)    = u         + half*dt*su0  - half*duy   *dx_loc
+    qp(ix,iy,iP,2)     = max(p     + half*dt*sP0  - half*dpy   *dx_loc,smallP)
+    qp(ix,iy,ivy,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
+    qp(ix,iy,ivz,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
  
 #endif
 
@@ -176,13 +163,13 @@ subroutine predictor
         ivy_spe  = ivdy(idust) 
         ivz_spe  = ivdz(idust)
 
-        r_rho = q(i,irho_spe)
-        u     = q(i,ivx_spe)
+        r_rho = q(ix,iy,irho_spe)
+        u     = q(ix,iy,ivx_spe)
         dux   = dq(i,ivx_spe,1)
         drx   = dq(i,irho_spe,1)
-        v     = q(i,ivy_spe)
+        v     = q(ix,iy,ivy_spe)
         dvx   = dq(i,ivy_spe,1)
-        w     = q(i,ivz_spe)
+        w     = q(ix,iy,ivz_spe)
         dwx   = dq(i,ivz_spe,1)
 #if NY>1   
         dry   = dq(i,irho_spe,2)   
@@ -216,33 +203,33 @@ subroutine predictor
 #endif
 
     !Direction x
-    dx_loc=dx(i,1)
-    qm(i,irho_spe,1)   = r_rho     + half*dt*sr0  + half*drx   *dx_loc
-    qm(i,ivx_spe,1)    = u         + half*dt*su0  + half*dux   *dx_loc
-    qm(i,ivy_spe,1)    = v         + half*dt*sv0  + half*dvx   *dx_loc
-    qm(i,ivz_spe,1)    = w         + half*dt*sw0  + half*dwx   *dx_loc 
-    qp(i,irho_spe,1)   = r_rho     + half*dt*sr0  - half*drx   *dx_loc
-    qp(i,ivx_spe,1)    = u         + half*dt*su0  - half*dux   *dx_loc
-    qp(i,ivy_spe,1)    = v         + half*dt*sv0  - half*dvx   *dx_loc
-    qp(i,ivz_spe,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
+    dx_loc=dx(ix,iy,1)
+    qm(ix,iy,irho_spe,1)   = r_rho     + half*dt*sr0  + half*drx   *dx_loc
+    qm(ix,iy,ivx_spe,1)    = u         + half*dt*su0  + half*dux   *dx_loc
+    qm(ix,iy,ivy_spe,1)    = v         + half*dt*sv0  + half*dvx   *dx_loc
+    qm(ix,iy,ivz_spe,1)    = w         + half*dt*sw0  + half*dwx   *dx_loc 
+    qp(ix,iy,irho_spe,1)   = r_rho     + half*dt*sr0  - half*drx   *dx_loc
+    qp(ix,iy,ivx_spe,1)    = u         + half*dt*su0  - half*dux   *dx_loc
+    qp(ix,iy,ivy_spe,1)    = v         + half*dt*sv0  - half*dvx   *dx_loc
+    qp(ix,iy,ivz_spe,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
     
     !direction y
 #if NY>1
-    dx_loc=radius_polar*dx(i,2)
-    qm(i,irho_spe,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
-    qm(i,ivx_spe,2)    = u         + half*dt*su0  + half*duy   *dx_loc
-    qm(i,ivy_spe,2)    = v         + half*dt*sv0  + half*dvy   *dx_loc
-    qm(i,ivz_spe,2)    = w         + half*dt*sw0  + half*dwy   *dx_loc 
-    qp(i,irho_spe,2)   = r_rho     + half*dt*sr0  - half*dry   *dx_loc
-    qp(i,ivx_spe,2)    = u         + half*dt*su0  - half*duy   *dx_loc
-    qp(i,ivy_spe,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
-    qp(i,ivz_spe,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
+    dx_loc=radius_polar*dx(ix,iy,2)
+    qm(ix,iy,irho_spe,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
+    qm(ix,iy,ivx_spe,2)    = u         + half*dt*su0  + half*duy   *dx_loc
+    qm(ix,iy,ivy_spe,2)    = v         + half*dt*sv0  + half*dvy   *dx_loc
+    qm(ix,iy,ivz_spe,2)    = w         + half*dt*sw0  + half*dwy   *dx_loc 
+    qp(ix,iy,irho_spe,2)   = r_rho     + half*dt*sr0  - half*dry   *dx_loc
+    qp(ix,iy,ivx_spe,2)    = u         + half*dt*su0  - half*duy   *dx_loc
+    qp(ix,iy,ivy_spe,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
+    qp(ix,iy,ivz_spe,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
 
 #endif
 
 #if NDUSTPSCAL>0
     do ipscal= 1, ndustpscal
-        r_rho = q(i,idust_pscal(idust,ipscal))
+        r_rho = q(ix,iy,idust_pscal(idust,ipscal))
 
         drx   = dq(i,idust_pscal(idust,ipscal),1)
         dry   = dq(i,idust_pscal(idust,ipscal),2)
@@ -258,15 +245,15 @@ subroutine predictor
 #endif
         ! Direction x
 
-        dx_loc=dx(i,1)
-        qm(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  + half*drx   * dx_loc
-        qp(i,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   * dx_loc
+        dx_loc=dx(ix,iy,1)
+        qm(ix,iy,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  + half*drx   * dx_loc
+        qp(ix,iy,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   * dx_loc
         
         ! Direction y
 #if NY>1
-       dx_loc=radius_polar*dx(i,2)
-       qm(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   * dx_loc
-       qp(i,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   * dx_loc
+       dx_loc=radius_polar*dx(ix,iy,2)
+       qm(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   * dx_loc
+       qp(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   * dx_loc
 #endif
     end do
 #endif
@@ -276,21 +263,19 @@ subroutine predictor
 ! We recompute the thermal pressure if we don't solve for the NRJ equation
 if(iso_cs==1) then
     do idim =1,ndim
-        qp(i,iP,idim)   = cs(i)**2*qp(i,irho,idim)
-        qm(i,iP,idim)   = cs(i)**2*qm(i,irho,idim)
+        qp(ix,iy,iP,idim)   = cs(i)**2*qp(ix,iy,irho,idim)
+        qm(ix,iy,iP,idim)   = cs(i)**2*qm(ix,iy,irho,idim)
     end do
 end if
 if(non_standard_eos==1) then
     do idim=1,ndim
-        qp(i,iP,idim)   = cs_eos(barotrop(qp(i,irho,idim)))**2*qp(i,irho,idim)
-        qm(i,iP,idim)   = cs_eos(barotrop(qm(i,irho,idim)))**2*qm(i,irho,idim)
+        qp(ix,iy,iP,idim)   = cs_eos(barotrop(qp(ix,iy,irho,idim)))**2*qp(ix,iy,irho,idim)
+        qm(ix,iy,iP,idim)   = cs_eos(barotrop(qm(ix,iy,irho,idim)))**2*qm(ix,iy,irho,idim)
    end do
 end if
-end if !End of very first if loop
-end do !End of very first do loop (i)
-  !$OMP END DO
+end do 
+end do 
 
-  !$OMP END PARALLEL
   deallocate(dq)
 
 end subroutine predictor
@@ -315,20 +300,16 @@ subroutine add_delta_u
 
   flux       = 0.0d0
 
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,idust,ivar,ix,iy,il,ily,qleft,qright,flx,csr,csl)
-  !$OMP DO
-  do i = 1, ncells
-    if(active_cell_predictor(i)==1) then
-      ix=ixx(i)
-      iy=iyy(i)
+
+  do iy=2,ny_max-1
+    do ix= 2,nx_max-1
+      i=icell(ix,iy)
 
       !First direction x
       il = icell(ix-1,iy)
       do ivar=1,nvar
-            qleft(ivar)  = qm(il,ivar,1)
-            qright(ivar) = qp(i,ivar,1)
+            qleft(ivar)  = qm(ix-1,iy,ivar,1)
+            qright(ivar) = qp(ix,iy,ivar,1)
             flx(ivar)    = 0.0d0
       end do
 
@@ -354,8 +335,8 @@ subroutine add_delta_u
     il = icell(ix,iy-1)
 
         do ivar=1,nvar
-            qleft(ivar)  = qm(il,ivar,2)
-            qright(ivar) = qp(i,ivar, 2)
+            qleft(ivar)  = qm(ix,iy-1,ivar,2)
+            qright(ivar) = qp(ix,iy,ivar, 2)
             flx(ivar)    = 0.0d0
         end do
 
@@ -381,52 +362,23 @@ subroutine add_delta_u
         end do
 #endif
 
-    end if
+    end do
   end do
-  !$OMP END DO
-  !$OMP BARRIER
 
-  !Update state vector 
-  !$OMP DO
-  do i=1,ncells
-    if(active_cell(i)==1) then
-        ix = ixx(i)
-        iy = iyy(i)
-#if NY==1
-        il  = icell(ix+1,iy)
-        ! 1D case
-        do ivar = 1, nvar
-            u_prim(i,ivar)=u_prim(i,ivar)+(flux(i,ivar,1)*surf(i,1)-flux(il,ivar,1)*surf(il,1))/vol(i)*dt
-        end do
-#endif
-#if NY>1
+  do iy=first_active_y,last_active_y
+    do ix= first_active,last_active
+        i=icell(ix,iy)
         ! 2D case : we do both fluxes at the same time to be more efficient
         il  = icell(ix+1,iy)
         ily = icell(ix,iy+1)
         do ivar = 1, nvar
-              u_prim(i,ivar)=u_prim(i,ivar) + (flux(i,ivar,1)*surf(i,1)-flux(il,ivar,1)*surf(il,1))  /vol(i)*dt&
-              &                             + (flux(i,ivar,2)*surf(i,2)-flux(ily,ivar,2)*surf(ily,2))/vol(i)*dt
+              u_prim(ix,iy,ivar)=u_prim(ix,iy,ivar) + (flux(i,ivar,1)*surf(ix,iy,1)-flux(il,ivar,1) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
+              &                             + (flux(i,ivar,2)*surf(ix,iy,2)-flux(ily,ivar,2)*surf(ix,iy+1,2))/vol(ix,iy)*dt
         end do
-#endif
 
-      endif
+      end do
     end do
-
-  !$OMP END DO
-  !$OMP END PARALLEL
-
-
-! #if GEOM==2
-!   deallocate(source_loc)
-! #endif
-
 end subroutine add_delta_u
-
-
-
-
-
-
 
 subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
  use hydro_solvers

@@ -7,7 +7,7 @@ subroutine dust_growth(verbose)
   use OMP_LIB
   implicit none
   logical :: verbose
-  integer :: i,idust,jdust,kdust,niter_growth,ifrag1,ifrag2,ic1,ic2,ic3,ic4
+  integer :: i,idust,jdust,kdust,niter_growth,ifrag1,ifrag2,ic1,ic2,ic3,ic4,ix,iy,icell
   integer :: frag_test,turbgrow,ambigrow,driftgrow,browgrow
 
   real(dp) :: eta,zeta,massmin,mono1,mono2,m_add,m1,m2,s1,s2,m_mono,a_mu,barotrop
@@ -22,7 +22,6 @@ subroutine dust_growth(verbose)
   real(dp), dimension(1:ndust,1:ndust)  :: K_coag , dvij             ! Kernel and differential velocity
   real(dp), dimension(1:ndust,1:ndust)  :: redistribute_fragments
   real(dp), dimension(1:ndust)          :: t_sdust,sigmav_dust,tau_k,omega_dust,gamma_d2
-  real(dp), dimension(1:ncells)         :: dt_cfl_all
   real(dp):: dt_growth,time_growth
 
   ! Flags 
@@ -56,22 +55,17 @@ subroutine dust_growth(verbose)
     redistribute_fragments(:,idust)= redistribute_fragments(:,idust)/sum(redistribute_fragments(:,idust))
   end do
 
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(time_growth,niter_growth,T,lambJ,vambi,drhodt,m1,vdrift_turb,vdrift_brow,vdrift_ad,vdrift_hydro,s1,s2,dv,f_frag,p_coag,Ecol,Ebr,dndt,ic1,ic2,ifrag2,idust,jdust,kdust,i,dt_growth,t_L,t_eta,Reynolds,t_stop_loc,dvij,f_Stokes,x_stokes,St1,St2,vclass1,vclass2,vclass3,epsilon_mass)    
-  
-  !$OMP DO 
-  do i=1,ncells
-  if (active_cell(i)==1) then
-
+   do iy = first_active_y,last_active_y
+   do ix = first_active,last_active
+      i =icell(ix,iy)
      ! Cell by cell-cycling
      time_growth  = 0.0d0
      niter_growth = 0
      if(.not.dust_growth_disk) then
-      T            = barotrop(q(i,irho))
-      lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs_eos(T)*unit_v
-      Reynolds     = 6.2d7*dsqrt(q(i,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
-      t_L          = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))/unit_t
+      T            = barotrop(q(ix,iy,irho))
+      lambJ        = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))*cs_eos(T)*unit_v
+      Reynolds     = 6.2d7*dsqrt(q(ix,iy,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
+      t_L          = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))/unit_t
       t_eta        = t_L/dsqrt(Reynolds)
       t_stop_loc   = 0.0d0
      else
@@ -99,7 +93,7 @@ subroutine dust_growth(verbose)
            if(t_stop_loc(idust)>t_L)vdrift_turb   = vclass3
            
            vdrift_brow  = dsqrt(dSQRT((8.0d0*kb*T/pi)*(mdust(i,idust)*unit_m+mdust(i,jdust)*unit_m)/(mdust(i,idust)*mdust(i,jdust)*unit_m**2)/unit_v**2)**2)
-           vdrift_hydro = dsqrt((q(i,ivdx(idust))-q(i,ivdx(jdust)))**2+(q(i,ivdy(idust))-q(i,ivdy(jdust)))**2+(q(i,ivdz(idust))-q(i,ivdz(jdust)))**2)
+           vdrift_hydro = dsqrt((q(ix,iy,ivdx(idust))-q(ix,iy,ivdx(jdust)))**2+(q(ix,iy,ivdy(idust))-q(ix,iy,ivdy(jdust)))**2+(q(ix,iy,ivdz(idust))-q(ix,iy,ivdz(jdust)))**2)
            if(turbgrow ==1)  dvij(idust,jdust) = vdrift_turb
            if(browgrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_brow**2.)
            if(driftgrow==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_hydro**2.)
@@ -138,19 +132,19 @@ subroutine dust_growth(verbose)
                     !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/vfrag,1.0d0),0.0d0) ! velocity threshold
 
                  endif
-                 dndt = clustered_fraction**2.0*pi*(s1+s2)**2.*dvij(idust,jdust)*u_prim(i,irhod(idust))*u_prim(i,irhod(jdust))/m1/m2 ! K n1 n2
+                 dndt = clustered_fraction**2.0*pi*(s1+s2)**2.*dvij(idust,jdust)*u_prim(ix,iy,irhod(idust))*u_prim(ix,iy,irhod(jdust))/m1/m2 ! K n1 n2
 
               if(kernel_type==1) then ! Constant Kernel
 
                  p_coag = 1.0d0
                  f_frag = 0.0d0
-                 dndt   = u_prim(i,irhod(idust))*u_prim(i,irhod(jdust))/m1/m2
+                 dndt   = u_prim(ix,iy,irhod(idust))*u_prim(ix,iy,irhod(jdust))/m1/m2
 
               else if(kernel_type==2) then ! Additive Kernel
 
                  p_coag = 1.0d0
                  f_frag = 0.0d0
-                 dndt   = (m1+m2)*u_prim(i,irhod(idust))*u_prim(i,irhod(jdust))/m1/m2
+                 dndt   = (m1+m2)*u_prim(ix,iy,irhod(idust))*u_prim(ix,iy,irhod(jdust))/m1/m2
 
               endif
 
@@ -167,10 +161,10 @@ subroutine dust_growth(verbose)
               !#######################################
               !#######################################
               if(kernel_type==0) then
-                 if(eps_threshold>0.0d0.and.(u_prim(i,irhod(idust))<eps_threshold*u_prim(i,irho)))           p_coag=0.0d0
-                 if(eps_threshold>0.0d0.and.(u_prim(i,irhod(jdust))<eps_threshold*u_prim(i,irho)))           p_coag=0.0d0
-                 if(eps_threshold_frag>0.0d0.and.(u_prim(i,irhod(idust))<eps_threshold_frag*u_prim(i,irho))) f_frag=0.0d0
-                 if(eps_threshold_frag>0.0d0.and.(u_prim(i,irhod(jdust))<eps_threshold_frag*u_prim(i,irho))) f_frag=0.0d0
+                 if(eps_threshold>0.0d0.and.(u_prim(ix,iy,irhod(idust))<eps_threshold*u_prim(ix,iy,irho)))           p_coag=0.0d0
+                 if(eps_threshold>0.0d0.and.(u_prim(ix,iy,irhod(jdust))<eps_threshold*u_prim(ix,iy,irho)))           p_coag=0.0d0
+                 if(eps_threshold_frag>0.0d0.and.(u_prim(ix,iy,irhod(idust))<eps_threshold_frag*u_prim(ix,iy,irho))) f_frag=0.0d0
+                 if(eps_threshold_frag>0.0d0.and.(u_prim(ix,iy,irhod(jdust))<eps_threshold_frag*u_prim(ix,iy,irho))) f_frag=0.0d0
               endif
 
               ic1 = max(min(floor(dlog((1.0d0-f_frag)*(m1+m2)/massmin)/dlog(eta)+1),ndust),1)
@@ -221,10 +215,9 @@ subroutine dust_growth(verbose)
         dt_growth=1d32!(dt-time_growth)
          do idust=1,ndust
             if(abs(drhodt(idust)).ne.0.0d0) then
-               dt_growth=min(dt_growth,u_prim(i,irhod(idust))/abs(drhodt(idust))*CFL_growth)
+               dt_growth=min(dt_growth,u_prim(ix,iy,irhod(idust))/abs(drhodt(idust))*CFL_growth)
             endif
          end do
-         dt_cfl_all(i)=dt_growth
          dt_growth=min(dt_growth,dt-time_growth)
 
          if(dtcontrol_growth>0.0d0)then
@@ -233,7 +226,7 @@ subroutine dust_growth(verbose)
          endif
          !stop
          do idust=1,ndust
-            u_prim(i,irhod(idust))=max(u_prim(i,irhod(idust))+drhodt(idust)*dt_growth,u_prim(i,irho)*dust_ratio_min)
+            u_prim(ix,iy,irhod(idust))=max(u_prim(ix,iy,irhod(idust))+drhodt(idust)*dt_growth,u_prim(ix,iy,irho)*dust_ratio_min)
          end do
          time_growth=time_growth+dt_growth
          !print *,time_growth, dt_growth,i
@@ -241,10 +234,9 @@ subroutine dust_growth(verbose)
          
       end do
       if(kernel_type>0) print *, 'number of iterations', niter_growth
-   endif
+      end do
    end do
-   !$OMP END DO
-   !$OMP END PARALLEL
+
    
  end subroutine dust_growth
 
@@ -258,26 +250,17 @@ subroutine dust_growth_stepinski(verbose)
   use OMP_LIB
   implicit none
   logical :: verbose
-  integer :: i,idust,jdust,ipscal
+  integer :: i,idust,jdust,ipscal,icell,ix,iy
 
-
-
-
-  !$OMP PARALLEL &
-  !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,idust,ipscal)    
-  
-  !$OMP DO 
-  do i=1,ncells
-  if (active_cell(i)==1) then
-     ! Differential velocity loop
-     do idust=1,ndust
-           u_prim(i,idust_pscal(idust,1))=max(u_prim(i,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(i,irhod(idust))*sminstep/unit_l)
-           !sdust(i,idust) = u_prim(i,idust_pscal(idust,1))/q(i,irhod(idust))
+   do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+         i = icell(ix,iy)
+         ! Differential velocity loop
+         do idust=1,ndust
+           u_prim(ix,iy,idust_pscal(idust,1))=max(u_prim(ix,iy,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(ix,iy,irhod(idust))*sminstep/unit_l)
+         end do
       end do
-   endif
    end do
-   !$OMP END DO
-   !$OMP END PARALLEL
+
    
  end subroutine dust_growth_stepinski

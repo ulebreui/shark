@@ -11,78 +11,38 @@ subroutine allocate_init
   call get_active_cells
 
   ! Grid related quantities
-  allocate(vol(1:ncells))
-  allocate(dvol(1:ncells))
-  allocate(dx(1:ncells,1:ndim))
-  allocate(surf(1:ncells,1:ndim))
-  allocate(position(1:ncells,1:ndim))
-  allocate(radii(1:ncells))
+  allocate(vol(1:nx_max,1:ny_max))
+  allocate(surf(1:nx_max,1:ny_max,1:ndim))
+  allocate(dx(1:nx_max,1:ny_max,1:ndim))
+
+
+
+  allocate(position(1:nx_max,1:ny_max,1:ndim))
   allocate(radii_c(1:ncells))
 
   vol      = 0.d0
-  dvol     = 0.d0
-  dx       = 0.d0
   Surf     = 0.d0
+  dx       = 0.d0
+  
   position = 0.0d0
 
   do i=1,ncells
-    radii(i)   = 1.0d0 ! We set it to 1 for cartesian geometry to avoid code duplication
     radii_c(i) = 1.0d0 ! We set it to 1 for cartesian geometry to avoid code duplication
   end do
 
-#if GEOM==1
-  radii=0.0d0 
-  radii_c=0.0d0
-  allocate(theta(1:ncells))
-  theta=0.0d0 
-  allocate(dx_l(1:ncells))
-  allocate(dx_r(1:ncells))
-  allocate(dx_l_cell(1:ncells))
-  allocate(dx_r_cell(1:ncells))
-  allocate(dx_c(1:ncells))
-  dx_l = 0.d0
-  dx_r = 0.d0
-  dx_l_cell=0.d0
-  dx_r_cell=0.d0
-  dx_c=0.d0
-#endif
-
 #if GEOM==2
-    allocate(phi(1:ncells))
+    allocate(phi(1:nx_max,1:ny_max))
     phi=1.0d0
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
 #endif
-#endif
-#if GEOM==3
-    allocate(phi(1:ncells))
-    phi=1.0d0
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
-#endif
-#endif
-
-#if GEOM==4
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
-#endif
-#endif
-
 
   ! Variable related quantities
-  allocate(u_prim(1:ncells,1:nvar))
-  allocate(q(1:ncells,1:nvar))
-  allocate(qm(1:ncells,1:nvar,1:ndim))
-  allocate(qp(1:ncells,1:nvar,1:ndim))
+  allocate(q(1:nx_max,1:ny_max,1:nvar))
+  allocate(u_prim(1:nx_max,1:ny_max,1:nvar))
+  allocate(qm(1:nx_max,1:ny_max,1:nvar,1:ndim))
+  allocate(qp(1:nx_max,1:ny_max,1:nvar,1:ndim))
+
+
+
   ! Force on the gas
   allocate(force(1:ncells,1:3))
   allocate(flux(1:ncells,1:nvar,1:ndim))

@@ -17,7 +17,7 @@ subroutine distribution_dust(initi)
   implicit none
   logical  ::initi
   real(dp) :: zeta,eta,m_min,sum_dust,m_sum
-  integer  :: idust,i,jdust,kdust
+  integer  :: idust,i,jdust,kdust,icell,ix,iy
 
   zeta = (smax/smin)**(1.0d0/ndust)
   eta  = zeta**3.
@@ -74,16 +74,23 @@ subroutine distribution_dust(initi)
      endif
 
   else !Else we use the updated dust distribution
-  !do i=1,ncells
-     do idust=1,ndust
-        epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
+   do iy=1,ny_max
+     do ix= 1,ny_max
+      do idust=1,ndust
+        epsilondust(icell(ix,iy),idust)=q(ix,iy,irhod(idust))/q(ix,iy,irho)
+      end do
      end do
+   end do
    !end do
   end if
   if(restarting>0.and.initi) then
-     do idust=1,ndust
-        epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
-     end do
+      do iy=1,ny_max
+        do ix= 1,ny_max
+         do idust=1,ndust
+           epsilondust(icell(ix,iy),idust)=q(ix,iy,irhod(idust))/q(ix,iy,irho)
+         end do
+        end do
+      end do
   endif
   !Add ice mantle
   if((initi.or.restarting>0).and.kernel_type==0) then

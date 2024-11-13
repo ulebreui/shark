@@ -1,128 +1,32 @@
 module boundary_types
 contains
 
-subroutine boundary_collapse_1D
-  use parameters
-  use commons
-  use units
-  implicit none
-  integer :: idust,ighost,ix,iy,icell,ibound_left, ibound_right, i_active_left, i_active_right, ivar
-
-   do ix=1,nghost 
-     do iy=1,ny_max
-         ibound_left    = icell(ix,iy)
-         ibound_right   = icell(nx_max+1-ix,iy)
-
-         i_active_left  = icell(first_active,iy)
-         i_active_right = icell(last_active,iy)
-
-        do ivar =1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Zero gradient
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
-        end do 
-
-        u_prim(ibound_left,ivx)   = 0.0d0
-        u_prim(first_active,ivx)  = 0.0d0
-        u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
-        u_prim(last_active,ivx)   = min(u_prim(last_active,ivx),0.0d0)
-
-#if NDUST>0
-        do idust=1,ndust
-            u_prim(ibound_left ,ivdx(idust))   = 0.0d0
-            u_prim(first_active,ivdx(idust))   = 0.0d0
-            u_prim(ibound_right,ivdx(idust))   = min(u_prim(ibound_right,ivdx(idust)),0.0d0)
-            u_prim(last_active ,ivdx(idust))   = min(u_prim(last_active ,ivdx(idust)),0.0d0)
-        end do
-#endif
-
-      end do
-  
-  end do
-
-
-end subroutine boundary_collapse_1D
-
-
-
-subroutine zero_gradients
-  use parameters
-  use commons
-  use units
-  implicit none
-  integer  :: idust,ighost,ix,iy,icell,ibound_left, ibound_right, i_active_left, i_active_right,ivar
-
-  if(ndim==1) then
-   do ix = 1,nghost
-      u_prim(ix,:)          = u_prim(first_active,:)
-      u_prim(nx_max+1-ix,:) = u_prim(last_active,:)
-   end do
-  else
-  do ix = first_active,last_active  
-   do iy = 1,nghost
-      ibound_left   = icell(ix,iy)
-      ibound_right  = icell(ix,ny_max+1-iy)
-
-      i_active_left = first_active_y
-      i_active_right= last_active_y      
-      do ivar =1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Zero grad along y
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
-      end do
-
-   end do
-  end do
-   do ix=1,nghost 
-     do iy=1,ny_max
-         ibound_left    = icell(ix,iy)
-         ibound_right   = icell(nx_max+1-ix,iy)
-         i_active_left = first_active!
-         i_active_right= last_active!    
-         do ivar =1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Zero grad along x
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
-         end do     
-
-      end do
-  end do
-  endif
-
-end subroutine zero_gradients
-
 subroutine disk_boundaries
   use parameters
   use commons
   use units
   implicit none
-  integer :: idust,ighost,ix,iy,icell, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer :: idust,ighost,ix,iy,icell,ivar
 
 
   do ix = first_active,last_active  
    do iy = 1,nghost
-      ibound_left    = icell(ix,iy)
-      ibound_right   = icell(ix,ny_max+1-iy)
-      i_active_left  = icell(ix,last_active_y -nghost+iy)
-      i_active_right = icell(ix,first_active_y+nghost-iy)
-   
       do ivar = 1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) 
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+         u_prim(ix,iy,ivar)  = u_prim(ix,last_active_y -nghost+iy,ivar) 
+         u_prim(ix,ny_max+1-iy,ivar) = u_prim(ix,first_active_y+nghost-iy,ivar)
       end do
 
    end do
 
   end do
    do ix= 1,nghost 
-     do iy= 1,ny_max
-         ibound_left    = icell(ix,iy)
-         ibound_right   = icell(nx_max+1-ix,iy)
-         i_active_left  = first_active
-         i_active_right = last_active   
+     do iy= 1,ny_max  
          do ivar = 1,nvar
-            u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) 
-            u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+            u_prim(ix,iy,ivar)  = u_prim(first_active,iy,ivar) 
+            u_prim(nx_max+1-ix,iy,ivar) = u_prim(last_active,iy,ivar)
          end do     
-         u_prim(ibound_right,ivx)  = min(u_prim(ibound_right,ivx),0.0d0)
-         u_prim(ibound_left,ivx)   = max(u_prim(ibound_left,ivx) ,0.0d0)
+         u_prim(nx_max+1-ix,iy,ivx)  = min(u_prim(nx_max+1-ix,iy,ivx),0.0d0)
+         u_prim(ix,iy,ivx)   = max(u_prim(ix,iy,ivx) ,0.0d0)
  
       end do
   end do
@@ -139,26 +43,17 @@ subroutine periodic_boundaries
 
   do ix = first_active,last_active  
    do iy = 1,nghost
-      ibound_left    = icell(ix,iy)
-      ibound_right   = icell(ix,ny_max+1-iy)
-      i_active_left  = icell(ix,last_active_y-nghost+iy)
-      i_active_right = icell(ix,first_active_y+nghost-iy)
       do ivar =1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic along y
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+         u_prim(ix,iy,ivar)  = u_prim(ix,last_active_y-nghost+iy,ivar) ! Periodic along y
+         u_prim(ix,ny_max+1-iy,ivar) = u_prim(ix,first_active_y+nghost-iy,ivar)
       end do
    end do
   end do
    do ix= 1,nghost 
-     do iy= 1,ny_max
-         ibound_left    = icell(ix,iy)
-         ibound_right   = icell(nx_max+1-ix,iy)
-         i_active_left  = icell(last_active-nghost+ix,iy)
-         i_active_right = icell(first_active+nghost-ix,iy)
-   
+     do iy= 1,ny_max   
          do ivar = 1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic conditions along x
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+            u_prim(ix,iy,ivar)  = u_prim(last_active-nghost+ix,iy,ivar) ! Periodic conditions along x
+            u_prim(nx_max+1-ix,iy,ivar) = u_prim(first_active+nghost-ix,iy,ivar)
          end do     
 
       end do
@@ -173,44 +68,33 @@ subroutine shear_boundaries(vel_shear)
   use commons
   use units
   implicit none
-  integer  :: idust,ighost,ix,iy,icell, ibound_left, ibound_right, i_active_left, i_active_right,ivar
+  integer  :: idust,ighost,ix,iy,icell,ivar
   real(dp) :: pm,mom_new,vel_shear
 
    do ix  = first_active,last_active
    do iy  = 1, nghost
-        !print *,'is it a boundary ? ', active_cell(icell(ix,iy))
-
-      ibound_left    = icell(ix,iy)
-      ibound_right   = icell(ix,ny_max+1-iy)
-      i_active_left  = icell(ix,last_active_y-nghost+iy)
-      i_active_right = icell(ix,first_active_y+nghost-iy)
       do ivar =1,nvar
-         u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! Periodic along y
-         u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+         u_prim(ix,iy,ivar)          = u_prim(ix,last_active_y-nghost+iy,ivar) ! Periodic along y
+         u_prim(ix,ny_max+1-iy,ivar) = u_prim(ix,first_active_y+nghost-iy,ivar)
       end do
    end do
   end do
 
    do ix=1,nghost ! Shear along x
      do iy= 1,ny_max
-         ibound_left    = icell(ix,iy)
-         ibound_right   = icell(nx_max+1-ix,iy)
-         i_active_left  = icell(last_active-nghost+ix,iy)
-         i_active_right = icell(first_active+nghost-ix,iy)
-
          do ivar =1,nvar
-            u_prim(ibound_left,ivar)  = u_prim(i_active_left,ivar) ! We first apply the periodic conditions along x
-            u_prim(ibound_right,ivar) = u_prim(i_active_right,ivar)
+            u_prim(ix,iy,ivar)          = u_prim(last_active-nghost+ix,iy,ivar) ! We first apply the periodic conditions along x
+            u_prim(nx_max+1-ix,iy,ivar) = u_prim(first_active+nghost-ix,iy,ivar)
          end do     
      
          ! Then, we compensate the shear in the z velocity
 
-         u_prim(ibound_left,ivz)         = u_prim(i_active_left,ivz) - u_prim(i_active_left,irho)*vel_shear
-         u_prim(ibound_right,ivz)        = u_prim(i_active_right,ivz) + u_prim(i_active_right,irho)*vel_shear     
+         u_prim(ix,iy,ivz)           = u_prim(last_active-nghost+ix,iy,ivz) - u_prim(last_active-nghost+ix,iy,irho)*vel_shear
+         u_prim(nx_max+1-ix,iy,ivz)  = u_prim(first_active+nghost-ix,iy,ivz) + u_prim(first_active+nghost-ix,iy,irho)*vel_shear     
 #if NDUST>0         
          do idust=1,ndust
-            u_prim(ibound_left ,ivdz(idust))     = u_prim(i_active_left,ivdz(idust)) - u_prim(i_active_left,irhod(idust))*vel_shear
-            u_prim(ibound_right,ivdz(idust))     = u_prim(i_active_right ,ivdz(idust)) + u_prim(i_active_right,irhod(idust)) *vel_shear
+            u_prim(ix,iy ,ivdz(idust))             = u_prim(last_active-nghost+ix,iy,ivdz(idust)) - u_prim(last_active-nghost+ix,iy,irhod(idust))*vel_shear
+            u_prim(nx_max+1-ix,iy,ivdz(idust))     = u_prim(first_active+nghost-ix,iy ,ivdz(idust)) + u_prim(first_active+nghost-ix,iy,irhod(idust)) *vel_shear
          end do
 #endif  
       end do

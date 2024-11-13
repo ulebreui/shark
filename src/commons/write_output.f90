@@ -4,7 +4,7 @@ subroutine output(iout)
   use commons
   use units
   implicit none
-  integer  :: i,idust,jdust,iout,ilun=50,ipscal
+  integer  :: i,idust,jdust,iout,ilun=50,ipscal,ixx,iyy,ix,iy
   real(dp) :: sum_dust,barotrop,B_field,rhod_tot
   real(dp), dimension(1: nx*ny) :: xdp
   character(LEN = 5) :: nchar
@@ -37,7 +37,11 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) position(i,1) !
+   if(active_cell(i)==1) then
+      ix=ixx(i)
+      iy=iyy(i)
+      write(ilun) position(ix,iy,1) !
+   endif 
 #endif
 #if GEOM==2
    if(active_cell(i)==1) write(ilun) radii_c(i) !
@@ -50,22 +54,28 @@ subroutine output(iout)
   close(ilun)
 
   open(ilun,file=trim(path) // trim(nchar)//trim('/rho'), form=format_out,access='stream')
-  do i = 1,ncells
+
+  do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
+         write(ilun) q(ix,iy,irho)*unit_d
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_dcol
+         write(ilun) q(ix,iy,irho)*unit_dcol
 #endif
 #if GEOM>2
-   if(active_cell(i)==1) write(ilun) q(i,irho)*unit_d
+         write(ilun) q(ix,iy,irho)*unit_d
 #endif
+      end do 
   end do
   close(ilun)  
 
   open(ilun,file=trim(path) // trim(nchar)//trim('/v'), form=format_out,access='stream')
-  do i = 1,ncells
-   if(active_cell(i)==1) write(ilun) q(i,ivx)*unit_v !
+
+  do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+         write(ilun) q(ix,iy,ivx)*unit_v !
+       end do
   end do
   close(ilun)
 
@@ -73,80 +83,103 @@ subroutine output(iout)
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/y'), form=format_out,access='stream')
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) position(i,2)
+      if(active_cell(i)==1) then
+         ix=ixx(i)
+         iy=iyy(i)
+         write(ilun) position(ix,iy,2)
+      endif
    end do
    close(ilun)
    endif
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/vy'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivy)*unit_v
+   do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+         write(ilun) q(ix,iy,ivy)*unit_v
+      end do
    end do
    close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/vz'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivz)*unit_v
+
+   do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+         write(ilun) q(ix,iy,ivz)*unit_v
+      end do
    end do
+
    close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/P'), form=format_out,access='stream')
-  do i = 1,ncells
+   do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
+         write(ilun) q(ix,iy,iP)*unit_P
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P*unit_l
+         write(ilun) q(ix,iy,iP)*unit_P*unit_l
 #endif
 #if GEOM>2
-   if(active_cell(i)==1) write(ilun) q(i,iP)*unit_P
+         write(ilun) q(ix,iy,iP)*unit_P
 #endif
+      end do
   end do
   close(ilun)
 
 #if NDUST>0
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod_tot'), form=format_out,access='stream')
-   do i = 1,ncells
-   if(active_cell(i)==1)  then
-   rhod_tot=0.d0
-   do idust=1,ndust
+
+   do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
+         rhod_tot=0.d0
+         do idust=1,ndust
 #if GEOM<2
-    rhod_tot = rhod_tot + q(i,irhod(idust))*unit_d
+            rhod_tot = rhod_tot + q(ix,iy,irhod(idust))*unit_d
 #endif
 #if GEOM==2
-   rhod_tot  = rhod_tot +  q(i,irhod(idust))*unit_dcol
+            rhod_tot  = rhod_tot +  q(ix,iy,irhod(idust))*unit_dcol
 #endif
 #if GEOM>2
-   rhod_tot  = rhod_tot + q(i,irhod(idust))*unit_d
+            rhod_tot  = rhod_tot + q(ix,iy,irhod(idust))*unit_d
 #endif
+         end do
+         write(ilun) rhod_tot
+      end do 
    end do
-    write(ilun) rhod_tot
-   endif 
-   end do
+
   close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod'), form=format_out,access='stream')
   do idust=1,ndust
-   do i = 1,ncells
+      do iy = first_active_y,last_active_y
+         do ix = first_active,last_active
 #if GEOM<2
-   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_d
+            write(ilun) q(ix,iy,irhod(idust))*unit_d
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_dcol
+            write(ilun) q(ix,iy,irhod(idust))*unit_dcol
 #endif
 #if GEOM>2
-   if(active_cell(i)==1) write(ilun) q(i,irhod(idust))*unit_d
+            write(ilun) q(ix,iy,irhod(idust))*unit_d
 #endif
-   end do
+         end do
+      end do
   end do
   close(ilun)
+
 #if NDUSTPSCAL>0
  open(ilun,file=trim(path) // trim(nchar)//trim('/dustpscal'), form=format_out,access='stream')
 
  do idust=1,ndust
    do ipscal=1,ndustpscal
-      if(active_cell(i)==1) write(ilun) q(i,idust_pscal(idust,ipscal))
+     do idust=1,ndust
+         do iy = first_active_y,last_active_y
+            write(ilun) q(ix,iy,idust_pscal(idust,ipscal))
+      end do
    end do
  end do
  close(ilun)
+
 #endif
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
@@ -154,26 +187,35 @@ subroutine output(iout)
    end do
   end do
   close(ilun)
+
   open(ilun,file=trim(path) // trim(nchar)//trim('/vd'), form=format_out,access='stream')
   do idust=1,ndust
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdx(idust))*unit_v
-   end do
+      do iy = first_active_y,last_active_y
+         do ix = first_active,last_active
+            write(ilun) q(ix,iy,ivdx(idust))*unit_v
+         end do
+      end do
   end do
   close(ilun)
 
   open(ilun,file=trim(path) // trim(nchar)//trim('/vdy'), form=format_out,access='stream')
+
   do idust=1,ndust
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdy(idust))*unit_v
-   end do
+      do iy = first_active_y,last_active_y
+         do ix = first_active,last_active
+            write(ilun) q(ix,iy,ivdy(idust))*unit_v
+         end do
+      end do
   end do
+
   close(ilun)
   open(ilun,file=trim(path) // trim(nchar)//trim('/vdz'), form=format_out,access='stream')
   do idust=1,ndust
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) q(i,ivdz(idust))*unit_v
-   end do
+      do iy = first_active_y,last_active_y
+         do ix = first_active,last_active
+            write(ilun) q(ix,iy,ivdy(idust))*unit_v
+         end do
+      end do
   end do
   close(ilun)
 #endif
