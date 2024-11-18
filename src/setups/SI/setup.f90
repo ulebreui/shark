@@ -16,7 +16,7 @@ subroutine setup
   integer :: ind_ux,ind_uy,info
 
 
-  integer :: i,idust,jdust,imax,ix,iy,icell,ixx,iyy
+  integer :: i, idust,jdust,imax,ix,iy,icell,ixx,iyy
   call allocate_init
 
 
@@ -331,12 +331,11 @@ subroutine compute_tstop
   use OMP_LIB
 
   implicit none
-  integer :: i,idust
   real(dp):: pn,rhon
   !Re-calc distribution
 
 
-   integer :: i,idust,icell,ix,iy
+   integer :: idust,icell,ix,iy
 
    do iy = first_active_y,last_active_y
     do ix = first_active,last_active
