@@ -110,15 +110,15 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
     print *,'You are using a linear cartesian grid.'
     do ix = 1, nx_max
       do iy = 1, ny_max
-        dx(ix,iy,1) = rmax_x/float(nx)
-        dx(ix,iy,2) = rmax_y/float(ny)
+        dx(ix,iy,1) = rmax_x/DBLE(nx)
+        dx(ix,iy,2) = rmax_y/DBLE(ny)
 
         surf(ix,iy,1) = dx(ix,iy,1)
         surf(ix,iy,2) = dx(ix,iy,2)
 
         vol (ix,iy)       = dx(ix,iy,1)*dx(ix,iy,2)
-        position(ix,iy,1) = (float(ix-first_active)+half)   * rmax_x/float(nx)
-        position(ix,iy,2) = (float(iy-first_active_y)+half) * rmax_y/float(ny)
+        position(ix,iy,1) = (DBLE(ix-first_active)+half)   * rmax_x/DBLE(nx)
+        position(ix,iy,2) = (DBLE(iy-first_active_y)+half) * rmax_y/DBLE(ny)
     end do
   end do
 #endif
@@ -130,17 +130,17 @@ subroutine gridinit(rmax_x,rmax_y,inner_r)
 
       do ix = 1, nx_max
         do iy = 1, ny_max
-          dx(ix,iy,1)     = rmax_x/float(nx) ! d_r
-          dx(ix,iy,2)     = rmax_y/float(ny) ! d_Phi
-          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
-          phi(ix,iy)        = (float(iy-first_active_y)+half) * rmax_y/float(ny)
+          dx(ix,iy,1)     = rmax_x/DBLE(nx) ! d_r
+          dx(ix,iy,2)     = rmax_y/DBLE(ny) ! d_Phi
+          radii(ix,iy)    = inner_r + (DBLE(ix-first_active)+half)   * rmax_x/DBLE(nx)
+          phi(ix,iy)        = (DBLE(iy-first_active_y)+half) * rmax_y/DBLE(ny)
 
 
-          position(ix,iy,1) = radii_c(icell(ix,iy))*cos(phi(ix,iy))
-          position(ix,iy,2) = radii_c(icell(ix,iy))*sin(phi(ix,iy))  
-          surf(ix,iy,1)     = (radii_c(icell(ix,iy))-half* dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
+          position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
+          position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy))  
+          surf(ix,iy,1)     = (radii(x,iy)-half* dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
           surf(ix,iy,2)     = dx(ix,iy,1)! dr
-          vol (ix,iy)       = radii_c(icell(ix,iy))*dx(ix,iy,1)*dx(ix,iy,2)
+          vol (ix,iy)       = radii(ix,iy)*dx(ix,iy,1)*dx(ix,iy,2)
 
         end do
       end do
@@ -173,17 +173,17 @@ subroutine gridinit_disk_log(rmax_x,inner_r)
 
       do ix = 1, nx_max
         do iy = 1, ny_max
-          dx(ix,iy,1)     = rmax_x/float(nx) ! d_r
-          dx(ix,iy,2)     = 2.0d0*pi/float(ny) ! d_Phi
-          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
-          phi(ix,iy)        = (float(iy-first_active_y)+half) * 2.0d0*pi/float(ny)
+          dx(ix,iy,1)     = rmax_x/DBLE(nx) ! d_r
+          dx(ix,iy,2)     = 2.0d0*pi/DBLE(ny) ! d_Phi
+          radii(ix,iy)    = inner_r + (DBLE(ix-first_active)+half)   * rmax_x/DBLE(nx)
+          phi(ix,iy)        = (DBLE(iy-first_active_y)+half) * 2.0d0*pi/DBLE(ny)
 
 
-          position(ix,iy,1) = radii_c(icell(ix,iy))*cos(phi(ix,iy))
-          position(ix,iy,2) = radii_c(icell(ix,iy))*sin(phi(ix,iy))  
-          surf(ix,iy,1)     = (radii_c(icell(ix,iy))-half* dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
+          position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
+          position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy))  
+          surf(ix,iy,1)     = (radii(ix,iy)-half* dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
           surf(ix,iy,2)     = dx(ix,iy,1)! dr
-          vol (ix,iy)      = radii_c(icell(ix,iy))*dx(ix,iy,1)*dx(ix,iy,2)
+          vol (ix,iy)       = radii(ix,iy)*dx(ix,iy,1)*dx(ix,iy,2)
 
         end do
       end do
@@ -194,19 +194,19 @@ subroutine gridinit_disk_log(rmax_x,inner_r)
   zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx-1))
   do iy = 1, ny_max
     do ix = 1, nx_max
-      radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
+      radii(ix,iy)   = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
       dx(ix,iy,1)     = inner_r*(zeta_r**(ix+1-first_active)-zeta_r**(ix-first_active))
-      dx(ix,iy,2)     = 2.0d0*pi/float(ny) ! d_Phi
-      phi(ix,iy)        = (float(iy-first_active_y)+half) *2.0d0*pi/float(ny)
-      position(ix,iy,1) = radii_c(icell(ix,iy))*cos(phi(ix,iy))
-      position(ix,iy,2) = radii_c(icell(ix,iy))*sin(phi(ix,iy)) 
+      dx(ix,iy,2)     = 2.0d0*pi/DBLE(ny) ! d_Phi
+      phi(ix,iy)        = (DBLE(iy-first_active_y)+half) *2.0d0*pi/DBLE(ny)
+      position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
+      position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy)) 
       surf(ix,iy,1)     = inner_r*(zeta_r**(ix-first_active))*(dx(ix,iy,2))  ! r dphi
       surf(ix,iy,2)     = dx(ix,iy,1)! dr
-      vol (ix,iy)       = radii_c(icell(ix,iy))*dx(ix,iy,1)*dx(ix,iy,2)
+      vol (ix,iy)       = radii(ix,iy)*dx(ix,iy,1)*dx(ix,iy,2)
     end do
     do ix=1,nghost
-      radii_c(icell(ix,iy))             = inner_r*0.5d0
-      radii_c(icell(nx_max+1-ix,iy))    = rmax_x+0.5d0*dx(last_active,iy,1)
+      radii(ix,iy)             = inner_r*0.5d0
+      radii(nx_max+1-ix,iy)    = rmax_x+0.5d0*dx(last_active,iy,1)
       dx(ix,iy,1)              = dx(first_active,iy,1)
       dx(nx_max+1-ix,iy,1)     = dx(last_active,iy,1)
     end do
@@ -241,11 +241,11 @@ subroutine gridinit_disk_log(rmax_x,inner_r,rmax_y)
 
       do ix = 1, nx_max
         do iy = 1, ny_max
-          dx(ix,iy,1)     = rmax_x/float(nx) ! d_r
-          dx(ix,iy,2)     = rmax_y/float(ny) ! d_y
-          radii_c(icell(ix,iy))    = inner_r + (float(ix-first_active)+half)   * rmax_x/float(nx)
-          position(ix,iy,1) = radii_c(icell(ix,iy))
-          position(ix,iy,2) = (float(iy-first_active_y)+half) *rmax_y/float(ny)  
+          dx(ix,iy,1)     = rmax_x/DBLE(nx) ! d_r
+          dx(ix,iy,2)     = rmax_y/DBLE(ny) ! d_y
+          radii(ix,iy)    = inner_r + (DBLE(ix-first_active)+half)   * rmax_x/DBLE(nx)
+          position(ix,iy,1) = radii(ix,iy)
+          position(ix,iy,2) = (DBLE(iy-first_active_y)+half) *rmax_y/DBLE(ny)  
           surf(ix,iy,1)     = (dx(ix,iy,2))  ! dy
           surf(ix,iy,2)     = dx(ix,iy,1)! dr
           vol (ix,iy)              = dx(ix,iy,1)*dx(ix,iy,2)
@@ -259,18 +259,18 @@ subroutine gridinit_disk_log(rmax_x,inner_r,rmax_y)
   zeta_r=(rmax_x/(inner_r))**(1.0d0/(nx))
   do iy = 1, ny_max
     do ix = 1, nx_max
-      radii_c(icell(ix,iy))    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
+      radii(ix,iy)    = inner_r*half*(zeta_r**(ix-first_active)+zeta_r**(ix+1-first_active))
       dx(ix,iy,1)     = inner_r*(zeta_r**(ix+1-first_active)-zeta_r**(ix-first_active))
-      dx(ix,iy,2)     = rmax_y/float(ny) ! d_y
-      position(ix,iy,1) = radii_c(icell(ix,iy))
-      position(ix,iy,2) = (float(iy-first_active_y)+half) *rmax_y/float(ny)
+      dx(ix,iy,2)     = rmax_y/DBLE(ny) ! d_y
+      position(ix,iy,1) = radii(ix,iy)
+      position(ix,iy,2) = (DBLE(iy-first_active_y)+half) *rmax_y/DBLE(ny)
       surf(ix,iy,1)     = (dx(ix,iy,2))   ! dy
       surf(ix,iy,2)     = dx(ix,iy,1)     ! dr
       vol (ix,iy)       = dx(ix,iy,1)*dx(ix,iy,2)
     end do
     do ix=1,nghost
-      radii_c(icell(ix,iy))             = inner_r*0.5d0
-      radii_c(icell(nx_max+1-ix,iy))    = rmax_x +0.5d0*dx(last_active,iy,1)
+      radii(ix,iy)             = inner_r*0.5d0
+      radii(nx_max+1-ix,iy))   = rmax_x +0.5d0*dx(last_active,iy,1)
       dx(ix,iy,1)              = dx(first_active,iy,1)
       dx(nx_max+1-ix,iy,1)     = dx(last_active,iy,1)
     end do

@@ -11,22 +11,26 @@ subroutine predictor
   use OMP_LIB
   use slope_limiter
   implicit none
-  integer  :: i,ix,iy,icell,iymin,iymax,idust,il,ir
-  integer  :: ixx,iyy
-  integer  :: ivar,idim,ix0,iy0
-  real(dp) :: slope_lft,slope_rgt,slope_lim,barotrop,cs_eos,ddxp,ddxm,dx_loc
+  integer  :: ix,iy,icell,iymin,iymax,idust,il,ir
+  integer  :: ivar,idim
+  real(dp) :: slope_lft,slope_rgt,slope_lim,barotrop,cs_eos,dx_loc
   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,dcen,dsgn,dlim,slop,radius_polar
   integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
-  real(dp), dimension(:,:,:),allocatable :: dq
+  real(dp), dimension(:,:,:),allocatable :: dq_x
+  real(dp), dimension(:,:,:),allocatable :: dq_y
+
   if(static) return
 
 
   ! Initialise to zero
-  allocate(dq(1:ncells,1:nvar,1:ndim))
+  allocate(dq_x(1:nx_max,1:ny_max,1:nvar))
+  allocate(dq_y(1:nx_max,1:ny_max,1:nvar))
 
-  dq    = 0.0d0
+  dq_x    = 0.0d0
+  dq_y    = 0.0d0
+
   qp    = 0.0d0
   qm    = 0.0d0
   drx   = 0.0d0 
@@ -44,53 +48,43 @@ subroutine predictor
 
   do iy=2,ny_max-1
     do ix= 2,nx_max-1
-        i=icell(ix,iy)
-      radius_polar=1.0d0     
-#if GEOM==2
-      radius_polar=radii_c(i)
-#endif
-#if GEOM==4
-      radius_polar=1.0d0
-#endif  
+        radius_polar=radii(ix,iy)
     if(slope_type>0) then
     do ivar = 1, nvar
-            dq(i,ivar,1) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix-1,iy,ivar))/(dx(ix,iy,1)+dx(ix-1,iy,1)),2.0d0*(q(ix+1,iy,ivar) - q(ix,iy,ivar))/(dx(ix+1,iy,1)+dx(ix,iy,1)))
-#if NY>1
-            dq(i,ivar,2) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix,iy-1,ivar))/(dx(ix,iy,2)+dx(ix,iy-1,2)),2.0d0*(q(ix,iy+1,ivar) - q(ix,iy,ivar))/(dx(ix,iy+1,2)+dx(ix,iy,2)))/radius_polar
-#endif   
+            dq_x(ix,iy,ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix-1,iy,ivar))/(dx(ix,iy,1)+dx(ix-1,iy,1)),2.0d0*(q(ix+1,iy,ivar) - q(ix,iy,ivar))/(dx(ix+1,iy,1)+dx(ix,iy,1)))
+            dq_y(ix,iy,ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix,iy-1,ivar))/(dx(ix,iy,2)+dx(ix,iy-1,2)),2.0d0*(q(ix,iy+1,ivar) - q(ix,iy,ivar))/(dx(ix,iy+1,2)+dx(ix,iy,2)))/radius_polar
     end do
     endif
 
       r_rho = q(ix,iy,irho)
       u     = q(ix,iy,ivx)
-      dux   = dq(i,ivx,1)
-      drx   = dq(i,irho,1)
+      dux   = dq_x(ix,iy,ivx)
+      drx   = dq_x(ix,iy,irho)
       w     = q(ix,iy,ivz)
-      dwx   = dq(i,ivz,1)
+      dwx   = dq_x(ix,iy,ivz)
       v     = q(ix,iy,ivy)
-      dvx   = dq(i,ivy,1)
+      dvx   = dq_x(ix,iy,ivy)
       p     = q(ix,iy,iP)
-      dPx   = dq(i,iP,1)
+      dPx   = dq_x(ix,iy,iP)
       if(iso_cs==1) then
-       P     = q(ix,iy,irho)*cs(i)**2
-       dPx   = dq(i,irho,1)*cs(i)**2
+       P     = q(ix,iy,irho)*cs(ix,iy)**2
+       dPx   = dq_x(ix,iy,irho)*cs(ix,iy)**2
       endif 
-#if NY>1
-      duy   = dq(i,ivx,2)
-      dry   = dq(i,irho,2)
-      dvy   = dq(i,ivy,2)
-      dpy   = dq(i,iP,2)
-      dwy   = dq(i,ivz,2)
+
+      duy   = dq_y(ix,iy,ivx)
+      dry   = dq_y(ix,iy,irho)
+      dvy   = dq_y(ix,iy,ivy)
+      dpy   = dq_y(ix,iy,iP)
+      dwy   = dq_y(ix,iy,ivz)
       if(iso_cs==1) then
-        dPy   = dq(i,irho,2)*cs(i)**2
+        dPy   = dq_y(ix,iy,irho)*cs(ix,iy)**2
       endif
-#endif
       
     
     if(force_kick) then
-        u    = u + force(i,1)*half*dt
-        v    = v + force(i,2)*half*dt
-        w    = w + force(i,3)*half*dt
+        u    = u + force_x(ix,iy)*half*dt
+        v    = v + force_y(ix,iy)*half*dt
+        w    = w + force_z(ix,iy)*half*dt
     endif
 
 
@@ -116,11 +110,11 @@ subroutine predictor
 
 !Disk (edge-on) geometry 
 #if GEOM==4
-      sr0    = -u*drx-v*dry - (dux+dvy)*r_rho      - r_rho*u    / radii_c(i)
-      sp0    = -u*dpx-v*dpy - (dux+dvy)*gamma*p    - gamma*p*u  / radii_c(i)
-      su0    = -u*dux-v*duy - (dpx        )/r_rho  + (w**2.)    / radii_c(i)
+      sr0    = -u*drx-v*dry - (dux+dvy)*r_rho      - r_rho*u    / radii(ix,iy)
+      sp0    = -u*dpx-v*dpy - (dux+dvy)*gamma*p    - gamma*p*u  / radii(ix,iy)
+      su0    = -u*dux-v*duy - (dpx        )/r_rho  + (w**2.)    / radii(ix,iy)
       sv0    = -u*dvx-v*dvy - (dpy        )/r_rho  
-      sw0    = -u*dwx-v*dwy - u*w        / radii_c(i)
+      sw0    = -u*dwx-v*dwy - u*w        / radii(ix,iy)
 #endif
 
 
@@ -138,7 +132,6 @@ subroutine predictor
     qp(ix,iy,ivz,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
 
     ! direction y
-#if NY>1
     dx_loc=radius_polar*dx(ix,iy,2)
     qm(ix,iy,irho,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
     qm(ix,iy,ivx,2)    = u         + half*dt*su0  + half*duy   *dx_loc
@@ -150,8 +143,6 @@ subroutine predictor
     qp(ix,iy,iP,2)     = max(p     + half*dt*sP0  - half*dpy   *dx_loc,smallP)
     qp(ix,iy,ivy,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
     qp(ix,iy,ivz,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
- 
-#endif
 
     ! Dust terms: same remark as for the gas
 #if NDUST>0
@@ -165,22 +156,21 @@ subroutine predictor
 
         r_rho = q(ix,iy,irho_spe)
         u     = q(ix,iy,ivx_spe)
-        dux   = dq(i,ivx_spe,1)
-        drx   = dq(i,irho_spe,1)
+        dux   = dq_x(ix,iy,ivx_spe)
+        drx   = dq_x(ix,iy,irho_spe)
         v     = q(ix,iy,ivy_spe)
-        dvx   = dq(i,ivy_spe,1)
+        dvx   = dq_x(ix,iy,ivy_spe)
         w     = q(ix,iy,ivz_spe)
-        dwx   = dq(i,ivz_spe,1)
-#if NY>1   
-        dry   = dq(i,irho_spe,2)   
-        duy   = dq(i,ivx_spe,2)  
-        dvy   = dq(i,ivy_spe,2)
-        dwy   = dq(i,ivz_spe,2)
-#endif
+        dwx   = dq_x(ix,iy,ivz_spe)
+        dry   = dq_y(ix,iy,irho_spe)   
+        duy   = dq_y(ix,iy,ivx_spe)  
+        dvy   = dq_y(ix,iy,ivy_spe)
+        dwy   = dq_y(ix,iy,ivz_spe)
+
     if(force_kick) then
-        u    = u + force_dust(i,1,idust)*half*dt
-        v    = v + force_dust(i,2,idust)*half*dt
-        w    = w + force_dust(i,3,idust)*half*dt
+        u    = u + force_dust_x(ix,iy,idust)*half*dt
+        v    = v + force_dust_y(ix,iy,idust)*half*dt
+        w    = w + force_dust_Z(ix,iy,idust)*half*dt
     endif
 
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
@@ -197,9 +187,9 @@ subroutine predictor
 
 #if GEOM==4
         !Polar geometry source terms -- TODO add the missing source terms
-        sr0    = sr0 - r_rho*u/radii_c(i)
-        su0    = su0 + w**2.  /radii_c(i)
-        sw0    = sw0 - u*w    /radii_c(i)
+        sr0    = sr0 - r_rho*u/radii(ix,iy)
+        su0    = su0 + w**2.  /radii(ix,iy)
+        sw0    = sw0 - u*w    /radii(ix,iy)
 #endif
 
     !Direction x
@@ -214,7 +204,6 @@ subroutine predictor
     qp(ix,iy,ivz_spe,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
     
     !direction y
-#if NY>1
     dx_loc=radius_polar*dx(ix,iy,2)
     qm(ix,iy,irho_spe,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
     qm(ix,iy,ivx_spe,2)    = u         + half*dt*su0  + half*duy   *dx_loc
@@ -225,14 +214,13 @@ subroutine predictor
     qp(ix,iy,ivy_spe,2)    = v         + half*dt*sv0  - half*dvy   *dx_loc
     qp(ix,iy,ivz_spe,2)    = w         + half*dt*sw0  - half*dwy   *dx_loc
 
-#endif
 
 #if NDUSTPSCAL>0
     do ipscal= 1, ndustpscal
         r_rho = q(ix,iy,idust_pscal(idust,ipscal))
 
-        drx   = dq(i,idust_pscal(idust,ipscal),1)
-        dry   = dq(i,idust_pscal(idust,ipscal),2)
+        drx   = dq_x(ix,iy,idust_pscal(idust,ipscal))
+        dry   = dq_y(ix,iy,idust_pscal(idust,ipscal))
 
         sr0   = -u*drx-v*dry - (dux+dvy)*r_rho
 #if GEOM==2
@@ -241,7 +229,7 @@ subroutine predictor
 #endif
 #if GEOM==4
         !Polar geometry source terms
-        sr0    = sr0 - r_rho*u/radii_c(i)
+        sr0    = sr0 - r_rho*u/radii(ix,iy)
 #endif
         ! Direction x
 
@@ -250,11 +238,9 @@ subroutine predictor
         qp(ix,iy,idust_pscal(idust,ipscal),1)   = r_rho + half*dt*sr0  - half*drx   * dx_loc
         
         ! Direction y
-#if NY>1
        dx_loc=radius_polar*dx(ix,iy,2)
        qm(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   * dx_loc
        qp(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   * dx_loc
-#endif
     end do
 #endif
       end do !dust loop
@@ -263,8 +249,8 @@ subroutine predictor
 ! We recompute the thermal pressure if we don't solve for the NRJ equation
 if(iso_cs==1) then
     do idim =1,ndim
-        qp(ix,iy,iP,idim)   = cs(i)**2*qp(ix,iy,irho,idim)
-        qm(ix,iy,iP,idim)   = cs(i)**2*qm(ix,iy,irho,idim)
+        qp(ix,iy,iP,idim)   = cs(ix,iy)**2*qp(ix,iy,irho,idim)
+        qm(ix,iy,iP,idim)   = cs(ix,iy)**2*qm(ix,iy,irho,idim)
     end do
 end if
 if(non_standard_eos==1) then
@@ -276,7 +262,8 @@ end if
 end do 
 end do 
 
-  deallocate(dq)
+  deallocate(dq_x)
+  deallocate(dq_y)
 
 end subroutine predictor
 
@@ -289,7 +276,7 @@ subroutine add_delta_u
   use OMP_LIB
 
   implicit none
-  integer :: i,idust,ivar,ix,iy,il,ily,icell
+  integer :: idust,ivar,ix,iy,il,ily,icell
   integer :: ixx,iyy
 
   real(dp), dimension(1:nvar) :: qleft,qright,flx
@@ -298,15 +285,14 @@ subroutine add_delta_u
 
   if(static) return
 
-  flux       = 0.0d0
+  flux_x       = 0.0d0
+  flux_y       = 0.0d0
 
 
   do iy=2,ny_max-1
     do ix= 2,nx_max-1
-      i=icell(ix,iy)
 
       !First direction x
-      il = icell(ix-1,iy)
       do ivar=1,nvar
             qleft(ivar)  = qm(ix-1,iy,ivar,1)
             qright(ivar) = qp(ix,iy,ivar,1)
@@ -314,8 +300,8 @@ subroutine add_delta_u
       end do
 
       if(iso_cs==1) then
-            csl=cs(il)
-            csr=cs(i)
+            csl=cs(ix-1,iy)
+            csr=cs(ix,iy)
       else if(non_standard_eos==1) then
             csl=cs_eos(barotrop(qleft(irho)))
             csr=cs_eos(barotrop(qright(irho)))
@@ -324,15 +310,13 @@ subroutine add_delta_u
           csr=sqrt(gamma*qright(iP)/qright(irho))
       endif
 
-      call solve_wrapper(qleft,qright,flx,csl,csr,1,i)
+      call solve_wrapper(qleft,qright,flx,csl,csr,1)
 
       do ivar=1,nvar
-            flux(i,ivar,1)=flx(ivar) 
+            flux_x(ix,iy,ivar)=flx(ivar) 
       end do
 
     ! Then direction y
-#if NY>1
-    il = icell(ix,iy-1)
 
         do ivar=1,nvar
             qleft(ivar)  = qm(ix,iy-1,ivar,2)
@@ -341,8 +325,8 @@ subroutine add_delta_u
         end do
 
         if(iso_cs==1) then
-            csl = cs(il)
-            csr = cs(i)
+            csl = cs(ix,iy-1)
+            csr = cs(ix,iy)
         else if(non_standard_eos==1) then
 
             csl = cs_eos(barotrop(qleft(irho)))
@@ -355,32 +339,26 @@ subroutine add_delta_u
           
         endif
 
-        call solve_wrapper(qleft,qright,flx,csl,csr,2,i)
+        call solve_wrapper(qleft,qright,flx,csl,csr,2)
 
         do ivar=1,nvar
-            flux(i,ivar,2)=flx(ivar) 
+            flux_y(ix,iy,ivar)=flx(ivar) 
         end do
-#endif
 
     end do
   end do
 
   do iy=first_active_y,last_active_y
     do ix= first_active,last_active
-        i=icell(ix,iy)
-        ! 2D case : we do both fluxes at the same time to be more efficient
-        il  = icell(ix+1,iy)
-        ily = icell(ix,iy+1)
         do ivar = 1, nvar
-              u_prim(ix,iy,ivar)=u_prim(ix,iy,ivar) + (flux(i,ivar,1)*surf(ix,iy,1)-flux(il,ivar,1) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
-              &                             + (flux(i,ivar,2)*surf(ix,iy,2)-flux(ily,ivar,2)*surf(ix,iy+1,2))/vol(ix,iy)*dt
+              u_prim(ix,iy,ivar)=u_prim(ix,iy,ivar) + (flux_x(ix,iy,ivar)*surf(ix,iy,1)-flux_x(ix+1,iy,ivar) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
+              &                             + (flux_y(ix,iy,ivar)*surf(ix,iy,2)-flux_y(ix,iy+1,ivar)*surf(ix,iy+1,2))/vol(ix,iy)*dt
         end do
-
       end do
     end do
 end subroutine add_delta_u
 
-subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
+subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim)
  use hydro_solvers
  use parameters
  use commons
@@ -391,18 +369,18 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
  real(dp),dimension(1:nvar),intent(inout) :: flx
  real(dp) :: csl,csr
 
- integer  :: idim,i
+ integer  :: idim
 
 
  ! First the gas
 #if SOLVER==0        
-    call solver_llf(qleft,qright,flx,csl,csr,idim,i)
+    call solver_llf(qleft,qright,flx,csl,csr,idim)
 #endif
 #if SOLVER==1       
-    call solver_hll(qleft,qright,flx,csl,csr,idim,i)
+    call solver_hll(qleft,qright,flx,csl,csr,idim)
 #endif
 #if SOLVER==2        
-    call solver_hllc(qleft,qright,flx,csl,csr,idim,i)
+    call solver_hllc(qleft,qright,flx,csl,csr,idim)
 #endif
 
  ! Then the dust
@@ -411,16 +389,16 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
 
 #if SOLVERDUST==0
 
-    call solver_dust_Huang_Bai(qleft,qright,flx,idim,i)
+    call solver_dust_Huang_Bai(qleft,qright,flx,idim)
 
 #endif
 
 #if SOLVERDUST==1
-    call solver_dust_llf(qleft,qright,flx,idim,i)
+    call solver_dust_llf(qleft,qright,flx,idim)
 #endif
 
 #if SOLVERDUST==2
-    call solver_dust_hll(qleft,qright,flx,idim,i)
+    call solver_dust_hll(qleft,qright,flx,idim)
 #endif
 
 #if SOLVERDUST==3

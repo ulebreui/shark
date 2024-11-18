@@ -179,7 +179,7 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
+        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(idust)/(q(i,irho)*cs(i))
      end do
      end if
   end do

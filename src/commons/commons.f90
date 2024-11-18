@@ -10,7 +10,7 @@ module commons
   !Grid
   real(dp), dimension(:,:,:), allocatable :: dx
   real(dp), dimension(:,:,:), allocatable :: position
-  real(dp), dimension(:), allocatable   :: radii_c
+  real(dp), dimension(:,:), allocatable   :: radii
 
 #if GEOM==2
   ! Disk face-on geometry /!\ Phi is the azimuthal angle here it ranges from 0 to 2pi

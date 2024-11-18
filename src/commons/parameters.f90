@@ -7,41 +7,29 @@ module parameters
 #endif  
   implicit none
 
-  integer,parameter   ::  nghost         = NGHOST
-  integer,parameter   ::  nx             = NX
-  integer,parameter   ::  ny             = NY
-#if NY==1
-  integer,parameter   ::  ncells        = NX + 2*nghost !Number of cells + ghost cells at each sides
-  integer,parameter   ::  ndim          = 1
-  integer,parameter   ::  ncells_active = NX
-  integer,parameter   ::  nx_max        = NX + 2*nghost
-  integer,parameter   ::  ny_max        = 1
-  integer,parameter   ::  ny_max_minus_1= 1
-#else
-  integer,parameter   ::  ncells        = (NX+2*nghost)*(NY+2*nghost) !Number of cells + ghost cells at each sides
-  integer,parameter   ::  ncells_active = NX*NY 
-  integer,parameter   ::  ndim          = 2
-  integer,parameter   ::  nx_max        = NX + 2*nghost
-  integer,parameter   ::  ny_max        = NY + 2*nghost
-  integer,parameter   ::  ny_max_minus_1= NY-1
-#endif 
+  integer, parameter   ::  nghost         = NGHOST
+  integer, parameter   ::  nx             = NX
+  integer, parameter   ::  ny             = NY
+  integer, parameter   ::  ncells        = (NX+2*nghost)*(NY+2*nghost) !Number of cells + ghost cells at each sides
+  integer, parameter   ::  ncells_active = NX*NY 
+  integer, parameter   ::  ndim          = 2
+  integer, parameter   ::  nx_max        = NX + 2*nghost
+  integer, parameter   ::  ny_max        = NY + 2*nghost
+
+
   ! Computational domain boundaries
-  integer,parameter   ::  first_active     = nghost + 1
-  integer,parameter   ::  last_active      = NX+2*nghost-nghost
-#if NY>1
-  integer,parameter   ::  first_active_y   = nghost + 1
-  integer,parameter   ::  last_active_y    = NY+2*nghost-nghost
-#else
-  integer,parameter   ::  first_active_y   = 1
-  integer,parameter   ::  last_active_y    = 1
-#endif 
+  integer, parameter   ::  first_active     = nghost + 1
+  integer, parameter   ::  last_active      = NX+2*nghost-nghost
+  integer, parameter   ::  first_active_y   = nghost + 1
+  integer, parameter   ::  last_active_y    = NY+2*nghost-nghost
+
 
   ! Variables
-  integer,parameter   ::  Ndust       = NDUST  !Number of dust species
-  integer,parameter   ::  ndustpscal  = NDUSTPSCAL
-  integer,parameter   ::  nvar        = 5 + Ndust * (4+NDUSTPSCAL) !Number of variables
+  integer, parameter   ::  ndust       = NDUST  !Number of dust species
+  integer, parameter   ::  ndustpscal  = NDUSTPSCAL
+  integer, parameter   ::  nvar        = 5 + Ndust * (4+NDUSTPSCAL) !Number of variables
 
-  real(dp),parameter            :: half = 0.5d0
+  real(dp), parameter  :: half = 0.5d0
 
   logical             ::  static            = .false.
   logical             ::  force_kick        = .false.

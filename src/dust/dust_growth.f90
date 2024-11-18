@@ -15,10 +15,9 @@ subroutine dust_growth(verbose)
   real(dp) :: Kernel,dv,T,Ecol,Eroll,Ebr
   real(dp) :: cs_eos
   real(dp) :: Ebr_mono,Erol_mono
-  real(dp) :: lambJ,vambi
   real(dp) :: t_L,t_eta,Reynolds,St1,St2,vclass1,vclass2,vclass3,f_Stokes,x_stokes,vdrift_turb,vdrift_brow,vdrift_hydro,vdrift_ad
   real(dp) :: dndt,dndt2,p_frag,p_coag,epsilon_mass
-  real(dp), dimension(1:ndust)          :: drhodt , t_stop_loc       ! Coagulation rate
+  real(dp), dimension(1:ndust)          :: drhodt        ! Coagulation rate
   real(dp), dimension(1:ndust,1:ndust)  :: K_coag , dvij             ! Kernel and differential velocity
   real(dp), dimension(1:ndust,1:ndust)  :: redistribute_fragments
   real(dp), dimension(1:ndust)          :: t_sdust,sigmav_dust,tau_k,omega_dust,gamma_d2
@@ -61,38 +60,30 @@ subroutine dust_growth(verbose)
      ! Cell by cell-cycling
      time_growth  = 0.0d0
      niter_growth = 0
-     if(.not.dust_growth_disk) then
-      T            = barotrop(q(ix,iy,irho))
-      lambJ        = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))*cs_eos(T)*unit_v
-      Reynolds     = 6.2d7*dsqrt(q(ix,iy,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
-      t_L          = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))/unit_t
-      t_eta        = t_L/dsqrt(Reynolds)
-      t_stop_loc   = 0.0d0
-     else
-      ! Add here the necessary to grow dust in the disk
-     endif
-     do idust=1,ndust
-        t_stop_loc(idust)=tstop(i,idust)
-     end do
+     T            = barotrop(q(ix,iy,irho))
+     Reynolds     = 6.2d7*dsqrt(q(ix,iy,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
+     t_L          = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))/unit_t
+     t_eta        = t_L/dsqrt(Reynolds)
+
      ! Differential velocity loop
      dvij=0.0d0           
      do idust=1,ndust
         do jdust=1,idust
 
-           x_stokes = t_stop_loc(jdust)/t_stop_loc(idust)
+           x_stokes = tstop(ix,iy,jdust)/tstop(ix,iy,idust)
            f_Stokes = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
-           St1 = t_stop_loc(idust)/t_l
-           St2 = t_stop_loc(jdust)/t_l
+           St1 = tstop(ix,iy,idust)/t_l
+           St2 = tstop(ix,iy,jdust)/t_l
            
            vclass1 = alpha_turb*cs_eos(T)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
            vclass2 = alpha_turb*cs_eos(T)*dsqrt(f_Stokes*St1)           
            vclass3 = alpha_turb*cs_eos(T)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
            
            vdrift_turb                            = vclass2
-           if(t_stop_loc(idust)<t_eta)vdrift_turb = vclass1
-           if(t_stop_loc(idust)>t_L)vdrift_turb   = vclass3
+           if(tstop(ix,iy,idust)<t_eta)vdrift_turb    = vclass1
+           if(tstop(ix,iy,idust)>t_L)vdrift_turb      = vclass3
            
-           vdrift_brow  = dsqrt(dSQRT((8.0d0*kb*T/pi)*(mdust(i,idust)*unit_m+mdust(i,jdust)*unit_m)/(mdust(i,idust)*mdust(i,jdust)*unit_m**2)/unit_v**2)**2)
+           vdrift_brow  = dsqrt(dSQRT((8.0d0*kb*T/pi)*(mdust(idust)*unit_m+mdust(jdust)*unit_m)/(mdust(idust)*mdust(jdust)*unit_m**2)/unit_v**2)**2)
            vdrift_hydro = dsqrt((q(ix,iy,ivdx(idust))-q(ix,iy,ivdx(jdust)))**2+(q(ix,iy,ivdy(idust))-q(ix,iy,ivdy(jdust)))**2+(q(ix,iy,ivdz(idust))-q(ix,iy,ivdz(jdust)))**2)
            if(turbgrow ==1)  dvij(idust,jdust) = vdrift_turb
            if(browgrow ==1)  dvij(idust,jdust) = dsqrt(dvij(idust,jdust)**2.+vdrift_brow**2.)
@@ -105,11 +96,11 @@ subroutine dust_growth(verbose)
         drhodt       = 0.0d0
         niter_growth = niter_growth+1
         do idust=1,ndust
-           m1 = mdust(i,idust)           
-           s1 = sdust(i,idust)
+           m1 = mdust(idust)           
+           s1 = sdust(idust)
            do jdust=1,idust
-              m2  = mdust(i,jdust)
-              s2  = sdust(i,jdust)
+              m2  = mdust(jdust)
+              s2  = sdust(jdust)
               !#######################################
               !#######################################
               !#######################################
@@ -125,11 +116,9 @@ subroutine dust_growth(verbose)
 
                  If(frag_test==1) then
 
-                    ! if(frag_thre==0) then
                     Ecol   = 0.5d0*(m1*m2)/(m1+m2)*dvij(idust,jdust)**2
                     Ebr    = (m1+m2)/m_mono*Ebr_mono
                     f_frag = max(min((Ecol-0.1d0*Ebr)/(4.9d0*Ebr),1.0d0),0.0d0)
-                    !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/vfrag,1.0d0),0.0d0) ! velocity threshold
 
                  endif
                  dndt = clustered_fraction**2.0*pi*(s1+s2)**2.*dvij(idust,jdust)*u_prim(ix,iy,irhod(idust))*u_prim(ix,iy,irhod(jdust))/m1/m2 ! K n1 n2
@@ -171,7 +160,7 @@ subroutine dust_growth(verbose)
               ic2 = max(min(floor(dlog((1.0d0-f_frag)*(m1+m2)/massmin)/dlog(eta)+1)+1,ndust),1)
 
               epsilon_mass            = 1.0d0
-              if(ic1<ic2)epsilon_mass = min((mdust(i,ic2)-(1.0d0-f_frag)*(m1+m2))/(mdust(i,ic2)-mdust(i,ic1)),1.0d0)
+              if(ic1<ic2)epsilon_mass = min((mdust(ic2)-(1.0d0-f_frag)*(m1+m2))/(mdust(ic2)-mdust(ic1)),1.0d0)
 
               !#######################################
               !#######################################
@@ -254,10 +243,9 @@ subroutine dust_growth_stepinski(verbose)
 
    do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         i = icell(ix,iy)
          ! Differential velocity loop
          do idust=1,ndust
-           u_prim(ix,iy,idust_pscal(idust,1))=max(u_prim(ix,iy,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(ix,iy,irhod(idust))*sminstep/unit_l)
+           u_prim(ix,iy,idust_pscal(idust,1))=max(u_prim(ix,iy,idust_pscal(idust,1))*(1.0d0+dt/tcoag(ix,iy,idust)),q(ix,iy,irhod(idust))*sminstep/unit_l)
          end do
       end do
    end do

@@ -27,7 +27,7 @@ subroutine setup
     do ix = 1,nx_max
       xx       = position(icell(ix,iy),1)  ! Boxlen already in pc
       yy       = position(icell(ix,iy),2)-box_l/6.0
-      rr       = radii_c(icell(ix,iy))
+      rr       = radii(icell(ix,iy))
       H        = HoverR*rr
       Omega    = sqrt(Mstar/rr**3)
       cs0      = Omega*H
@@ -41,7 +41,7 @@ subroutine setup
      do idust=1,ndust
         q(icell(ix,iy),irhod(idust))    = dust2gas*q(icell(ix,iy),irho)
         epsilondust(icell(ix,iy),idust) = dust2gas
-        sdust(icell(ix,iy),idust)       = scut/unit_l ! The 2H term comes from the vertical integration 
+        sdust(idust)       = scut/unit_l ! The 2H term comes from the vertical integration 
         sminstep=scut
 #if NDUSTPSCAL>0
         if(growth_step)  q(icell(ix,iy),idust_pscal(idust,1)) = scut/unit_l
@@ -213,8 +213,8 @@ subroutine setup_inloop
   !$OMP DO 
    do i=1,ncells
     if(active_cell(i)==1) then
-            if(radii_c(i)<r_relax) then
-                t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii_c(i))**3)) ! Relaxation timescale
+            if(radii(i)<r_relax) then
+                t_rel=n_rel*2.0d0*pi/(dsqrt(Mstar/(radii(i))**3)) ! Relaxation timescale
                 rho_init = uprim_condinit(i,irho)
                 vx_init  = uprim_condinit(i,ivx)/rho_init
                 vy_init  = uprim_condinit(i,ivy)/rho_init
@@ -302,13 +302,13 @@ end subroutine setup_inloop
 
         yy_p       = position(i,2)-box_l/6.0
 
-        r_sphe = sqrt(radii_c(i)**2+yy_p**2)
-        force(i,1)  = - Mstar/r_sphe**3 * radii_c(i)
+        r_sphe = sqrt(radii(i)**2+yy_p**2)
+        force(i,1)  = - Mstar/r_sphe**3 * radii(i)
         force(i,2)  = - Mstar/r_sphe**3 * yy_p
         force(i,3)  = 0.0d0
 #if NDUST>0
         do idust=1,ndust
-         force_dust(i,1,idust)  = - Mstar/r_sphe**3 * radii_c(i)
+         force_dust(i,1,idust)  = - Mstar/r_sphe**3 * radii(i)
          force_dust(i,2,idust)  = - Mstar/r_sphe**3 * yy_p
          force_dust(i,3,idust)  = 0.0d0
         end do
@@ -356,16 +356,16 @@ subroutine compute_tstop
   !$OMP DO
   do i=1,ncells
    if(active_cell(i)==1) then
-        rr       = radii_c(i)
+        rr       = radii(i)
         H        = HoverR*rr
-        t_L      =  sqrt(radii_c(i)**3) ! 1/Omega
+        t_L      =  sqrt(radii(i)**3) ! 1/Omega
 
         do idust=1,ndust
-        sloc                 = sdust(i,idust)
+        sloc                 = sdust(idust)
 #if NDUSTPSCAL>0
         if(growth_step) sloc = q(i,idust_pscal(idust,1)) 
 #endif    
-        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)/(sqrt(2.0d0*pi)*H)*cs(i))
+        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(idust)/(q(i,irho)/(sqrt(2.0d0*pi)*H)*cs(i))
         x_stokes       = 1.0d0
         f_Stokes       = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
         St1            = tstop(i,idust)/t_l

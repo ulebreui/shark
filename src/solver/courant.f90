@@ -30,17 +30,12 @@ subroutine courant
       do ix = first_active,last_active
          i = icell(ix,iy)
          !Cas 1D   
-#if NY==1
-         dxx = dx(ix,iy,1)
-#else
-         dxx  = min(dx(ix,iy,1),dx(ix,iy,2))
-#if GEOM==2
-         dxx  = min(dx(ix,iy,1),radii_c(i)*dx(ix,iy,2))
-#endif
-#endif
 
+
+         dxx  = min(dx(ix,iy,1),radii(ix,iy)*dx(ix,iy,2))
+         
          vv   = abs(q(ix,iy,ivx)) + abs(q(ix,iy,ivy))+ abs(q(ix,iy,ivz))
-         vmax = cs(i)+vv
+         vmax = cs(ix,iy)+vv
 
 
 
@@ -54,12 +49,12 @@ subroutine courant
          dt = min(dt,CFL*dxx/abs(vmax))
          if(force_kick) then
 
-            force_max= sqrt(force(i,1)**2+force(i,2)**2+force(i,3)**2)
+            force_max= sqrt(force_x(ix,iy)**2+force_y(ix,iy)**2+force_z(ix,iy)**2)
 
 #if NDUST>0     
             do idust=1,ndust
 
-               force_max= max(force_max,sqrt(force_dust(i,1,idust)**2+force_dust(i,2,idust)**2+force_dust(i,3,idust)**2))
+               force_max= max(force_max,sqrt(force_dust_x(ix,iy,idust)**2+force_dust_y(ix,iy,idust)**2+force_dust_z(ix,iy,idust)**2))
 
             end do
 #endif 

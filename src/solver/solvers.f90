@@ -1,7 +1,7 @@
 module hydro_solvers
 contains
 
-subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
+subroutine solver_llf(qleft,qright,flx,csl,csr,idim)
     use parameters
     use commons
 
@@ -10,7 +10,7 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
     real(dp) :: csl,csr
-    integer  :: idim,idust,i
+    integer  :: idim,idust
 
     real(dp) :: ustar, Estarleft,Estarright,Pstar,rhostarleft,rhostarright
     real(dp) :: S_lft,S_rgt,hllc_l,hllc_r,r_o,u_o,P_o,e_o,lambda_llf_d
@@ -94,7 +94,7 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 
 end subroutine solver_llf
 
-subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
+subroutine solver_hll(qleft,qright,flx,csl,csr,idim)
     use parameters
     use commons
 
@@ -103,7 +103,7 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
     real(dp) :: csl,csr
-    integer  :: idim,idust,i
+    integer  :: idim,idust
 
     real(dp) :: ustar, Estarleft,Estarright,Pstar,rhostarleft,rhostarright
     real(dp) :: S_lft,S_rgt,hllc_l,hllc_r,r_o,u_o,P_o,e_o,lambda_llf_d
@@ -189,7 +189,7 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 
 end subroutine solver_hll
 
-subroutine solver_hllc(qleft,qright,flx,csl,csr,idim,i)
+subroutine solver_hllc(qleft,qright,flx,csl,csr,idim)
     use parameters
     use commons
 
@@ -198,7 +198,7 @@ subroutine solver_hllc(qleft,qright,flx,csl,csr,idim,i)
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
     real(dp) :: csl,csr
-    integer  :: idim,idust,i
+    integer  :: idim,idust
 
     real(dp) :: ustar, Estarleft,Estarright,Pstar,rhostarleft,rhostarright
     real(dp) :: S_lft,S_rgt,hllc_l,hllc_r,r_o,u_o,P_o,e_o,lambda_llf_d
@@ -326,7 +326,7 @@ end subroutine solver_hllc
 #if NDUST>0
 #if SOLVERDUST==0
 
-subroutine solver_dust_Huang_Bai(qleft,qright,flx,idim,i)
+subroutine solver_dust_Huang_Bai(qleft,qright,flx,idim)
     use parameters
     use commons
 
@@ -336,7 +336,7 @@ subroutine solver_dust_Huang_Bai(qleft,qright,flx,idim,i)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,ipscal,i
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,ipscal
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d
 
@@ -587,7 +587,7 @@ end subroutine solver_hllc_dust
 
 
 #if SOLVERDUST==1
-subroutine solver_dust_llf(qleft,qright,flx,idim,i)
+subroutine solver_dust_llf(qleft,qright,flx,idim)
 
     use parameters
     use commons
@@ -596,7 +596,7 @@ subroutine solver_dust_llf(qleft,qright,flx,idim,i)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d,csl,csr
 
@@ -674,7 +674,7 @@ end subroutine solver_dust_llf
 #if NDUST>0
 #if SOLVERDUST==2
 
-subroutine solver_dust_hll(qleft,qright,flx,idim,i)
+subroutine solver_dust_hll(qleft,qright,flx,idim)
 
     use parameters
     use commons
@@ -683,7 +683,7 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d
     real(dp) :: ca_lft,ca_rgt

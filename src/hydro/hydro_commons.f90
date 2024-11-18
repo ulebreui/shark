@@ -4,11 +4,16 @@ module hydro_commons
   real(dp), dimension(:,:,:),   allocatable :: u_prim
 
   
-  real(dp), dimension(:),     allocatable :: cs
+  real(dp), dimension(:,:),     allocatable :: cs
   real(dp), dimension(:,:,:,:), allocatable :: qm
   real(dp), dimension(:,:,:,:), allocatable :: qp
-  real(dp), dimension(:,:),   allocatable :: force
-  real(dp), dimension(:,:,:), allocatable  :: flux
+
+  real(dp), dimension(:,:),   allocatable :: force_x
+  real(dp), dimension(:,:),   allocatable :: force_y
+  real(dp), dimension(:,:),   allocatable :: force_z
+
+  real(dp), dimension(:,:,:), allocatable  :: flux_x
+  real(dp), dimension(:,:,:), allocatable  :: flux_y
 
   real(dp) :: gamma           = 1.66667d0   ! Adiabatic index
   integer :: iso_cs           = -1          ! Isothermal eos if positiv

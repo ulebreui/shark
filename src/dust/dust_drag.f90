@@ -25,7 +25,7 @@ subroutine dust_drag(coeffdt)
 
      do idust=1,ndust
 
-        alphak(idust) = coeffdt * dt / tstop(i,idust) ! Half for half dt
+        alphak(idust) = coeffdt * dt / tstop(ix,iy,idust) ! Half for half dt
 
         pnx   = pnx  + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(ix,iy,ivdx(idust))
         pny   = pny  + alphak(idust)/(1.0d0 + alphak(idust)) * u_prim(ix,iy,ivdy(idust))

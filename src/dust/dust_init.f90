@@ -34,7 +34,7 @@ subroutine distribution_dust(initi)
      enddo
      do idust=1,ndust
         do i=1,ncells
-           sdust(i,idust)=sqrt(aminus(idust)*aplus(idust))
+           sdust(idust)=sqrt(aminus(idust)*aplus(idust))
         end do
      enddo
   endif
@@ -57,7 +57,7 @@ subroutine distribution_dust(initi)
         mdust=sdust**3.
         do idust=1,ndust
            do i=1,ncells
-              epsilondust(i,idust)=mdust(i,idust)*exp(-mdust(i,idust))*(mplus(idust)-mminus(idust))
+              epsilondust(i,idust)=mdust(idust)*exp(-mdust(idust))*(mplus(idust)-mminus(idust))
            end do
         end do
      else if(kernel_type==2) then
@@ -65,7 +65,7 @@ subroutine distribution_dust(initi)
         mdust=sdust**3.
         do idust=1,ndust
            do i=1,ncells
-              epsilondust(i,idust)=mdust(i,idust)*exp(-mdust(i,idust))*(mplus(idust)-mminus(idust))
+              epsilondust(i,idust)=mdust(idust)*exp(-mdust(idust))*(mplus(idust)-mminus(idust))
            end do
         end do
         else
@@ -73,7 +73,7 @@ subroutine distribution_dust(initi)
         stop
      endif
 
-  else !Else we use the updated dust distribution
+   else !Else we use the updated dust distribution
    do iy=1,ny_max
      do ix= 1,ny_max
       do idust=1,ndust
@@ -100,11 +100,11 @@ subroutine distribution_dust(initi)
   endif
   if((initi.or.restarting>0)) then
      print *, 'Initial dust distribution, size :'
-     print *,  sdust(1,:)*unit_l
+     print *,  sdust(:)*unit_l
      print *, 'Initial dust distribution, epsilon :'
      print *,  epsilondust(1,:)
      print *, 'Initial dust distribution, mass :'
-     print *,  mdust(1,:)*unit_m
+     print *,  mdust(:)*unit_m
   end if
 
 end subroutine distribution_dust
@@ -120,12 +120,15 @@ subroutine allocate_dust
   allocate(mplus(1:ndust))
   allocate(mminus(1:ndust))
   allocate(epsilondust(1:ncells,1:ndust))
-  allocate(sdust(1:ncells,1:ndust))
-  allocate(mdust(1:ncells,1:ndust))
-  allocate(tstop(1:ncells,1:ndust))
-  allocate(tcoag(1:ncells,1:ndust))
+  allocate(sdust(1:ndust))
+  allocate(mdust(1:ndust))
+  allocate(tstop(1:nx_max,1:ny_max,1:ndust))
+  allocate(tcoag(1:nx_max,1:ny_max,1:ndust))
 
-  allocate(force_dust(1:ncells,1:3,1:ndust))
+  allocate(force_dust_x(1:nx_max,1:ny_max,1:ndust))
+  allocate(force_dust_y(1:nx_max,1:ny_max,1:ndust))
+  allocate(force_dust_z(1:nx_max,1:ny_max,1:ndust))
+
   allocate(irhod(1:ndust))
   allocate(ivdx(1:ndust))
   allocate(ivdy(1:ndust))
@@ -148,7 +151,10 @@ subroutine allocate_dust
 
   tstop = 0.0d0
   tcoag = 0.0d0
-  force_dust=0.0d0
+  force_dust_x=0.0d0
+  force_dust_y=0.0d0
+  force_dust_z=0.0d0
+
 end subroutine allocate_dust
 
 
@@ -209,8 +215,8 @@ subroutine paruta_distri
   do i = 1,ncells
      normalise=0.0d0
      do idust = icutmin,icutmax
-        normalise = normalise+mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
-        epsilondust(i,idust) = mdust(i,idust)**(-5./6.)*(mplus(idust)-mminus(idust))
+        normalise = normalise+mdust(idust)**(-5./6.)*(mplus(idust)-mminus(idust))
+        epsilondust(i,idust) = mdust(idust)**(-5./6.)*(mplus(idust)-mminus(idust))
      end do
       epsilondust(i,:)=dust2gas*epsilondust(i,:)/normalise
   end do
@@ -343,9 +349,9 @@ subroutine read_dust_params(ilun,nmlfile)
   namelist/dust_params/frag_thre,vfrag,drag,dust_back_reaction,smin,smax,scut,scutmin,mrn,rhograin&
   &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,growth_step &
   &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
-  &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
-  &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb
+  & themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
+  & slope_mono,ice_mantle,gamma_grains, estar_grains ,sticking_efficiency , &
+  & dtcontrol_growth,clustered_fraction,alpha_turb
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"

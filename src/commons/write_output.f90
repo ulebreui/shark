@@ -18,39 +18,38 @@ subroutine output(iout)
   call system(makedirectory)
   ! Generic info file
   open(ilun,file=trim(path) // trim(nchar)//trim('/info.dat'))
-  write(ilun,'("nvar        =",I11)')nvar
-  write(ilun,'("ndust        =",I11)')NDUST
-  write(ilun,'("ndustpscal   =",I11)')NDUSTPSCAL
-  write(ilun,'("NX        =",I11)')NX
-  write(ilun,'("NY        =",I11)')NY
-  write(ilun,'("GEOM        =",I11)')GEOM
-  write(ilun,'("GRIDSPACE       =",I11)')GRIDSPACE
-  write(ilun,'("time        =",E23.15)')time
-  write(ilun,'("unit_t        =",E23.15)')unit_t
-  write(ilun,'("unit_d        =",E23.15)')unit_d
-  write(ilun,'("unit_l        =",E23.15)')unit_l
-  write(ilun,'("unit_v        =",E23.15)')unit_v
-  write(ilun,'("unit_p        =",E23.15)')unit_p
+
+  write(ilun,'("nvar        =",I11)')      nvar
+  write(ilun,'("ndust        =",I11)')     NDUST
+  write(ilun,'("ndustpscal   =",I11)')     NDUSTPSCAL
+  write(ilun,'("NX        =",I11)')        NX
+  write(ilun,'("NY        =",I11)')        NY
+  write(ilun,'("GEOM        =",I11)')      GEOM
+  write(ilun,'("GRIDSPACE       =",I11)')  GRIDSPACE
+  write(ilun,'("time        =",E23.15)')   time
+  write(ilun,'("unit_t        =",E23.15)') unit_t
+  write(ilun,'("unit_d        =",E23.15)') unit_d
+  write(ilun,'("unit_l        =",E23.15)') unit_l
+  write(ilun,'("unit_v        =",E23.15)') unit_v
+  write(ilun,'("unit_p        =",E23.15)') unit_p
   !call write_setup_info(ilun)
   close(ilun)
   
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
-  do i = 1,ncells
+    do iy = first_active_y,last_active_y
+      do ix = first_active,last_active
 #if GEOM<2
-   if(active_cell(i)==1) then
-      ix=ixx(i)
-      iy=iyy(i)
+
       write(ilun) position(ix,iy,1) !
-   endif 
 #endif
 #if GEOM==2
-   if(active_cell(i)==1) write(ilun) radii_c(i) !
+     write(ilun) radii(ix,iy) !
 #endif
 #if GEOM==4
-   if(active_cell(i)==1) write(ilun) radii_c(i) !
+    write(ilun) radii(ix,iy) !
 #endif
   end do
-  !xdp
+  end do
   close(ilun)
 
   open(ilun,file=trim(path) // trim(nchar)//trim('/rho'), form=format_out,access='stream')
@@ -133,7 +132,7 @@ subroutine output(iout)
          rhod_tot=0.d0
          do idust=1,ndust
 #if GEOM<2
-            rhod_tot = rhod_tot + q(ix,iy,irhod(idust))*unit_d
+            rhod_tot  = rhod_tot + q(ix,iy,irhod(idust))*unit_d
 #endif
 #if GEOM==2
             rhod_tot  = rhod_tot +  q(ix,iy,irhod(idust))*unit_dcol
@@ -183,7 +182,7 @@ subroutine output(iout)
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) sdust(i,idust)*unit_l 
+      if(active_cell(i)==1) write(ilun) sdust(idust)*unit_l 
    end do
   end do
   close(ilun)

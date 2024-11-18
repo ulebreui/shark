@@ -10,15 +10,11 @@ module dust_parameters
   logical             ::  drift_in_growth       = .false.     ! Drift velocity included in growth
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
-  logical             ::  ambipolar_in_growth   = .false.     ! Ambipolar velocity included in growth
-  logical             ::  lorentz_dust          = .false.     ! Add the lorentz force on the dust
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
-  logical             ::  electrostatic_barrier = .false.     ! Add the electrostatic barrier for dust growth
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
   real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
 
   real(dp)            ::  dtcontrol_growth  = -1.0d0
-  real(dp)            ::  delta_vambi       = 1.0
   character (len=60)  ::  dust_distribution = 'mrn'
   
   real(dp):: CFL_growth         = 0.1d0 ! CFL for smoluchowski
@@ -27,11 +23,10 @@ module dust_parameters
 
   real(dp):: rhodust_threshold  = 1d-27
   real(dp):: dust_ratio_min     = 1d-11
-  integer :: kernel_type        = 0 ! 0 = physical, 1= constant, 2 = additive
+  integer :: kernel_type        = 0   ! 0 = physical, 1= constant, 2 = additive
+  integer ::  frag_thre         = 0   ! 0 = NRJ, 1= velocity
 
 
-  integer ::  frag_thre       = 0   ! 0 = NRJ, 1= velocity
-  integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq
   logical ::  dust_growth_disk = .false.
   !Dust distribution
   real(dp)::  smin            = 1d-7    ! Minimum possible dust size 
@@ -75,11 +70,14 @@ module dust_commons
   real(dp), dimension(:)  , allocatable    :: mplus
   real(dp), dimension(:)  , allocatable    :: mminus
   real(dp), dimension(:,:), allocatable    :: epsilondust
-  real(dp), dimension(:,:), allocatable    :: sdust
-  real(dp), dimension(:,:), allocatable    :: mdust
-  real(dp), dimension(:,:,:), allocatable  :: force_dust
-  real(dp), dimension(:,:), allocatable    :: tstop
-  real(dp), dimension(:,:), allocatable    :: tcoag
+  real(dp), dimension(:), allocatable    :: sdust
+  real(dp), dimension(:), allocatable    :: mdust
+  real(dp), dimension(:,:,:), allocatable  :: force_dust_x
+  real(dp), dimension(:,:,:), allocatable  :: force_dust_y
+  real(dp), dimension(:,:,:), allocatable  :: force_dust_z
+
+  real(dp), dimension(:,:,:), allocatable    :: tstop
+  real(dp), dimension(:,:,:), allocatable    :: tcoag
 
   ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod

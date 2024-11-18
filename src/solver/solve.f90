@@ -132,9 +132,9 @@ subroutine ctoprim
   
     q(ix,iy,iP)               = max((gamma-1.0d0)*(u_prim(ix,iy,iP)-ekin),smallp) !TODO : substract magnetic nrj
 
-    if(iso_cs<1)              cs(i) = sqrt(gamma*q(ix,iy,iP)/q(ix,iy,irho))
-    if(non_standard_eos == 1) cs(i) = cs_eos(barotrop(q(ix,iy,irho)))
-    if(iso_cs==1 .or. non_standard_eos == 1) q(ix,iy,iP)  =  u_prim(ix,iy,irho)*cs(i)**2
+    if(iso_cs<1)              cs(ix,iy) = sqrt(gamma*q(ix,iy,iP)/q(ix,iy,irho))
+    if(non_standard_eos == 1) cs(ix,iy) = cs_eos(barotrop(q(ix,iy,irho)))
+    if(iso_cs==1 .or. non_standard_eos == 1) q(ix,iy,iP)  =  u_prim(ix,iy,irho)*cs(ix,iy)**2
 #if NDUST>0
     do idust = 1,ndust
         q(ix,iy,irhod(idust)) = u_prim(ix,iy,irhod(idust))
@@ -144,7 +144,6 @@ subroutine ctoprim
 #if NDUSTPSCAL>0
     do ipscal=1,ndustpscal
         q(ix,iy,idust_pscal(idust,ipscal))  = u_prim(ix,iy,idust_pscal(idust,ipscal))/u_prim(ix,iy,irhod(idust))
-        if(growth_step)  sdust(i,idust) = q(ix,iy,idust_pscal(idust,ipscal))
     end do
 #endif             
      end do

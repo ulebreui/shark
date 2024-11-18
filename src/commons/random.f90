@@ -46,10 +46,10 @@ contains
 
     integer,dimension( IRandNumSize ) :: OutSeed
 
-    RandNum = float( Seed( 4 ) ) / Divisor( 4 ) + &
-         &    float( Seed( 3 ) ) / Divisor( 3 ) + &
-         &    float( Seed( 2 ) ) / Divisor( 2 ) + &
-         &    float( Seed( 1 ) ) / Divisor( 1 )
+    RandNum = DBLE( Seed( 4 ) ) / Divisor( 4 ) + &
+         &    DBLE( Seed( 3 ) ) / Divisor( 3 ) + &
+         &    DBLE( Seed( 2 ) ) / Divisor( 2 ) + &
+         &    DBLE( Seed( 1 ) ) / Divisor( 1 )
 
     call ranfmodmult( Multiplier, Seed, OutSeed )
 

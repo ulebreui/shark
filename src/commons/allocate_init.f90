@@ -6,7 +6,7 @@ subroutine allocate_init
   use units
   implicit none
 
-  integer :: idust,i,ipscal,icountpscal
+  integer :: idust,i,ipscal,icountpscal,ix,iy
 
   call get_active_cells
 
@@ -14,11 +14,8 @@ subroutine allocate_init
   allocate(vol(1:nx_max,1:ny_max))
   allocate(surf(1:nx_max,1:ny_max,1:ndim))
   allocate(dx(1:nx_max,1:ny_max,1:ndim))
-
-
-
   allocate(position(1:nx_max,1:ny_max,1:ndim))
-  allocate(radii_c(1:ncells))
+  allocate(radii(1:nx_max,1:ny_max))
 
   vol      = 0.d0
   Surf     = 0.d0
@@ -26,13 +23,15 @@ subroutine allocate_init
   
   position = 0.0d0
 
-  do i=1,ncells
-    radii_c(i) = 1.0d0 ! We set it to 1 for cartesian geometry to avoid code duplication
+  do ix=1,nx_max
+    do iy=1,ny_max
+      radii(ix,iy) = 1.0d0 ! We set it to 1 for cartesian geometry to avoid code duplication
+    end do
   end do
 
 #if GEOM==2
     allocate(phi(1:nx_max,1:ny_max))
-    phi=1.0d0
+    phi = 1.0d0
 #endif
 
   ! Variable related quantities
@@ -40,15 +39,20 @@ subroutine allocate_init
   allocate(u_prim(1:nx_max,1:ny_max,1:nvar))
   allocate(qm(1:nx_max,1:ny_max,1:nvar,1:ndim))
   allocate(qp(1:nx_max,1:ny_max,1:nvar,1:ndim))
+  allocate(cs(1:nx_max,1:ny_max))
+
+  ! Fluxes 
+  allocate(flux_x(1:nx_max,1:ny_max,1:nvar))
+  allocate(flux_y(1:nx_max,1:ny_max,1:nvar))
 
 
 
   ! Force on the gas
-  allocate(force(1:ncells,1:3))
-  allocate(flux(1:ncells,1:nvar,1:ndim))
-  flux=0.0d0
+  allocate(force_x(1:nx_max,1:ny_max))
+  allocate(force_y(1:nx_max,1:ny_max))
+  allocate(force_z(1:nx_max,1:ny_max))
 
-  allocate(cs(1:ncells))
+
 
 #if NDUST>0
   ! Dust variables when included
@@ -59,21 +63,29 @@ subroutine allocate_init
   q      = 0.0d0
   qm     = 0.0d0
   qp     = 0.0d0
-  force  = 0.0d0
   cs     = 0.0d0
+ 
+  force_x  = 0.0d0
+  force_y  = 0.0d0
+  force_z  = 0.0d0
+  flux_x   = 0.0d0
+  flux_y   = 0.0d0
 
   !Indexation of variables /!\ Every index must be unique but the order does not matter
   irho = 1
   ivx  = 2
   ivy  = 3  
   ivz  = 4
-  iP   = 5 ! Energy equation
+  iP   = 5 
+
+
   print *,'Are the indices in order ? '
   print *,'irho =', irho
   print *,'ivx   =', ivx
   print *,'ivy  =', ivy
   print *,'ivz  =', ivz
   print *,'iP   =', iP
+  
   index_vn(1) = ivx  
   index_vt(1) = ivy
   index_vn(2) = ivy
@@ -101,9 +113,9 @@ subroutine allocate_init
     index_vdt(idust,2) = ivdx(idust)
   end do
 #endif
-  smallr=smallr/unit_d
-  smallc=smallc/unit_v
-  smallp=smallr*smallc**2
+  smallr = smallr/unit_d
+  smallc = smallc/unit_v
+  smallp = smallr*smallc**2
   print *, 'Nvar =', nvar
 
 
