@@ -335,7 +335,7 @@ subroutine read_dust_params(ilun, nmlfile)
    &, CFL_growth, rhodust_threshold, dust_ratio_min, dust_distribution, aO_themis, acut_themis, awidthcut_themis,&
    & themis_slope, sigma_themis, kernel_type, turb_in_growth, drift_in_growth, brownian_in_growth,&
    & slope_mono, ice_mantle, gamma_grains, estar_grains, sticking_efficiency, &
-   & dtcontrol_growth, clustered_fraction, alpha_turb
+   & dtcontrol_growth, alpha_turb
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
    print *, "Dust namelist reading  !"
@@ -388,14 +388,9 @@ subroutine read_dust_params(ilun, nmlfile)
       print *, 'gamma_grains                    :', gamma_grains
       print *, 'estar_grains                    :', estar_grains
       print *, 'sticking_efficiency             :', sticking_efficiency
-      print *, 'clustered_fraction              :', clustered_fraction
 
       if (sticking_efficiency > 1 .or. sticking_efficiency <= 0) then
          print *, "sticking_efficiency must be larger than zero and smaller than 1"
-         stop
-      end if
-      if (clustered_fraction < 1.) then
-         print *, "clustered_fraction must at least be 1 "
          stop
       end if
       if (drift_in_growth) print *, "Growth by drift activated"

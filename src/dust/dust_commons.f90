@@ -12,7 +12,6 @@ module dust_parameters
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
-  real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
 
   real(dp)            ::  dtcontrol_growth  = -1.0d0
   character (len=60)  ::  dust_distribution = 'mrn'

@@ -19,9 +19,9 @@ subroutine dust_drag(coeffdt)
 
          i = icell(ix, iy)
          rhon = u_prim(ix, iy, irho)
-         pnx = u_prim(ix, iy, ivx)
-         pny = u_prim(ix, iy, ivy)
-         pnz = u_prim(ix, iy, ivz)
+         pnx  = u_prim(ix, iy, ivx)
+         pny  = u_prim(ix, iy, ivy)
+         pnz  = u_prim(ix, iy, ivz)
 
          do idust = 1, ndust
 
