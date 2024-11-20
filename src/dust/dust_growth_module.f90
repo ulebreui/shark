@@ -18,10 +18,10 @@ module smoluchowski
 
 	   real(dp) :: f_frag,p_coag,sticking_efficiency,eps_threshold_frag,eps_threshold
 
-	   integer :: niter_growth
-	   integer :: frag_test
-	   real(dp):: Ebr_mono,m_mono,s1,s2,m1,m2
-	   real(dp):: epsilon_mass,rhodust_min
+	   integer  :: niter_growth
+	   integer  :: frag_test
+	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2
+	   real(dp) :: epsilon_mass,rhodust_min
 
 	   real(dp) , dimension(1:ndust) :: drhodt
 	   real(dp) :: dndt

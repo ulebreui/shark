@@ -9,19 +9,20 @@ subroutine dust_growth(verbose)
    implicit none
    logical :: verbose
 
-   integer :: i, idust, jdust, kdust, niter_growth, ifrag2, ic1, ic2, ix, iy, icell
+   integer :: ix, iy
 
-   integer :: frag_test, turbgrow, driftgrow, browgrow
+   integer :: idust, jdust, kdust
 
-   real(dp) :: eta, zeta, massmin, m1, m2, s1, s2, m_mono, a_mu, barotrop
+   integer  :: frag_test, turbgrow, driftgrow, browgrow
+   real(dp) :: eta, zeta, massmin, m1, m2, s1, s2, m_mono, a_mu
    real(dp) :: f_frag, p_frag, p_coag
-   real(dp) :: Kernel, T, Ecol, Eroll, Ebr
-   real(dp) :: Ebr_mono, Erol_mono
-   real(dp) :: t_L, t_eta, Reynolds, St1, St2, vclass1, vclass2, vclass3, f_Stokes, x_stokes
+
+   real(dp) :: T
+   real(dp) :: Ecol, Ebr, Ebr_mono
+   real(dp) :: t_L, t_eta, Reynolds
    real(dp) :: vdrift_turb, vdrift_brow, vdrift_hydro
-   real(dp) :: dndt, epsilon_mass
-   real(dp), dimension(1:ndust)           :: drhodt        ! Coagulation rate
-   real(dp), dimension(1:ndust, 1:ndust)  :: K_coag, dvij             ! Kernel and differential velocity
+   
+   real(dp), dimension(1:ndust, 1:ndust)  :: dvij        
    real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
    real(dp), dimension(1:ndust)           :: t_sdust
    real(dp), dimension(1:ndust)           :: dust_dens
@@ -52,7 +53,7 @@ subroutine dust_growth(verbose)
    redistribute_fragments = 0.0d0
    do idust = 1, ndust
       do jdust = 1, ndust
-        if(jdust<=idust)redistribute_fragments(jdust,idust) = (aplus(jdust)**(4.0d0-slope_mono)-aminus(jdust)**(4.0d0-slope_mono))/(aplus(idust)**(4.0d0-slope_mono)-aminus(1)**(4.0d0-slope_mono))
+         if(jdust<=idust) redistribute_fragments(jdust,idust) = (aplus(jdust)**(4.0d0-slope_mono)-aminus(jdust)**(4.0d0-slope_mono))/(aplus(idust)**(4.0d0-slope_mono)-aminus(1)**(4.0d0-slope_mono))
       end do
    end do
    do idust = 1, ndust
@@ -69,16 +70,14 @@ subroutine dust_growth(verbose)
          ! Differential velocity loop
          dvij = 0.0d0
          do idust = 1, ndust
-            do jdust = 1, idust
-
-               vdrift_turb  = dv_ormel(alpha_turb,cs(ix,iy),tstop(ix, iy, idust),tstop(ix, iy, jdust),Reynolds,t_L)
-               vdrift_brow  = dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust))
-
-               vdrift_hydro = dsqrt((q(ix,iy,ivdx(idust))-q(ix,iy,ivdx(jdust)))**2+(q(ix,iy,ivdy(idust))-q(ix,iy,ivdy(jdust)))**2+(q(ix,iy,ivdz(idust))-q(ix,iy,ivdz(jdust)))**2)
-               
-               if (turbgrow == 1)  dvij(idust, jdust)  = vdrift_turb
-               if (browgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.+vdrift_brow**2.)
-               if (driftgrow == 1) dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.+vdrift_hydro**2.)
+            do jdust = 1, ndust
+               if (turbgrow  == 1)  dvij(idust, jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(ix, iy, idust),tstop(ix, iy, jdust),Reynolds,t_L)
+               if (browgrow  == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
+                  &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust)))**2.)
+               if (driftgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
+                  &+(q(ix,iy,ivdx(idust))-q(ix,iy,ivdx(jdust)))**2&
+                  &+(q(ix,iy,ivdy(idust))-q(ix,iy,ivdy(jdust)))**2&
+                  &+(q(ix,iy,ivdz(idust))-q(ix,iy,ivdz(jdust)))**2)
             end do
          end do
       end do
@@ -97,7 +96,6 @@ subroutine dust_growth(verbose)
          do idust = 1, ndust
             u_prim(ix, iy, irhod(idust)) = dust_dens(idust)
          end do         
-         if (kernel_type > 0) print *, 'number of iterations', niter_growth
       end do
    end do
 
@@ -112,7 +110,7 @@ subroutine dust_growth_stepinski
    use OMP_LIB
    implicit none
    logical :: verbose
-   integer :: i, idust, jdust, ipscal, icell, ix, iy
+   integer :: idust, jdust, ipscal, ix, iy
 
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
