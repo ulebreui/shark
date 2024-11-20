@@ -41,9 +41,8 @@ subroutine time_loop
   use commons
   use units
   implicit none
-  integer :: icount,i,iout,istep
+  integer :: icount,iout,istep
   logical :: verbose,continue_sim,outputing
-  integer::clock_rate, clock_max,t1,t2,t3,t4,t5
   
 
   icount = 0
@@ -98,7 +97,7 @@ subroutine time_loop
      !Actual solving of equations
   
 
-     call solve(verbose,outputing)
+     call solve(verbose)
 
 
      !New time
