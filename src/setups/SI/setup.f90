@@ -93,7 +93,7 @@ subroutine setup
      do idust=1,ndust
 
         q(ix,iy,irhod(idust))    = dust2gas_species(idust)*rho_init!+ perturbation
-        epsilondust(i,idust) = dust2gas_species(idust)
+        epsilondust(i,idust)     = dust2gas_species(idust)
 
         if(.not. stokes_distrib) sdust(idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(2d-2*cs0,perturbation)
@@ -218,8 +218,8 @@ subroutine read_setup_params(ilun,nmlfile)
         icount=0
      endif
 
-     if(time.eq.0) outputing=.true.   
-     if(outputing)call output(iout)
+     if(time.eq.0) outputing = .true.   
+     if(outputing) call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
 
@@ -237,7 +237,7 @@ subroutine read_setup_params(ilun,nmlfile)
      end if
 
      if(outputing) print *, " Total mass is", mtot
-      if(outputing) print *," Total dust mass is", mdtot
+     if(outputing) print *, " Total dust mass is", mdtot
 
      outputing=.false.
 

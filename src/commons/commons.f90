@@ -19,9 +19,6 @@ module commons
 
   real(dp), dimension(:,:), allocatable   :: vol
   real(dp), dimension(:,:,:), allocatable :: Surf
-
-  real(dp), dimension(:), allocatable   :: active_cell
-  real(dp), dimension(:), allocatable   :: active_cell_predictor
   
   real(dp):: time 
   real(dp):: tend

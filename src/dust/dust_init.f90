@@ -25,7 +25,7 @@ subroutine distribution_dust(initi)
   if(kernel_type==1)m_min = smin**3.
   if(kernel_type==2)m_min = smin**3.
   
-  if((initi.or.restarting>0)) then
+  if(initi) then
      do idust =1,ndust
         aminus(idust) = smin  * zeta ** (idust-1)/unit_l
         aplus (idust) = smin  * zeta ** (idust)/unit_l
@@ -83,22 +83,14 @@ subroutine distribution_dust(initi)
    end do
    !end do
   end if
-  if(restarting>0.and.initi) then
-      do iy=1,ny_max
-        do ix= 1,ny_max
-         do idust=1,ndust
-           epsilondust(icell(ix,iy),idust)=q(ix,iy,irhod(idust))/q(ix,iy,irho)
-         end do
-        end do
-      end do
-  endif
+  
   !Add ice mantle
-  if((initi.or.restarting>0).and.kernel_type==0) then
+  if((initi).and.kernel_type==0) then
      sdust=sdust+ice_mantle/unit_l
      aplus=aplus!+ice_mantle/unit_l
      aminus=aminus!+ice_mantle/unit_l
   endif
-  if((initi.or.restarting>0)) then
+  if((initi)) then
      print *, 'Initial dust distribution, size :'
      print *,  sdust(:)*unit_l
      print *, 'Initial dust distribution, epsilon :'
@@ -386,9 +378,9 @@ subroutine read_dust_params(ilun,nmlfile)
      print *, 'Slope of monomer distrib :', themis_slope
 
   else if (trim(dust_distribution).eq.'logn') then
-     print *,'THEMIS dust distribution'
-     print *, 'Average grain size       :', aO_themis
-     print *, 'Standard dev             :', sigma_themis
+     print *,' THEMIS dust distribution'
+     print *,' Average grain size       :', aO_themis
+     print *,' Standard dev             :', sigma_themis
   else if  (trim(dust_distribution).eq.'equal') then
      print *,' Equal dust bins'
   else if (trim(dust_distribution).eq.'table') then
@@ -403,7 +395,7 @@ subroutine read_dust_params(ilun,nmlfile)
      print *, "CFL for growth                  :", CFL_growth
      print *, 'gamma_grains                    :', gamma_grains
      print *, 'estar_grains                    :', estar_grains
-     print *, 'sticking_efficiency             :',sticking_efficiency 
+     print *, 'sticking_efficiency             :', sticking_efficiency 
      print *, 'clustered_fraction              :', clustered_fraction
 
      if(sticking_efficiency>1.or.sticking_efficiency<=0) then

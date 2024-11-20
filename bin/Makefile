@@ -66,7 +66,7 @@ BINDIR = .
 VPATH  = ../src:../src/commons:../src/grid:../src/solver:../src/setups/$(SETUP):../src/hydro:../src/:../src/dust
 #############################################################################
 # All objects
-MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o random.o newton_raphson.o 
+MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o random.o
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif

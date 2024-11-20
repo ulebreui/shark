@@ -18,66 +18,54 @@ subroutine predictor
   integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
-  real(dp), dimension(:,:,:),allocatable :: dq_x
-  real(dp), dimension(:,:,:),allocatable :: dq_y
+  real(dp), dimension(1:nvar) :: dq_x
+  real(dp), dimension(1:nvar) :: dq_y
 
   if(static) return
 
 
   ! Initialise to zero
-  allocate(dq_x(1:nx_max,1:ny_max,1:nvar))
-  allocate(dq_y(1:nx_max,1:ny_max,1:nvar))
 
   dq_x    = 0.0d0
   dq_y    = 0.0d0
 
   qp    = 0.0d0
   qm    = 0.0d0
-  drx   = 0.0d0 
-  dpx   = 0.0d0  
-  dry   = 0.0d0 
-  dpy   = 0.0d0
-  duy   = 0.0d0
-  dvx   = 0.0d0
-  dvy   = 0.0d0
-  dwx   = 0.0d0
-  dwy   = 0.0d0
-  u     = 0.0d0
-  v     = 0.0d0
-  w     = 0.0d0
 
   do iy=2,ny_max-1
     do ix= 2,nx_max-1
         radius_polar=radii(ix,iy)
-    if(slope_type>0) then
-    do ivar = 1, nvar
-            dq_x(ix,iy,ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix-1,iy,ivar))/(dx(ix,iy,1)+dx(ix-1,iy,1)),2.0d0*(q(ix+1,iy,ivar) - q(ix,iy,ivar))/(dx(ix+1,iy,1)+dx(ix,iy,1)))
-            dq_y(ix,iy,ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix,iy-1,ivar))/(dx(ix,iy,2)+dx(ix,iy-1,2)),2.0d0*(q(ix,iy+1,ivar) - q(ix,iy,ivar))/(dx(ix,iy+1,2)+dx(ix,iy,2)))/radius_polar
-    end do
-    endif
+        if(slope_type>0) then
+            do ivar = 1, nvar
+                    dq_x(ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix-1,iy,ivar))/(dx(ix,iy,1)+dx(ix-1,iy,1)),2.0d0*(q(ix+1,iy,ivar) - q(ix,iy,ivar))/(dx(ix+1,iy,1)+dx(ix,iy,1)))
+                    dq_y(ivar) = slope_limit(2.0d0*(q(ix,iy,ivar) - q(ix,iy-1,ivar))/(dx(ix,iy,2)+dx(ix,iy-1,2)),2.0d0*(q(ix,iy+1,ivar) - q(ix,iy,ivar))/(dx(ix,iy+1,2)+dx(ix,iy,2)))/radius_polar
+            end do
+        endif
 
       r_rho = q(ix,iy,irho)
       u     = q(ix,iy,ivx)
-      dux   = dq_x(ix,iy,ivx)
-      drx   = dq_x(ix,iy,irho)
-      w     = q(ix,iy,ivz)
-      dwx   = dq_x(ix,iy,ivz)
       v     = q(ix,iy,ivy)
-      dvx   = dq_x(ix,iy,ivy)
+      w     = q(ix,iy,ivz)
       p     = q(ix,iy,iP)
-      dPx   = dq_x(ix,iy,iP)
+
+      drx   = dq_x(irho)
+      dux   = dq_x(ivx)
+      dvx   = dq_x(ivy)
+      dwx   = dq_x(ivz)
+      dPx   = dq_x(iP)
       if(iso_cs==1) then
        P     = q(ix,iy,irho)*cs(ix,iy)**2
-       dPx   = dq_x(ix,iy,irho)*cs(ix,iy)**2
+       dPx   = dq_x(irho)*cs(ix,iy)**2
       endif 
 
-      duy   = dq_y(ix,iy,ivx)
-      dry   = dq_y(ix,iy,irho)
-      dvy   = dq_y(ix,iy,ivy)
-      dpy   = dq_y(ix,iy,iP)
-      dwy   = dq_y(ix,iy,ivz)
+      dry   = dq_y(irho)
+      duy   = dq_y(ivx)
+      dvy   = dq_y(ivy)
+      dwy   = dq_y(ivz)
+      dpy   = dq_y(iP)
+
       if(iso_cs==1) then
-        dPy   = dq_y(ix,iy,irho)*cs(ix,iy)**2
+        dPy   = dq_y(irho)*cs(ix,iy)**2
       endif
       
     
@@ -156,21 +144,25 @@ subroutine predictor
 
         r_rho = q(ix,iy,irho_spe)
         u     = q(ix,iy,ivx_spe)
-        dux   = dq_x(ix,iy,ivx_spe)
-        drx   = dq_x(ix,iy,irho_spe)
         v     = q(ix,iy,ivy_spe)
-        dvx   = dq_x(ix,iy,ivy_spe)
         w     = q(ix,iy,ivz_spe)
-        dwx   = dq_x(ix,iy,ivz_spe)
-        dry   = dq_y(ix,iy,irho_spe)   
-        duy   = dq_y(ix,iy,ivx_spe)  
-        dvy   = dq_y(ix,iy,ivy_spe)
-        dwy   = dq_y(ix,iy,ivz_spe)
+
+        drx   = dq_x(irho_spe)
+        dux   = dq_x(ivx_spe)
+        dvx   = dq_x(ivy_spe)
+        dwx   = dq_x(ivz_spe)
+
+        dry   = dq_y(irho_spe)   
+        duy   = dq_y(ivx_spe)  
+        dvy   = dq_y(ivy_spe)
+        dwy   = dq_y(ivz_spe)
 
     if(force_kick) then
+
         u    = u + force_dust_x(ix,iy,idust)*half*dt
         v    = v + force_dust_y(ix,iy,idust)*half*dt
         w    = w + force_dust_Z(ix,iy,idust)*half*dt
+
     endif
 
         sr0    = -u*drx-v*dry - (dux+dvy)*r_rho
@@ -193,7 +185,7 @@ subroutine predictor
 #endif
 
     !Direction x
-    dx_loc=dx(ix,iy,1)
+    dx_loc = dx(ix,iy,1)
     qm(ix,iy,irho_spe,1)   = r_rho     + half*dt*sr0  + half*drx   *dx_loc
     qm(ix,iy,ivx_spe,1)    = u         + half*dt*su0  + half*dux   *dx_loc
     qm(ix,iy,ivy_spe,1)    = v         + half*dt*sv0  + half*dvx   *dx_loc
@@ -204,7 +196,7 @@ subroutine predictor
     qp(ix,iy,ivz_spe,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
     
     !direction y
-    dx_loc=radius_polar*dx(ix,iy,2)
+    dx_loc = radius_polar*dx(ix,iy,2)
     qm(ix,iy,irho_spe,2)   = r_rho     + half*dt*sr0  + half*dry   *dx_loc
     qm(ix,iy,ivx_spe,2)    = u         + half*dt*su0  + half*duy   *dx_loc
     qm(ix,iy,ivy_spe,2)    = v         + half*dt*sv0  + half*dvy   *dx_loc
@@ -217,10 +209,10 @@ subroutine predictor
 
 #if NDUSTPSCAL>0
     do ipscal= 1, ndustpscal
-        r_rho = q(ix,iy,idust_pscal(idust,ipscal))
 
-        drx   = dq_x(ix,iy,idust_pscal(idust,ipscal))
-        dry   = dq_y(ix,iy,idust_pscal(idust,ipscal))
+        r_rho = q(ix,iy,idust_pscal(idust,ipscal))
+        drx   = dq_x(idust_pscal(idust,ipscal))
+        dry   = dq_y(idust_pscal(idust,ipscal))
 
         sr0   = -u*drx-v*dry - (dux+dvy)*r_rho
 #if GEOM==2
@@ -241,6 +233,7 @@ subroutine predictor
        dx_loc=radius_polar*dx(ix,iy,2)
        qm(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  + half*dry   * dx_loc
        qp(ix,iy,idust_pscal(idust,ipscal),2)   = r_rho + half*dt*sr0  - half*dry   * dx_loc
+       
     end do
 #endif
       end do !dust loop
@@ -262,8 +255,6 @@ end if
 end do 
 end do 
 
-  deallocate(dq_x)
-  deallocate(dq_y)
 
 end subroutine predictor
 

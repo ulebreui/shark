@@ -42,18 +42,6 @@ subroutine Source_terms
         end do
 #endif
 #endif 
-
-#if NDUST>0
-    if(dust_back_reaction .and. iso_cs<1) then
-        do idust = 1,ndust
-          S_U(ix,iy,iP) = S_U(ix,iy,iP) + dt*(q(ix,iy,ivx)*(q(ix,iy,ivx)-q(ix,iy,ivdx(idust))))/tstop(ix,iy,idust) &
-          & + dt*(q(ix,iy,ivy)*(q(ix,iy,ivy)-q(ix,iy,ivdy(idust))))/tstop(ix,iy,idust)&
-          & + dt*(q(ix,iy,ivz)*(q(ix,iy,ivz)-q(ix,iy,ivdz(idust))))/tstop(ix,iy,idust)
-     
-        end do
-    endif
-#endif
-
     end do
   end do
 

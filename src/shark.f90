@@ -13,9 +13,9 @@ program shark
   ! Parameter reading
   call read_params
 
-  if(nrestart>0)restarting=1
   ! Setup initialisation
   call setup
+  
 
   call system_clock ( t1, clock_rate, clock_max )
   ! Actual time loop
@@ -51,8 +51,13 @@ subroutine time_loop
   time   = 0.0d0
   ! We dump a first output corresponding to the ICs
   iout=1
+  if(nrestart>0)restarting=1
+
   if(restarting>0) iout = nrestart
-  restarting=0
+  if(nrestart>0) then 
+    call restart(nrestart)
+  endif
+ 
   continue_sim = .true.
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
@@ -65,9 +70,11 @@ subroutine time_loop
      verbose= .false.
      icount = icount+1
      istep  = istep+1
-
-     call check_output(icount,iout,outputing,verbose)
-
+     if(restarting.eq.0) then
+        call check_output(icount,iout,outputing,verbose)
+     else
+        restarting=0
+     endif
      
 #if NDUST>0
      if(kernel_type>0) verbose=.true.
@@ -123,7 +130,7 @@ subroutine prompt
     write ( *, * ) ' sss   hh   hh    aa aa     rr  rrr  kk  kk                  '
     write ( *, * ) '  sss  hhhhhhh   aaaaaaa    rrrrr    kk kk                   '
     write ( *, * ) '   sss hh   hh  aaa    aaa  rr  rr   kk  kk                  '
-    write ( *, * ) ' ssss  hh   hh aaa      aaa rr    rr kk   kk                 '
+    write ( *, * ) ' ssss  hh   hh aaa      aaa rr    rr kk   kk   (LITE)        '
     write ( *, * ) '-------------------------------------------------------------'
     write ( *, * ) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     write ( *, * ) '!!!!!!!!!000!!!!!!!!!!DDD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'

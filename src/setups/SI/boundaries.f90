@@ -18,7 +18,6 @@ subroutine apply_boundaries
 
    do ix  = first_active,last_active
    do iy  = 1, nghost
-        !print *,'is it a boundary ? ', active_cell(icell(ix,iy))
       do ivar =1,nvar
          u_prim(ix,iy,ivar)          = u_prim(ix,last_active_y-nghost+iy,ivar) ! Periodic along y
          u_prim(ix,ny_max+1-iy,ivar) = u_prim(ix,first_active_y+nghost-iy,ivar)

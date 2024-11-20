@@ -43,51 +43,6 @@ function iyy(i)
 
 end function iyy
 
-subroutine get_active_cells
-  use parameters
-  use commons
-  use units
-  implicit none
-  integer  :: ix,iy,icell,ii,icount,ixx,iyy
-  allocate(active_cell(1:ncells))
-  allocate(active_cell_predictor(1:ncells))
-
-  active_cell=0
-  active_cell_predictor=0
-  if(ndim==1) then
-    icount=0
-  	do ix=1,nx_max
-  		if(ix.ge.first_active.and.ix.le.last_active) then 
-      active_cell(ix)=1
-      icount=icount+1
-      endif
-      if(ix.ge.2 .and.ix.le.nx_max-1) active_cell_predictor(ix)=1
-
-  	end do
-  else
-    icount=0
-  	do ix=1,nx_max
-  		do iy=1,ny_max
-  		ii=icell(ix,iy)
-      !print *, ii, ix, iy,ixx(ii),iyy(ii)
-  		if(ix.ge.first_active.and.ix.le.last_active) then
-  			if(iy.ge.first_active_y.and.iy.le.last_active_y) then
-  		 	  active_cell(ii)=1
-          icount=icount+1
-  		 	endif
-  		  endif
-        if(ix.ge.2 .and.ix.le.nx_max-1) then
-          if(iy.ge.2 .and.iy.le.ny_max-1) then
-            active_cell_predictor(ii)=1
-          endif
-        endif
-  		end do
-  	end do	
-  endif
-  print *, icount, ' active cells were prepared.'
-end subroutine get_active_cells
-
-
 !Grid initialisation routine
 #if GEOM==0
 subroutine gridinit(rmax_x,rmax_y)

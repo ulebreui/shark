@@ -8,8 +8,6 @@ subroutine allocate_init
 
   integer :: idust,i,ipscal,icountpscal,ix,iy
 
-  call get_active_cells
-
   ! Grid related quantities
   allocate(vol(1:nx_max,1:ny_max))
   allocate(surf(1:nx_max,1:ny_max,1:ndim))
@@ -85,7 +83,7 @@ subroutine allocate_init
   print *,'ivy  =', ivy
   print *,'ivz  =', ivz
   print *,'iP   =', iP
-  
+
   index_vn(1) = ivx  
   index_vt(1) = ivy
   index_vn(2) = ivy
@@ -96,16 +94,20 @@ subroutine allocate_init
   icountpscal=1
   do idust=1,ndust
     print *,'idust   =', idust, 'irhod = ',iP+idust, ' ivdx = ', iP+ndust+idust,' ivdy = ',  iP+2*ndust+idust,' ivdz = ',  iP+3*ndust+idust
+    
     irhod(idust)= iP+idust
     ivdx(idust) = iP+ndust+idust
     ivdy(idust) = iP+2*ndust+idust
     ivdz(idust) = iP+3*ndust+idust
+
 #if NDUSTPSCAL>0
+
     do ipscal=1,ndustpscal
-      idust_pscal(idust,ipscal) = iP +4*ndust+icountpscal
+      idust_pscal(idust,ipscal) = iP + 4*ndust + icountpscal
       print *,'idustpscal   =', idust_pscal(idust,ipscal)
       icountpscal= icountpscal +1
     end do
+
 #endif     
     index_vdn(idust,1) = ivdx(idust)
     index_vdt(idust,1) = ivdy(idust)

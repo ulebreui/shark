@@ -24,25 +24,18 @@ subroutine courant
 
 
   dt=2d44
-  ca=0.0d0
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
          i = icell(ix,iy)
          !Cas 1D   
-
-
          dxx  = min(dx(ix,iy,1),radii(ix,iy)*dx(ix,iy,2))
          
-         vv   = abs(q(ix,iy,ivx)) + abs(q(ix,iy,ivy))+ abs(q(ix,iy,ivz))
-         vmax = cs(ix,iy)+vv
-
-
+         vmax = cs(ix,iy) +  abs(q(ix,iy,ivx)) + abs(q(ix,iy,ivy)) + abs(q(ix,iy,ivz))
 
 #if NDUST>0     
          do idust=1,ndust
-            vv   =  abs(q(ix,iy,ivdx(idust))) + abs(q(ix,iy,ivdy(idust))) + abs(q(ix,iy,ivdz(idust)))
-            vmax =  max(vmax,ca+vv)
+            vmax =  max(vmax,abs(q(ix,iy,ivdx(idust))) + abs(q(ix,iy,ivdy(idust))) + abs(q(ix,iy,ivdz(idust))))
          enddo
 #endif
          !print(vmax)
