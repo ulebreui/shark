@@ -5,13 +5,14 @@ subroutine kick(coeffdt)
   use OMP_LIB
   use units
   implicit none
-  integer :: idust,ix,iy,icell
+  integer :: idust,ix,iy
   real(dp) :: energy_old,energy_new,coeffdt
 
   if(static) return
 
+  !$omp parallel do default(shared) private(idust, ix,iy,energy_old,energy_new)
   do iy=first_active_y,last_active_y
-   do ix=first_active,last_active
+    do ix=first_active,last_active
       if(iso_cs.ne.1 .or. non_standard_eos .ne. 1) then
         energy_old         = half*u_prim(ix,iy,ivx)**2/u_prim(ix,iy,irho) +  half*u_prim(ix,iy,ivy)**2/u_prim(ix,iy,irho)  + half*u_prim(ix,iy,ivz)**2/u_prim(ix,iy,irho)
       endif

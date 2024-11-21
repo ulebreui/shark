@@ -17,10 +17,10 @@ subroutine distribution_dust(initi)
    implicit none
    logical  ::initi
    real(dp) :: zeta, eta, m_min, sum_dust, m_sum
-   integer  :: idust, i, jdust, kdust, icell, ix, iy
+   integer  :: idust, i, jdust, kdust, icell, ix,iy
 
-   zeta = (smax/smin)**(1.0d0/ndust)
-   eta = zeta**3.
+   zeta  = (smax/smin)**(1.0d0/ndust)
+   eta   = zeta**3.
    m_min = 4./3.*pi*rhograin*smin**3./unit_m
    if (kernel_type == 1) m_min = smin**3.
    if (kernel_type == 2) m_min = smin**3.
@@ -74,10 +74,12 @@ subroutine distribution_dust(initi)
       end if
 
    else !Else we use the updated dust distribution
-      do iy = 1, ny_max
-         do ix = 1, ny_max
-            do idust = 1, ndust
-               epsilondust(icell(ix, iy), idust) = q(ix, iy, irhod(idust))/q(ix, iy, irho)
+
+      !$omp parallel do default(shared) private(idust, ix,iy)
+      do idust = 1, ndust
+         do iy = 1, ny_max
+            do ix = 1, ny_max
+               epsilondust(icell(ix,iy), idust) = q(ix,iy,irhod(idust))/q(ix,iy,irho)
             end do
          end do
       end do

@@ -14,38 +14,37 @@ subroutine courant
    use units
    implicit none
 
-   integer :: i, idust, ix, iy, icell
-   real(dp) :: vmax, dxx, force_max, ca, magnetosonic_fast, vv, fratio, D_max
+   integer  :: idust, ix,iy
+   real(dp) :: vmax, dxx, force_max, vv, fratio
 
    if (static) then
       return
    end if
 
    dt = 2d44
-
+   !$omp parallel do default(shared) schedule(static) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
-         i = icell(ix, iy)
          !Cas 1D
-         dxx = min(dx(ix, iy, 1), radii(ix, iy)*dx(ix, iy, 2))
+         dxx = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
 
-         vmax = cs(ix, iy) + abs(q(ix, iy, ivx)) + abs(q(ix, iy, ivy)) + abs(q(ix, iy, ivz))
+         vmax = cs(ix,iy) + abs(q(ix,iy,ivx)) + abs(q(ix,iy,ivy)) + abs(q(ix,iy,ivz))
 
 #if NDUST>0
          do idust = 1, ndust
-            vmax = max(vmax, abs(q(ix, iy, ivdx(idust))) + abs(q(ix, iy, ivdy(idust))) + abs(q(ix, iy, ivdz(idust))))
+            vmax = max(vmax, abs(q(ix,iy,ivdx(idust))) + abs(q(ix,iy,ivdy(idust))) + abs(q(ix,iy,ivdz(idust))))
          end do
 #endif
          !print(vmax)
          dt = min(dt, CFL*dxx/abs(vmax))
          if (force_kick) then
 
-            force_max = sqrt(force_x(ix, iy)**2 + force_y(ix, iy)**2 + force_z(ix, iy)**2)
+            force_max = sqrt(force_x(ix,iy)**2 + force_y(ix,iy)**2 + force_z(ix,iy)**2)
 
 #if NDUST>0
             do idust = 1, ndust
 
-               force_max = max(force_max, sqrt(force_dust_x(ix, iy, idust)**2 + force_dust_y(ix, iy, idust)**2 + force_dust_z(ix, iy, idust)**2))
+               force_max = max(force_max, sqrt(force_dust_x(ix,iy,idust)**2 + force_dust_y(ix,iy,idust)**2 + force_dust_z(ix,iy,idust)**2))
 
             end do
 #endif

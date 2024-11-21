@@ -255,13 +255,16 @@ subroutine setup_inloop
    use parameters
    use commons
    use units
+   use OMP_LIB
    implicit none
-   integer :: idust,icell,ix,iy
-   real(dp) :: u, v,Ohmdt, AA, BB,d,old_ek,new_ek
+   integer :: idust,ix,iy
+   real(dp) :: Ohmdt
+   real(dp) ::  u, v, AA, BB,d
    
    if(force_kick) return
 
    Ohmdt = Omega_shear*dt
+   !$omp parallel do default(shared) private(idust, ix,iy,u, v, Ohmdt, AA, BB,d)
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
           !Crank nicholson scheme
@@ -290,14 +293,15 @@ end subroutine setup_inloop
    use parameters
    use commons
    use units
+   use OMP_LIB
    implicit none
 
-   integer :: i,idust,icell,ix,iy
+   integer ::idust,ix,iy
 
-
+   if(.not.force_kick) return
+   !$omp parallel do default(shared) private(idust, ix,iy)
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-        i = icell(ix,iy)
         force_x(ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ix,iy,ivz) -  2.0d0*rad0*Omega_shear*eta_stream
         force_y(ix,iy)  = 0.0d0
         force_z(ix,iy)  = 2.0d0*Omega_shear*q(ix,iy,ivx)
@@ -335,8 +339,8 @@ subroutine compute_tstop
   !Re-calc distribution
 
 
-   integer :: idust,icell,ix,iy
-
+   integer :: idust,ix,iy
+   !$omp parallel do default(shared) private(idust, ix,iy)
    do iy = first_active_y,last_active_y
     do ix = first_active,last_active
      do idust=1,ndust

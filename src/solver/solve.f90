@@ -111,34 +111,34 @@ subroutine ctoprim
    use OMP_LIB
 
    implicit none
-   integer :: i, idust, ipscal, ix, iy, icell
+   integer :: idust, ipscal, ix,iy
    real(dp):: ekin, cs_eos, barotrop
 
    ! Gas related primitive quantities
+   !$omp parallel do default(shared) private(idust,ipscal, ix,iy,ekin)
    do iy = 1, ny_max
       do ix = 1, nx_max
-         i = icell(ix, iy)
-         q(ix, iy, irho) = max(u_prim(ix, iy, irho), smallr)
-         q(ix, iy, ivx) = u_prim(ix, iy, ivx)/u_prim(ix, iy, irho)
-         q(ix, iy, ivy) = u_prim(ix, iy, ivy)/u_prim(ix, iy, irho)
-         q(ix, iy, ivz) = u_prim(ix, iy, ivz)/u_prim(ix, iy, irho)
+         q(ix,iy,irho) = max(u_prim(ix,iy,irho), smallr)
+         q(ix,iy,ivx)  = u_prim(ix,iy,ivx)/u_prim(ix,iy,irho)
+         q(ix,iy,ivy)  = u_prim(ix,iy,ivy)/u_prim(ix,iy,irho)
+         q(ix,iy,ivz)  = u_prim(ix,iy,ivz)/u_prim(ix,iy,irho)
 
          ekin = half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivx)/u_prim(ix,iy,irho))**2.0) + half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivy)/u_prim(ix,iy,irho))**2.0) + half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivz)/u_prim(ix,iy,irho))**2.0)
 
-         q(ix, iy, iP) = max((gamma - 1.0d0)*(u_prim(ix, iy, iP) - ekin), smallp) !TODO : substract magnetic nrj
+         q(ix,iy,iP) = max((gamma - 1.0d0)*(u_prim(ix,iy,iP) - ekin), smallp) !TODO : substract magnetic nrj
 
-         if (iso_cs < 1) cs(ix, iy) = sqrt(gamma*q(ix, iy, iP)/q(ix, iy, irho))
-         if (non_standard_eos == 1) cs(ix, iy) = cs_eos(barotrop(q(ix, iy, irho)))
-         if (iso_cs == 1 .or. non_standard_eos == 1) q(ix, iy, iP) = u_prim(ix, iy, irho)*cs(ix, iy)**2
+         if (iso_cs < 1) cs(ix,iy) = sqrt(gamma*q(ix,iy,iP)/q(ix,iy,irho))
+         if (non_standard_eos == 1) cs(ix,iy) = cs_eos(barotrop(q(ix,iy,irho)))
+         if (iso_cs == 1 .or. non_standard_eos == 1) q(ix,iy,iP) = u_prim(ix,iy,irho)*cs(ix,iy)**2
 #if NDUST>0
          do idust = 1, ndust
-            q(ix, iy, irhod(idust)) = u_prim(ix, iy, irhod(idust))
-            q(ix, iy, ivdx(idust)) = u_prim(ix, iy, ivdx(idust))/u_prim(ix, iy, irhod(idust))
-            q(ix, iy, ivdy(idust)) = u_prim(ix, iy, ivdy(idust))/u_prim(ix, iy, irhod(idust))
-            q(ix, iy, ivdz(idust)) = u_prim(ix, iy, ivdz(idust))/u_prim(ix, iy, irhod(idust))
+            q(ix,iy,irhod(idust)) = u_prim(ix,iy,irhod(idust))
+            q(ix,iy,ivdx(idust))  = u_prim(ix,iy,ivdx(idust))/u_prim(ix,iy,irhod(idust))
+            q(ix,iy,ivdy(idust))  = u_prim(ix,iy,ivdy(idust))/u_prim(ix,iy,irhod(idust))
+            q(ix,iy,ivdz(idust))  = u_prim(ix,iy,ivdz(idust))/u_prim(ix,iy,irhod(idust))
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               q(ix, iy, idust_pscal(idust, ipscal)) = u_prim(ix, iy, idust_pscal(idust, ipscal))/u_prim(ix, iy, irhod(idust))
+               q(ix,iy,idust_pscal(idust, ipscal)) = u_prim(ix,iy,idust_pscal(idust, ipscal))/u_prim(ix,iy,irhod(idust))
             end do
 #endif
          end do
@@ -164,28 +164,26 @@ subroutine primtoc
    use OMP_LIB
 
    implicit none
-   integer :: i, idust, ix, iy, icell
-#if NDUSTPSCAL>0
+   integer :: idust, ix,iy
    integer :: ipscal
-#endif
 
+   !$omp parallel do default(shared) private(idust, ipscal, ix,iy)
    do iy = 1, ny_max
       do ix = 1, nx_max
-         i = icell(ix, iy)
-         u_prim(ix, iy, irho) = q(ix, iy, irho)
-         u_prim(ix, iy, ivx) = q(ix, iy, irho)*q(ix, iy, ivx)
-         u_prim(ix, iy, ivy) = q(ix, iy, irho)*q(ix, iy, ivy)
-         u_prim(ix, iy, ivz) = q(ix, iy, irho)*q(ix, iy, ivz)
+         u_prim(ix,iy,irho) = q(ix,iy,irho)
+         u_prim(ix,iy,ivx) = q(ix,iy,irho)*q(ix,iy,ivx)
+         u_prim(ix,iy,ivy) = q(ix,iy,irho)*q(ix,iy,ivy)
+         u_prim(ix,iy,ivz) = q(ix,iy,irho)*q(ix,iy,ivz)
          u_prim(ix,iy,iP)    = q(ix,iy,iP)/(gamma-1.0d0)+half* q(ix,iy,irho)*q(ix,iy,ivx)**2 + half* q(ix,iy,irho)*q(ix,iy,ivy)**2 + half* q(ix,iy,irho)*q(ix,iy,ivz)**2
 #if NDUST>0
          do idust = 1, ndust
-            u_prim(ix, iy, irhod(idust)) = q(ix, iy, irhod(idust))
-            u_prim(ix, iy, ivdx(idust)) = q(ix, iy, irhod(idust))*q(ix, iy, ivdx(idust))
-            u_prim(ix, iy, ivdy(idust)) = q(ix, iy, irhod(idust))*q(ix, iy, ivdy(idust))
-            u_prim(ix, iy, ivdz(idust)) = q(ix, iy, irhod(idust))*q(ix, iy, ivdz(idust))
+            u_prim(ix,iy,irhod(idust)) = q(ix,iy,irhod(idust))
+            u_prim(ix,iy,ivdx(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdx(idust))
+            u_prim(ix,iy,ivdy(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdy(idust))
+            u_prim(ix,iy,ivdz(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdz(idust))
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               u_prim(ix, iy, idust_pscal(idust, ipscal)) = q(ix, iy, irhod(idust))*q(ix, iy, idust_pscal(idust, ipscal))
+               u_prim(ix,iy,idust_pscal(idust, ipscal)) = q(ix,iy,irhod(idust))*q(ix,iy,idust_pscal(idust, ipscal))
             end do
 #endif
          end do

@@ -23,8 +23,28 @@ program shark
 
   call system_clock ( t2, clock_rate, clock_max )
 
-  write ( *, * ) 'Elapsed real time ', real ( t2- t1 ) / real ( clock_rate )  
-
+  write ( *, * ) 'Elapsed real time ', real ( t2- t1 ) / real ( clock_rate ) 
+  write (*, *) 'Boundaries + ctoprim      ', t21, ' seconds'
+  write (*, *) 'Forces                    ', t32, ' seconds'
+  write (*, *) 'Charging + stoping time   ', t43, ' seconds'
+  write (*, *) 'Courant                   ', t54, ' seconds'
+  write (*, *) 'Predictor step            ', t65, ' seconds'
+  write (*, *) 'Corrector step            ', t76, ' seconds'
+  write (*, *) 'Source terms              ', t87, ' seconds'
+  write (*, *) 'Dust                      ', t98, ' seconds'
+  write (*, *) 'Force kick + setup action ', t109, ' seconds'
+  open (20,file=trim('metrics.dat'))   
+  write(20,*) real ( t2- t1 ) / real ( clock_rate )  
+  write(20,*) t21
+  write(20,*) t32
+  write(20,*) t43
+  write(20,*) t54
+  write(20,*) t65
+  write(20,*) t76
+  write(20,*) t87
+  write(20,*) t98
+  write(20,*) t109
+  close(20)
 end program shark
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

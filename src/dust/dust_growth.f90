@@ -9,7 +9,7 @@ subroutine dust_growth(verbose)
    implicit none
    logical :: verbose
 
-   integer :: ix, iy
+   integer :: ix,iy
 
    integer :: idust, jdust, kdust
 
@@ -63,16 +63,16 @@ subroutine dust_growth(verbose)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          T        = (cs(ix,iy)*unit_v)**2*sqrt(mu_gas*mH/gamma/kB)
-         Reynolds = 6.2d7*dsqrt(q(ix, iy, irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
-         t_L      = sqrt(3.*pi/(32.*grav*q(ix, iy, irho)*unit_d))/unit_t
+         Reynolds = 6.2d7*dsqrt(q(ix,iy,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
+         t_L      = sqrt(3.*pi/(32.*grav*q(ix,iy,irho)*unit_d))/unit_t
          t_eta    = t_L/dsqrt(Reynolds)
 
          ! Differential velocity loop
          dvij = 0.0d0
          do idust = 1, ndust
             do jdust = 1, ndust
-               if (turbgrow  == 1)  dvij(idust, jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(ix, iy, idust),tstop(ix, iy, jdust),Reynolds,t_L)
-               if (browgrow  == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
+               if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(ix,iy,idust),tstop(ix,iy,jdust),Reynolds,t_L)
+               if (browgrow  == 1)  dvij(idust,jdust)  = dsqrt(dvij(idust,jdust)**2.&
                   &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust)))**2.)
                if (driftgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
                   &+(q(ix,iy,ivdx(idust))-q(ix,iy,ivdx(jdust)))**2&
@@ -86,15 +86,15 @@ subroutine dust_growth(verbose)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          do idust = 1, ndust
-              dust_dens(idust) = u_prim(ix, iy, irhod(idust))
+              dust_dens(idust) = u_prim(ix,iy,irhod(idust))
          end do
 
          call dust_growth_shark(dt,pi,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
-         &eta,dvij,u_prim(ix, iy, irho),sticking_efficiency,eps_threshold,u_prim(ix, iy, irho)*dust_ratio_min,&
+         &eta,dvij,u_prim(ix,iy,irho),sticking_efficiency,eps_threshold,u_prim(ix,iy,irho)*dust_ratio_min,&
          &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag)
 
          do idust = 1, ndust
-            u_prim(ix, iy, irhod(idust)) = dust_dens(idust)
+            u_prim(ix,iy,irhod(idust)) = dust_dens(idust)
          end do         
       end do
    end do
@@ -110,7 +110,7 @@ subroutine dust_growth_stepinski
    use OMP_LIB
    implicit none
    logical :: verbose
-   integer :: idust, jdust, ipscal, ix, iy
+   integer :: idust, jdust, ipscal, ix,iy
 
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active

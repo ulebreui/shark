@@ -5,8 +5,12 @@ module hydro_commons
 
   
   real(dp), dimension(:,:),     allocatable :: cs
-  real(dp), dimension(:,:,:,:), allocatable :: qm
-  real(dp), dimension(:,:,:,:), allocatable :: qp
+
+  real(dp), dimension(:,:,:), allocatable :: qm_x
+  real(dp), dimension(:,:,:), allocatable :: qp_x
+  real(dp), dimension(:,:,:), allocatable :: qm_y
+  real(dp), dimension(:,:,:), allocatable :: qp_y
+
 
   real(dp), dimension(:,:),   allocatable :: force_x
   real(dp), dimension(:,:),   allocatable :: force_y

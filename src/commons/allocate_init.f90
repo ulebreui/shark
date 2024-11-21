@@ -35,13 +35,15 @@ subroutine allocate_init
   ! Variable related quantities
   allocate(q(1:nx_max,1:ny_max,1:nvar))
   allocate(u_prim(1:nx_max,1:ny_max,1:nvar))
-  allocate(qm(1:nx_max,1:ny_max,1:nvar,1:ndim))
-  allocate(qp(1:nx_max,1:ny_max,1:nvar,1:ndim))
+  allocate(qm_x(1:nvar,1:nx_max,1:ny_max))
+  allocate(qp_x(1:nvar,1:nx_max,1:ny_max))
+  allocate(qm_y(1:nvar,1:nx_max,1:ny_max))
+  allocate(qp_y(1:nvar,1:nx_max,1:ny_max))
   allocate(cs(1:nx_max,1:ny_max))
 
   ! Fluxes 
-  allocate(flux_x(1:nx_max,1:ny_max,1:nvar))
-  allocate(flux_y(1:nx_max,1:ny_max,1:nvar))
+  allocate(flux_x(1:nvar,1:nx_max,1:ny_max))
+  allocate(flux_y(1:nvar,1:nx_max,1:ny_max))
 
 
 
@@ -59,8 +61,10 @@ subroutine allocate_init
 
   u_prim = 0.0d0
   q      = 0.0d0
-  qm     = 0.0d0
-  qp     = 0.0d0
+  qm_x     = 0.0d0
+  qp_x     = 0.0d0
+  qm_y     = 0.0d0
+  qp_y     = 0.0d0
   cs     = 0.0d0
  
   force_x  = 0.0d0

@@ -78,12 +78,11 @@ contains
 
       lambda_llf_g = max(abs(u_lft) + csl, abs(u_rgt) + csr)
 
-      flx(irho) = half*(flx_rho_lft + flx_rho_rgt) - half*lambda_llf_g*(rho_rgt - rho_lft)
+      flx(irho)           = half*(flx_rho_lft   + flx_rho_rgt)   - half*lambda_llf_g*(rho_rgt - rho_lft)
       flx(index_vn(idim)) = half*(flx_mom_u_lft + flx_mom_u_rgt) - half*lambda_llf_g*(mom_u_rgt - mom_u_lft)
       flx(index_vt(idim)) = half*(flx_mom_v_lft + flx_mom_v_rgt) - half*lambda_llf_g*(mom_v_rgt - mom_v_lft)
-      flx(ivz) = half*(flx_mom_w_lft + flx_mom_w_rgt) - half*lambda_llf_g*(mom_w_rgt - mom_w_lft)
-
-      flx(iP) = half*(flx_P_lft + flx_P_rgt) - half*lambda_llf_g*(E_rgt - E_lft)
+      flx(ivz)            = half*(flx_mom_w_lft + flx_mom_w_rgt) - half*lambda_llf_g*(mom_w_rgt - mom_w_lft)
+      flx(iP)             = half*(flx_P_lft     + flx_P_rgt)     - half*lambda_llf_g*(E_rgt - E_lft)
 
    end subroutine solver_llf
 
