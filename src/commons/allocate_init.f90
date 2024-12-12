@@ -33,8 +33,8 @@ subroutine allocate_init
 #endif
 
   ! Variable related quantities
-  allocate(q(1:nx_max,1:ny_max,1:nvar))
-  allocate(u_prim(1:nx_max,1:ny_max,1:nvar))
+  allocate(q(1:nvar,1:nx_max,1:ny_max))
+  allocate(u_prim(1:nvar,1:nx_max,1:ny_max))
   allocate(qm_x(1:nvar,1:nx_max,1:ny_max))
   allocate(qp_x(1:nvar,1:nx_max,1:ny_max))
   allocate(qm_y(1:nvar,1:nx_max,1:ny_max))

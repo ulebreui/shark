@@ -182,7 +182,7 @@ subroutine write_rho(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ix,iy,irho)*unit_loc
+         write(ilun) q(irho,ix,iy)*unit_loc
       end do 
   end do
 
@@ -210,7 +210,7 @@ subroutine write_v(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ix,iy,ivx)*unit_loc
+         write(ilun) q(ivx,ix,iy)*unit_loc
       end do 
   end do
 
@@ -237,7 +237,7 @@ subroutine write_vy(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ix,iy,ivx)*unit_loc
+         write(ilun) q(ivx,ix,iy)*unit_loc
       end do 
   end do
 
@@ -264,7 +264,7 @@ subroutine write_vz(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ix,iy,ivx)*unit_loc
+         write(ilun) q(ivx,ix,iy)*unit_loc
       end do 
   end do
 
@@ -290,7 +290,7 @@ subroutine write_P(iout,unit_loc)
    do iy = first_active_y,last_active_y
       do ix = first_active,last_active
 
-         write(ilun) q(ix,iy,iP)*unit_P*unit_loc
+         write(ilun) q(iP,ix,iy)*unit_P*unit_loc
 
       end do
   end do
@@ -320,7 +320,7 @@ subroutine write_rhod(iout,unit_loc)
   do idust=1,ndust
       do iy = first_active_y,last_active_y
          do ix = first_active,last_active
-            write(ilun) q(ix,iy,irhod(idust))*unit_loc
+            write(ilun) q(irhod(idust),ix,iy)*unit_loc
          end do
       end do
   end do
@@ -332,7 +332,7 @@ subroutine write_rhod(iout,unit_loc)
    do ix = first_active,last_active
       rhod_tot=0.d0
          do idust=1,ndust
-            rhod_tot  = rhod_tot +  q(ix,iy,irhod(idust))*unit_loc
+            rhod_tot  = rhod_tot +  q(irhod(idust),ix,iy)*unit_loc
          end do
          write(ilun) rhod_tot
       end do 
@@ -364,7 +364,7 @@ subroutine write_rho_pscal(iout)
    do ipscal=1,ndustpscal
       do iy = first_active_y,last_active_y
          do ix = first_active,last_active
-            write(ilun) q(ix,iy,idust_pscal(idust,ipscal))
+            write(ilun) q(idust_pscal(idust,ipscal),ix,iy)
       end do
    end do
  end do
@@ -424,7 +424,7 @@ subroutine write_vdx(iout,unit_loc)
   do idust=1,ndust
       do iy = first_active_y,last_active_y
          do ix = first_active,last_active
-            write(ilun) q(ix,iy,ivdx(idust))*unit_loc
+            write(ilun) q(ivdx(idust),ix,iy)*unit_loc
          end do
       end do
   end do
@@ -453,7 +453,7 @@ subroutine write_vdy(iout,unit_loc)
   do idust=1,ndust
       do iy = first_active_y,last_active_y
          do ix = first_active,last_active
-            write(ilun) q(ix,iy,ivdy(idust))*unit_loc
+            write(ilun) q(ivdy(idust),ix,iy)*unit_loc
          end do
       end do
   end do
@@ -480,7 +480,7 @@ subroutine write_vdz(iout,unit_loc)
   do idust=1,ndust
       do iy = first_active_y,last_active_y
          do ix = first_active,last_active
-            write(ilun) q(ix,iy,ivdz(idust))*unit_loc
+            write(ilun) q(ivdz(idust),ix,iy)*unit_loc
          end do
       end do
   end do
@@ -511,7 +511,7 @@ subroutine write_backup(iout)
   do ivar=1,nvar
       do iy = 1,ny_max
          do ix = 1,nx_max
-            write(ilun) u_prim(ix,iy,ivar)
+            write(ilun) u_prim(ivar,ix,iy)
          end do
       end do
   end do
@@ -546,7 +546,7 @@ subroutine write_backup(iout)
       do iy = 1,ny_max
          do ix = 1,nx_max
             read(ilun) xdp
-            u_prim(ix,iy,ivar) = xdp
+            u_prim(ivar,ix,iy) = xdp
          end do
       end do
   end do

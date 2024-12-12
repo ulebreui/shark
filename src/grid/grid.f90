@@ -90,7 +90,7 @@ subroutine gridinit(rmax_x, rmax_y)
 
             position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
             position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy))
-            surf(ix,iy,1) = (radii(x, iy) - half*dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
+            surf(ix,iy,1) = (radii(ix, iy) - half*dx(ix,iy,1))*(dx(ix,iy,2))  ! r dpho
             surf(ix,iy,2) = dx(ix,iy,1)! dr
             vol(ix,iy) = radii(ix,iy)*dx(ix,iy,1)*dx(ix,iy,2)
 

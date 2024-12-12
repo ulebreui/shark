@@ -24,9 +24,9 @@ program shark
   call system_clock ( t2, clock_rate, clock_max )
 
   write ( *, * ) 'Elapsed real time ', real ( t2- t1 ) / real ( clock_rate ) 
-  write (*, *) 'Boundaries + ctoprim      ', t21, ' seconds'
-  write (*, *) 'Forces                    ', t32, ' seconds'
-  write (*, *) 'Charging + stoping time   ', t43, ' seconds'
+  write (*, *) 'Boundaries  ', t21, ' seconds'
+  write (*, *) 'Ctoprim                    ', t32, ' seconds'
+  write (*, *) 'Charging + stoping time +force   ', t43, ' seconds'
   write (*, *) 'Courant                   ', t54, ' seconds'
   write (*, *) 'Predictor step            ', t65, ' seconds'
   write (*, *) 'Corrector step            ', t76, ' seconds'
@@ -189,5 +189,12 @@ subroutine prompt
 
 #if OPENMP==1
     write (*,*) ' You are using ',OMP_GET_MAX_THREADS(),' threads'
+    !write(*,*) ' You are using ',OMP_SCHEDULE,' scheduling'
+    !call omp_set_schedule(omp_sched_dynamic, 4)
+    write(*,*) ' You are using static scheduling'
+
+    !call omp_set_schedule(omp_sched_static,8)
+    call omp_set_schedule(omp_sched_static,8)
+
 #endif    
 end subroutine prompt

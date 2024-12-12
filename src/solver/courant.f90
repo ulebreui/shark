@@ -15,46 +15,56 @@ subroutine courant
    implicit none
 
    integer  :: idust, ix,iy
-   real(dp) :: vmax, dxx, force_max, vv, fratio
+   real(dp) :: vmax, dxx, force_max, vv,fratio
 
    if (static) then
       return
    end if
 
    dt = 2d44
-   !$omp parallel do default(shared) schedule(static) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          !Cas 1D
-         dxx = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
+         dxx  = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
+         vv   = abs(q(ivx,ix,iy)) + abs(q(ivy,ix,iy)) + abs(q(ivz,ix,iy))
 
-         vmax = cs(ix,iy) + abs(q(ix,iy,ivx)) + abs(q(ix,iy,ivy)) + abs(q(ix,iy,ivz))
-
+         vmax = cs(ix,iy) + vv
 #if NDUST>0
          do idust = 1, ndust
-            vmax = max(vmax, abs(q(ix,iy,ivdx(idust))) + abs(q(ix,iy,ivdy(idust))) + abs(q(ix,iy,ivdz(idust))))
+            vmax = max(vmax, abs(q(ivdx(idust),ix,iy)) + abs(q(ivdy(idust),ix,iy)) + abs(q(ivdz(idust),ix,iy)))
          end do
 #endif
          !print(vmax)
          dt = min(dt, CFL*dxx/abs(vmax))
-         if (force_kick) then
+      end do
+   end do
 
-            force_max = sqrt(force_x(ix,iy)**2 + force_y(ix,iy)**2 + force_z(ix,iy)**2)
+if (force_kick) then
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
+   do iy = first_active_y, last_active_y
+      do ix = first_active, last_active
+         !Cas 1D
+         dxx  = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
+         vv   = abs(q(ivx,ix,iy)) + abs(q(ivy,ix,iy)) + abs(q(ivz,ix,iy))+1d-30
 
+         force_max = sqrt(force_x(ix,iy)**2 + force_y(ix,iy)**2 + force_z(ix,iy)**2)
+
+         fratio = max(force_max*dxx/vv**2, 1d-3)
+         dt = min(dt, CFL*dxx/vv*(sqrt(1.0d0 + 2.0d0*CFL*fratio) - 1.0d0)/fratio)
 #if NDUST>0
             do idust = 1, ndust
 
-               force_max = max(force_max, sqrt(force_dust_x(ix,iy,idust)**2 + force_dust_y(ix,iy,idust)**2 + force_dust_z(ix,iy,idust)**2))
-
+               force_max = sqrt(force_dust_x(idust,ix,iy)**2 + force_dust_y(idust,ix,iy)**2 + force_dust_z(idust,ix,iy)**2)
+               vv = abs(q(ivdx(idust),ix,iy)) + abs(q(ivdy(idust),ix,iy)) + abs(q(ivdz(idust),ix,iy))+1d-30
+               fratio = max(force_max*dxx/vv**2, 1d-3)
+               dt = min(dt, CFL*dxx/vv*(sqrt(1.0d0 + 2.0d0*CFL*fratio) - 1.0d0)/fratio)
             end do
 #endif
 
-            if (vv .ne. 0.0d0) then
-               fratio = max(force_max*dxx/vv**2, 1d-3)
-               dt = min(dt, CFL*dxx/vv*(sqrt(1.0d0 + 2.0d0*CFL*fratio) - 1.0d0)/fratio)
-            end if
-         end if
       end do
    end do
+end if
+
 end subroutine courant
 

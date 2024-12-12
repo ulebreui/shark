@@ -23,39 +23,39 @@ subroutine predictor
 
 
 
-   !$omp parallel do default(shared) schedule(static) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal)
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
          radius_polar = radii(ix,iy)
 
-         r_rho = q(ix,iy,irho)
-         u = q(ix,iy,ivx)
-         v = q(ix,iy,ivy)
-         w = q(ix,iy,ivz)
-         p = q(ix,iy,iP)
+         r_rho = q(irho,ix,iy)
+         u = q(ivx,ix,iy)
+         v = q(ivy,ix,iy)
+         w = q(ivz,ix,iy)
+         p = q(iP,ix,iy)
          dx_l = (dx(ix,iy,1)+dx(ix-1,iy,1))*half
          dx_r = (dx(ix+1,iy,1)+dx(ix,iy,1))*half
          dy_l = (dx(ix,iy,2)+dx(ix,iy-1,2))*half
          dy_r = (dx(ix,iy+1,2)+dx(ix,iy,2))*half
 
-         drx = slope_limit((q(ix,iy,irho) - q(ix-1,iy,irho))/dx_l,(q(ix+1,iy,irho) - q(ix,iy,irho))/dx_r)
-         dux = slope_limit((q(ix,iy,ivx) - q(ix-1,iy,ivx))/dx_l,(q(ix+1,iy,ivx) - q(ix,iy,ivx))/dx_r)
-         dvx = slope_limit((q(ix,iy,ivy) - q(ix-1,iy,ivy))/dx_l,(q(ix+1,iy,ivy) - q(ix,iy,ivy))/dx_r)
-         dwx = slope_limit((q(ix,iy,ivz) - q(ix-1,iy,ivz))/dx_l,(q(ix+1,iy,ivz) - q(ix,iy,ivz))/dx_r)
-         dPx = slope_limit((q(ix,iy,iP) - q(ix-1,iy,iP))/dx_l,(q(ix+1,iy,iP) - q(ix,iy,iP))/dx_r)
+         drx = slope_limit((q(irho,ix,iy) - q(irho,ix-1,iy))/dx_l,(q(irho,ix+1,iy) - q(irho,ix,iy))/dx_r)
+         dux = slope_limit((q(ivx,ix,iy)  - q(ivx,ix-1,iy)) /dx_l,(q(ivx,ix+1,iy)  - q(ivx,ix,iy))/dx_r)
+         dvx = slope_limit((q(ivy,ix,iy)  - q(ivy,ix-1,iy)) /dx_l,(q(ivy,ix+1,iy)  - q(ivy,ix,iy))/dx_r)
+         dwx = slope_limit((q(ivz,ix,iy)  - q(ivz,ix-1,iy)) /dx_l,(q(ivz,ix+1,iy)  - q(ivz,ix,iy))/dx_r)
+         dPx = slope_limit((q(iP,ix,iy)   - q(iP,ix-1,iy))  /dx_l,(q(iP,ix+1,iy)   - q(iP,ix,iy))/dx_r)
          if (iso_cs == 1) then
-            P = q(ix,iy,irho)*cs(ix,iy)**2
-            dPx = slope_limit((q(ix,iy,irho) - q(ix-1,iy,irho))/dx_l,(q(ix+1,iy,irho) - q(ix,iy,irho))/dx_r)*cs(ix,iy)**2
+            P = q(irho,ix,iy)*cs(ix,iy)**2
+            dPx = slope_limit((q(irho,ix,iy) - q(irho,ix-1,iy))/dx_l,(q(irho,ix+1,iy) - q(irho,ix,iy))/dx_r)*cs(ix,iy)**2
          end if
 
-         dry = slope_limit((q(ix,iy,irho) - q(ix,iy-1,irho))/dy_l,(q(ix,iy+1,irho) - q(ix,iy,irho))/dy_r)/radius_polar
-         duy = slope_limit((q(ix,iy,ivx) - q(ix,iy-1,ivx))/dy_l,(q(ix,iy+1,ivx) - q(ix,iy,ivx))/dy_r)/radius_polar
-         dvy = slope_limit((q(ix,iy,ivy) - q(ix,iy-1,ivy))/dy_l,(q(ix,iy+1,ivy) - q(ix,iy,ivy))/dy_r)/radius_polar
-         dwy = slope_limit((q(ix,iy,ivz) - q(ix,iy-1,ivz))/dy_l,(q(ix,iy+1,ivz) - q(ix,iy,ivz))/dy_r)/radius_polar
-         dpy = slope_limit((q(ix,iy,iP) - q(ix,iy-1,iP))/dy_l,(q(ix,iy+1,iP) - q(ix,iy,iP))/dy_r)/radius_polar
+         dry = slope_limit((q(irho,ix,iy) - q(irho,ix,iy-1))/dy_l,(q(irho,ix,iy+1) - q(irho,ix,iy))/dy_r)/radius_polar
+         duy = slope_limit((q(ivx,ix,iy) - q(ivx,ix,iy-1))/dy_l,(q(ivx,ix,iy+1) - q(ivx,ix,iy))/dy_r)/radius_polar
+         dvy = slope_limit((q(ivy,ix,iy) - q(ivy,ix,iy-1))/dy_l,(q(ivy,ix,iy+1) - q(ivy,ix,iy))/dy_r)/radius_polar
+         dwy = slope_limit((q(ivz,ix,iy) - q(ivz,ix,iy-1))/dy_l,(q(ivz,ix,iy+1) - q(ivz,ix,iy))/dy_r)/radius_polar
+         dpy = slope_limit((q(iP,ix,iy) - q(iP,ix,iy-1))/dy_l,(q(iP,ix,iy+1) - q(iP,ix,iy))/dy_r)/radius_polar
 
          if (iso_cs == 1) then
-            dPy = slope_limit((q(ix,iy,irho) - q(ix,iy-1,irho))/dy_l,(q(ix,iy+1,irho) - q(ix,iy,irho))/dy_r)/radius_polar*cs(ix,iy)**2
+            dPy = slope_limit((q(irho,ix,iy) - q(irho,ix,iy-1))/dy_l,(q(irho,ix,iy+1) - q(irho,ix,iy))/dy_r)/radius_polar*cs(ix,iy)**2
          end if
 
          if (force_kick) then
@@ -126,26 +126,26 @@ subroutine predictor
             ivy_spe = ivdy(idust)
             ivz_spe = ivdz(idust)
 
-            r_rho = q(ix,iy,irho_spe)
-            u = q(ix,iy,ivx_spe)
-            v = q(ix,iy,ivy_spe)
-            w = q(ix,iy,ivz_spe)
+            r_rho = q(irho_spe,ix,iy)
+            u = q(ivx_spe,ix,iy)
+            v = q(ivy_spe,ix,iy)
+            w = q(ivz_spe,ix,iy)
 
-            drx = slope_limit((q(ix,iy,irho_spe) - q(ix-1,iy,irho_spe))/dx_l,(q(ix+1,iy,irho_spe) - q(ix,iy,irho_spe))/dx_r)
-            dux = slope_limit((q(ix,iy,ivx_spe) - q(ix-1,iy,ivx_spe))/dx_l,(q(ix+1,iy,ivx_spe) - q(ix,iy,ivx_spe))/dx_r)
-            dvx = slope_limit((q(ix,iy,ivy_spe) - q(ix-1,iy,ivy_spe))/dx_l,(q(ix+1,iy,ivy_spe) - q(ix,iy,ivy_spe))/dx_r)
-            dwx = slope_limit((q(ix,iy,ivz_spe) - q(ix-1,iy,ivz_spe))/dx_l,(q(ix+1,iy,ivz_spe) - q(ix,iy,ivz_spe))/dx_r)
+            drx = slope_limit((q(irho_spe,ix,iy) - q(irho_spe,ix-1,iy))/dx_l,(q(irho_spe,ix+1,iy) - q(irho_spe,ix,iy))/dx_r)
+            dux = slope_limit((q(ivx_spe,ix,iy) - q(ivx_spe,ix-1,iy))/dx_l,(q(ivx_spe,ix+1,iy) - q(ivx_spe,ix,iy))/dx_r)
+            dvx = slope_limit((q(ivy_spe,ix,iy) - q(ivy_spe,ix-1,iy))/dx_l,(q(ivy_spe,ix+1,iy) - q(ivy_spe,ix,iy))/dx_r)
+            dwx = slope_limit((q(ivz_spe,ix,iy) - q(ivz_spe,ix-1,iy))/dx_l,(q(ivz_spe,ix+1,iy) - q(ivz_spe,ix,iy))/dx_r)
 
-            dry = slope_limit((q(ix,iy,irho_spe) - q(ix,iy-1,irho_spe))/dy_l,(q(ix,iy+1,irho_spe) - q(ix,iy,irho_spe))/dy_r)/radius_polar
-            duy = slope_limit((q(ix,iy,ivx_spe) - q(ix,iy-1,ivx_spe))/dy_l,(q(ix,iy+1,ivx_spe) - q(ix,iy,ivx_spe))/dy_r)/radius_polar
-            dvy = slope_limit((q(ix,iy,ivy_spe) - q(ix,iy-1,ivy_spe))/dy_l,(q(ix,iy+1,ivy_spe) - q(ix,iy,ivy_spe))/dy_r)/radius_polar
-            dwy = slope_limit((q(ix,iy,ivz_spe) - q(ix,iy-1,ivz_spe))/dy_l,(q(ix,iy+1,ivz_spe) - q(ix,iy,ivz_spe))/dy_r)/radius_polar
+            dry = slope_limit((q(irho_spe,ix,iy) - q(irho_spe,ix,iy-1))/dy_l,(q(irho_spe,ix,iy+1) - q(irho_spe,ix,iy))/dy_r)/radius_polar
+            duy = slope_limit((q(ivx_spe,ix,iy) - q(ivx_spe,ix,iy-1))/dy_l,(q(ivx_spe,ix,iy+1) - q(ivx_spe,ix,iy))/dy_r)/radius_polar
+            dvy = slope_limit((q(ivy_spe,ix,iy) - q(ivy_spe,ix,iy-1))/dy_l,(q(ivy_spe,ix,iy+1) - q(ivy_spe,ix,iy))/dy_r)/radius_polar
+            dwy = slope_limit((q(ivz_spe,ix,iy) - q(ivz_spe,ix,iy-1))/dy_l,(q(ivz_spe,ix,iy+1) - q(ivz_spe,ix,iy))/dy_r)/radius_polar
 
             if (force_kick) then
 
-               u = u + force_dust_x(ix,iy,idust)*half*dt
-               v = v + force_dust_y(ix,iy,idust)*half*dt
-               w = w + force_dust_Z(ix,iy,idust)*half*dt
+               u = u + force_dust_x(idust,ix,iy)*half*dt
+               v = v + force_dust_y(idust,ix,iy)*half*dt
+               w = w + force_dust_z(idust,ix,iy)*half*dt
 
             end if
 
@@ -193,9 +193,9 @@ subroutine predictor
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
 
-               r_rho = q(ix,iy,idust_pscal(idust, ipscal))
-               drx   = slope_limit((q(ix,iy,idust_pscal(idust, ipscal)) - q(ix-1,iy,idust_pscal(idust, ipscal)))/dx_l,(q(ix+1,iy,idust_pscal(idust, ipscal)) - q(ix,iy,idust_pscal(idust, ipscal)))/dx_r)
-               dry   = slope_limit((q(ix,iy,idust_pscal(idust, ipscal)) - q(ix,iy-1,idust_pscal(idust, ipscal)))/dy_l,(q(ix,iy+1,idust_pscal(idust, ipscal)) - q(ix,iy,idust_pscal(idust, ipscal)))/dy_r)/radius_polar
+               r_rho = q(idust_pscal(idust,ipscal),ix,iy)
+               drx   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix-1,iy))/dx_l,(q(idust_pscal(idust,ipscal),ix+1,iy) - q(idust_pscal(idust,ipscal),ix,iy))/dx_r)
+               dry   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix,iy-1))/dy_l,(q(idust_pscal(idust,ipscal),ix,iy+1) - q(idust_pscal(idust,ipscal),ix,iy))/dy_r)/radius_polar
 
                sr0 = -u*drx - v*dry - (dux + dvy)*r_rho
 #if GEOM==2
@@ -256,7 +256,7 @@ subroutine add_delta_u
 
 
 
-   !$omp parallel do default(shared) schedule(static) private(idust, ivar, ix,iy,qleft, qright, flx, csr, csl)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ivar, ix,iy, qleft, qright, flx, csr, csl)
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
 
@@ -316,11 +316,11 @@ subroutine add_delta_u
       end do
    end do
 
-   !$omp parallel do default(shared) schedule(static) private(idust, ivar, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ivar, ix,iy)
       do iy = first_active_y, last_active_y
          do ix = first_active, last_active
-            do ivar = 1, nvar
-            u_prim(ix,iy,ivar)=u_prim(ix,iy,ivar) + (flux_x(ivar,ix,iy)*surf(ix,iy,1)-flux_x(ivar,ix+1,iy) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
+               do ivar = 1, nvar
+                  u_prim(ivar,ix,iy)=u_prim(ivar,ix,iy) + (flux_x(ivar,ix,iy)*surf(ix,iy,1)-flux_x(ivar,ix+1,iy) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
 &                             + (flux_y(ivar,ix,iy)*surf(ix,iy,2) - flux_y(ivar,ix,iy + 1)*surf(ix,iy + 1, 2))/vol(ix,iy)*dt
          end do
       end do

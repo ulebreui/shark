@@ -18,16 +18,16 @@ subroutine solve(verbose)
    call system_clock(t1, clock_rate, clock_max)
 
    call apply_boundaries !Boundaries are applied here.
-   call ctoprim
 
    call system_clock(t2, clock_rate, clock_max)
-
-   if (force_kick) call update_force_setup
+   call ctoprim
 
    call system_clock(t3, clock_rate, clock_max)
+
+    if (force_kick) call update_force_setup
+
 #if NDUST>0
    ! Re-calc distribution
-   call distribution_dust(.false.)
    call compute_tstop  !Re-calc distribution
 #endif
 
@@ -35,9 +35,10 @@ subroutine solve(verbose)
 
    ! We compute the stability timestep
    call courant
-   if (force_kick) call kick(1.0d0)
+   if (force_kick) call kick
 
    call system_clock(t5, clock_rate, clock_max)
+   
 
    ! Predictor step. Variables are estimated at cell interfaces and half dt
    call predictor
@@ -54,7 +55,7 @@ subroutine solve(verbose)
 
 #if NDUST>0
    ! Dust step (dynamics, growth, charging)
-   if (drag) call dust_drag(1.0d0) ! Second half kick
+   if (drag) call dust_drag ! Second half kick
    if (growth) call dust_growth(verbose)
 #if NDUSTPSCAL > 0
    if (growth_step) call dust_growth_stepinski! Dust growth with Stepinski /!\ dust size is in the first pscal
@@ -79,9 +80,9 @@ subroutine solve(verbose)
    if (verbose) then
       write (*, *) "Time spent in each routines: cumulative percentage & real time of current timestep & real time cumulative  "
       tall = t21 + t32 + t43 + t54 + t65 + t76 + t87 + t98 + t109
-      write (*, *) 'Boundaries + ctoprim      ', t21/tall*100., '(%) ,', t21, ' seconds'
-      write (*, *) 'Forces                    ', t32/tall*100., '(%) ,', t32, ' seconds'
-      write (*, *) 'Charging + stoping time   ', t43/tall*100., '(%) ,', t43, ' seconds'
+      write (*, *) 'Boundaries    ', t21/tall*100., '(%) ,', t21, ' seconds'
+      write (*, *) 'Ctoprim                 ', t32/tall*100., '(%) ,', t32, ' seconds'
+      write (*, *) 'Charging + stoping time  + forces ', t43/tall*100., '(%) ,', t43, ' seconds'
       write (*, *) 'Courant                   ', t54/tall*100., '(%) ,', t54, ' seconds'
       write (*, *) 'Predictor step            ', t65/tall*100., '(%) ,', t65, ' seconds'
       write (*, *) 'Corrector step            ', t76/tall*100., '(%) ,', t76, ' seconds'
@@ -115,37 +116,58 @@ subroutine ctoprim
    real(dp):: ekin, cs_eos, barotrop
 
    ! Gas related primitive quantities
-   !$omp parallel do default(shared) private(idust,ipscal, ix,iy,ekin)
+   !$omp parallel do schedule(RUNTIME) default(shared) private(ekin,idust, ipscal, ix,iy)
    do iy = 1, ny_max
       do ix = 1, nx_max
-         q(ix,iy,irho) = max(u_prim(ix,iy,irho), smallr)
-         q(ix,iy,ivx)  = u_prim(ix,iy,ivx)/u_prim(ix,iy,irho)
-         q(ix,iy,ivy)  = u_prim(ix,iy,ivy)/u_prim(ix,iy,irho)
-         q(ix,iy,ivz)  = u_prim(ix,iy,ivz)/u_prim(ix,iy,irho)
-
-         ekin = half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivx)/u_prim(ix,iy,irho))**2.0) + half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivy)/u_prim(ix,iy,irho))**2.0) + half*u_prim(ix,iy,irho)*((u_prim(ix,iy,ivz)/u_prim(ix,iy,irho))**2.0)
-
-         q(ix,iy,iP) = max((gamma - 1.0d0)*(u_prim(ix,iy,iP) - ekin), smallp) !TODO : substract magnetic nrj
-
-         if (iso_cs < 1) cs(ix,iy) = sqrt(gamma*q(ix,iy,iP)/q(ix,iy,irho))
-         if (non_standard_eos == 1) cs(ix,iy) = cs_eos(barotrop(q(ix,iy,irho)))
-         if (iso_cs == 1 .or. non_standard_eos == 1) q(ix,iy,iP) = u_prim(ix,iy,irho)*cs(ix,iy)**2
+         q(irho,ix,iy) = max(u_prim(irho,ix,iy), smallr)
+         q(ivx,ix,iy)  = u_prim(ivx,ix,iy)/u_prim(irho,ix,iy)
+         q(ivy,ix,iy)  = u_prim(ivy,ix,iy)/u_prim(irho,ix,iy)
+         q(ivz,ix,iy)  = u_prim(ivz,ix,iy)/u_prim(irho,ix,iy)
 #if NDUST>0
          do idust = 1, ndust
-            q(ix,iy,irhod(idust)) = u_prim(ix,iy,irhod(idust))
-            q(ix,iy,ivdx(idust))  = u_prim(ix,iy,ivdx(idust))/u_prim(ix,iy,irhod(idust))
-            q(ix,iy,ivdy(idust))  = u_prim(ix,iy,ivdy(idust))/u_prim(ix,iy,irhod(idust))
-            q(ix,iy,ivdz(idust))  = u_prim(ix,iy,ivdz(idust))/u_prim(ix,iy,irhod(idust))
+            q(irhod(idust),ix,iy) = u_prim(irhod(idust),ix,iy)
+            q(ivdx(idust),ix,iy)  = u_prim(ivdx(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+            q(ivdy(idust),ix,iy)  = u_prim(ivdy(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+            q(ivdz(idust),ix,iy)  = u_prim(ivdz(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               q(ix,iy,idust_pscal(idust, ipscal)) = u_prim(ix,iy,idust_pscal(idust, ipscal))/u_prim(ix,iy,irhod(idust))
+               q(idust_pscal(idust,ipscal),ix,iy) = u_prim(ix,iy,idust_pscal(idust, ipscal))/u_prim(irhod(idust),ix,iy)
             end do
 #endif
          end do
 #endif
-
       end do
    end do
+
+
+   if (non_standard_eos == 1) then
+      !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy)
+      do iy = 1, ny_max
+         do ix = 1, nx_max
+            cs(ix,iy)   = cs_eos(barotrop(q(irho,ix,iy)))
+            q(iP,ix,iy) = u_prim(irho,ix,iy)*cs(ix,iy)**2
+         end do
+      end do
+
+   else if (iso_cs == 1 ) then 
+      !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy)
+      do iy = 1, ny_max
+         do ix = 1, nx_max
+            q(iP,ix,iy) = u_prim(irho,ix,iy)*cs(ix,iy)**2
+         end do
+      end do
+
+   else
+     !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy,ekin)
+      do iy = 1, ny_max
+         do ix = 1, nx_max
+            ekin        = half*u_prim(irho,ix,iy)*((u_prim(ivx,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivy,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivz,ix,iy)/u_prim(irho,ix,iy))**2.0)
+            q(iP,ix,iy) = max((gamma - 1.0d0)*(u_prim(iP,ix,iy) - ekin), smallp) 
+         end do
+      end do
+
+   endif
+
 end subroutine ctoprim
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -167,23 +189,23 @@ subroutine primtoc
    integer :: idust, ix,iy
    integer :: ipscal
 
-   !$omp parallel do default(shared) private(idust, ipscal, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ipscal, ix,iy)
    do iy = 1, ny_max
       do ix = 1, nx_max
-         u_prim(ix,iy,irho) = q(ix,iy,irho)
-         u_prim(ix,iy,ivx) = q(ix,iy,irho)*q(ix,iy,ivx)
-         u_prim(ix,iy,ivy) = q(ix,iy,irho)*q(ix,iy,ivy)
-         u_prim(ix,iy,ivz) = q(ix,iy,irho)*q(ix,iy,ivz)
-         u_prim(ix,iy,iP)    = q(ix,iy,iP)/(gamma-1.0d0)+half* q(ix,iy,irho)*q(ix,iy,ivx)**2 + half* q(ix,iy,irho)*q(ix,iy,ivy)**2 + half* q(ix,iy,irho)*q(ix,iy,ivz)**2
+         u_prim(irho,ix,iy) = q(irho,ix,iy)
+         u_prim(ivx,ix,iy)  = q(irho,ix,iy)*q(ivx,ix,iy)
+         u_prim(ivy,ix,iy)  = q(irho,ix,iy)*q(ivy,ix,iy)
+         u_prim(ivz,ix,iy)  = q(irho,ix,iy)*q(ivz,ix,iy)
+         u_prim(iP,ix,iy)   = q(iP,ix,iy)/(gamma-1.0d0)+half* q(irho,ix,iy)*q(ivx,ix,iy)**2 + half* q(irho,ix,iy)*q(ivy,ix,iy)**2 + half* q(irho,ix,iy)*q(ivz,ix,iy)**2
 #if NDUST>0
          do idust = 1, ndust
-            u_prim(ix,iy,irhod(idust)) = q(ix,iy,irhod(idust))
-            u_prim(ix,iy,ivdx(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdx(idust))
-            u_prim(ix,iy,ivdy(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdy(idust))
-            u_prim(ix,iy,ivdz(idust)) = q(ix,iy,irhod(idust))*q(ix,iy,ivdz(idust))
+            u_prim(irhod(idust),ix,iy) = q(irhod(idust),ix,iy)
+            u_prim(ivdx(idust),ix,iy)  = q(irhod(idust),ix,iy)*q(ivdx(idust),ix,iy)
+            u_prim(ivdy(idust),ix,iy)  = q(irhod(idust),ix,iy)*q(ivdy(idust),ix,iy)
+            u_prim(ivdz(idust),ix,iy)  = q(irhod(idust),ix,iy)*q(ivdz(idust),ix,iy)
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               u_prim(ix,iy,idust_pscal(idust, ipscal)) = q(ix,iy,irhod(idust))*q(ix,iy,idust_pscal(idust, ipscal))
+               u_prim(ix,iy,idust_pscal(idust, ipscal)) = q(irhod(idust),ix,iy)*q(idust_pscal(idust,ipscal),ix,iy)
             end do
 #endif
          end do

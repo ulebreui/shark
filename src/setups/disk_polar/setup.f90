@@ -32,38 +32,38 @@ subroutine setup
       Omega    = sqrt(Mstar/rr**3)
       cs0      = Omega*H
 
-      q(ix,iy,irho)                      = sigma_R0*(R0_disk/rr)*exp(-rr/R_out_disk)
-      if(test_planet_disk) q(ix,iy,irho) = sigma_R0*(rr/R0_disk)**(-0.5d0)
+      q(irho,ix,iy)                      = sigma_R0*(R0_disk/rr)*exp(-rr/R_out_disk)
+      if(test_planet_disk) q(irho,ix,iy) = sigma_R0*(rr/R0_disk)**(-0.5d0)
 
-      !if(rr>R_out_disk) q(ix,iy,irho)  = sigma_R0*(R0_disk/rr)*decrease_density
-      q(ix,iy,ivx)                     = 0.0
-      !q(ix,iy,ivy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*2.0d0)
-      q(ix,iy,ivy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
-      if(test_planet_disk)q(ix,iy,ivy) = omega*rr
+      !if(rr>R_out_disk) q(irho,ix,iy)  = sigma_R0*(R0_disk/rr)*decrease_density
+      q(ivx,ix,iy)                     = 0.0
+      !q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*2.0d0)
+      q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
+      if(test_planet_disk)q(ivy,ix,iy) = omega*rr
 
-      q(ix,iy,iP)                      = q(ix,iy,irho)*cs0**2.0
+      q(iP,ix,iy)                      = q(irho,ix,iy)*cs0**2.0
       cs(ix,iy)                        = cs0
 #if NDUST>0
      do idust=1,ndust
-        q(ix,iy,irhod(idust))   = dust2gas*q(ix,iy,irho)
-        !if(rr>R_out_disk) q(ix,iy,irhod(idust))   = dust2gas*q(ix,iy,irho)/100.0d0
+        q(irhod(idust),ix,iy)   = dust2gas*q(irho,ix,iy)
+        !if(rr>R_out_disk) q(irhod(idust),ix,iy)   = dust2gas*q(irho,ix,iy)/100.0d0
         epsilondust(icell(ix,iy),idust)= dust2gas
         sdust(idust)      = scut/unit_l ! The 2H term comes from the vertical integration 
         sminstep=scut
 #if NDUSTPSCAL>0
-        if(growth_step)  q(ix,iy,idust_pscal(idust,1)) = scut/unit_l
+        if(growth_step)  q(idust_pscal(idust,1),ix,iy) = scut/unit_l
 #endif
-        ts_loc=  sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(idust)/(q(ix,iy,irho)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
+        ts_loc=  sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(idust)/(q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
         eta_drift = sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))-1.0d0
         Stokes_num= ts_loc * omega
-        q(ix,iy,ivdx(idust))    = eta_drift*omega*rr/(Stokes_num+1.0d0/Stokes_num)
-        q(ix,iy,ivdy(idust))    = omega*rr
+        q(ivdx(idust),ix,iy)    = eta_drift*omega*rr/(Stokes_num+1.0d0/Stokes_num)
+        q(ivdy(idust),ix,iy)    = omega*rr
      end do
 #endif
   enddo
   enddo
 #if NDUST>0  
- ! call distribution_dust(.true.)
+ ! call distribution_dust
 #endif
 
   call primtoc
@@ -74,7 +74,7 @@ subroutine setup
   do iy = 1,ny_max
     do ix = 1,nx_max
     do ivar=1,nvar
-            uprim_condinit(ix,iy,ivar)=u_prim(ix,iy,ivar)
+            uprim_condinit(ix,iy,ivar)=u_prim(ivar,ix,iy)
         end do
     end do
 end do
@@ -185,8 +185,8 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
-     if(outputing) print *, "Total mass is", sum(u_prim(:,:,irho))
-     if(outputing) print *, "Total momentum is", sum(u_prim(:,:,ivx)+u_prim(:,:,ivy))
+     if(outputing) print *, "Total mass is", sum(u_prim(irho,:,:))
+     if(outputing) print *, "Total momentum is", sum(u_prim(ivx,:,:)+u_prim(ivy,:,:))
 
      outputing=.false.
 
@@ -226,17 +226,17 @@ subroutine setup_inloop
                 vx_init = uprim_condinit(ix,iy,ivx)/rho_init
                 vy_init = uprim_condinit(ix,iy,ivy)/rho_init
 
-                rho_old = u_prim(ix,iy,irho)
-                vx_old  = u_prim(ix,iy,ivx)/rho_old
-                vy_old  = u_prim(ix,iy,ivy)/rho_old
+                rho_old = u_prim(irho,ix,iy)
+                vx_old  = u_prim(ivx,ix,iy)/rho_old
+                vy_old  = u_prim(ivy,ix,iy)/rho_old
 
                 rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
                 vx_new  = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
                 vy_new  = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
 
-                u_prim(ix,iy,irho) = rho_new
-                u_prim(ix,iy,ivx)  = rho_new*vx_new
-                u_prim(ix,iy,ivy)  = rho_new*vy_new
+                u_prim(irho,ix,iy) = rho_new
+                u_prim(ivx,ix,iy)  = rho_new*vx_new
+                u_prim(ivy,ix,iy)  = rho_new*vy_new
 #if NDUST>0
                 do idust=1,ndust
                 
@@ -244,20 +244,20 @@ subroutine setup_inloop
                     vx_init = uprim_condinit(ix,iy,ivdx(idust))/rho_init
                     vy_init = uprim_condinit(ix,iy,ivdy(idust))/rho_init
 
-                    rho_old = u_prim(ix,iy,irhod(idust))
-                    vx_old  = u_prim(ix,iy,ivdx(idust))/rho_old
-                    vy_old  = u_prim(ix,iy,ivdy(idust))/rho_old
+                    rho_old = u_prim(irhod(idust),ix,iy)
+                    vx_old  = u_prim(ivdx(idust),ix,iy)/rho_old
+                    vy_old  = u_prim(ivdy(idust),ix,iy)/rho_old
 
                     rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
                     vx_new  = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
                     vy_new  = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
 
-                    u_prim(ix,iy,irhod(idust)) = rho_new
-                    u_prim(ix,iy,ivdx(idust))  = rho_new*vx_new
-                    u_prim(ix,iy,ivdy(idust))  = rho_new*vy_new
+                    u_prim(irhod(idust),ix,iy) = rho_new
+                    u_prim(ivdx(idust),ix,iy)  = rho_new*vx_new
+                    u_prim(ivdy(idust),ix,iy)  = rho_new*vy_new
 #if NDUSTPSCAL>0 
                 do ipscal=1,ndustpscal
-                    u_prim(ix,iy,idust_pscal(idust,ipscal)) = u_prim(ix,iy,idust_pscal(idust,ipscal))/rho_old*rho_new ! We don't relax passive scalars
+                    u_prim(idust_pscal(idust,ipscal),ix,iy) = u_prim(idust_pscal(idust,ipscal),ix,iy)/rho_old*rho_new ! We don't relax passive scalars
                 end do
 #endif                
                 end do
@@ -270,7 +270,7 @@ subroutine setup_inloop
    do ix=1,first_active
         do iy=first_active_y,last_active_y
                 do ivar=1,nvar
-                    u_prim(ix,iy,ivar)=uprim_condinit(first_active,iy,ivar)
+                    u_prim(ivar,ix,iy)=uprim_condinit(first_active,iy,ivar)
                 end do
         end do
     end do
@@ -297,21 +297,21 @@ end subroutine setup_inloop
         force_z(ix,iy)  = 0.0d0
 #if NDUST>0
         do idust=1,ndust
-         force_dust_x(ix,iy,idust)  =  - Mstar/radii(ix,iy)**2
-         force_dust_y(ix,iy,idust)  = 0.0d0
-         force_dust_z(ix,iy,idust)  = 0.0d0
+         force_dust_x(idust,ix,iy)  =  - Mstar/radii(ix,iy)**2
+         force_dust_y(idust,ix,iy)  = 0.0d0
+         force_dust_z(idust,ix,iy)  = 0.0d0
         end do
 #endif
 
 #if NDUST>0
         do idust=1,ndust
          if(.not. drag) then
-          force_x(ix,iy)  = force_x(ix,iy)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivx) - q(ix,iy,ivdx(idust)))/tstop(ix,iy,idust)
-          force_y(ix,iy)  = force_y(ix,iy)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivy) - q(ix,iy,ivdy(idust)))/tstop(ix,iy,idust)
-          force_z(ix,iy)  = force_z(ix,iy)  - q(ix,iy,irhod(idust))/q(ix,iy,irho)*(q(ix,iy,ivz) - q(ix,iy,ivdz(idust)))/tstop(ix,iy,idust)
-          force_dust_x(ix,iy,idust)  = force_dust_x(ix,iy,idust)  + (q(ix,iy,ivx) - q(ix,iy,ivdx(idust)))/tstop(ix,iy,idust)
-          force_dust_y(ix,iy,idust)  = force_dust_y(ix,iy,idust)  + (q(ix,iy,ivy) - q(ix,iy,ivdy(idust)))/tstop(ix,iy,idust)
-          force_dust_z(ix,iy,idust)  = force_dust_z(ix,iy,idust)  + (q(ix,iy,ivz) - q(ix,iy,ivdz(idust)))/tstop(ix,iy,idust)
+          force_x(ix,iy)  = force_x(ix,iy)  - q(irhod(idust),ix,iy)/q(irho,ix,iy)*(q(ivx,ix,iy) - q(ivdx(idust),ix,iy))/tstop(idust,ix,iy)
+          force_y(ix,iy)  = force_y(ix,iy)  - q(irhod(idust),ix,iy)/q(irho,ix,iy)*(q(ivy,ix,iy) - q(ivdy(idust),ix,iy))/tstop(idust,ix,iy)
+          force_z(ix,iy)  = force_z(ix,iy)  - q(irhod(idust),ix,iy)/q(irho,ix,iy)*(q(ivz,ix,iy) - q(ivdz(idust),ix,iy))/tstop(idust,ix,iy)
+          force_dust_x(idust,ix,iy)  = force_dust_x(idust,ix,iy)  + (q(ivx,ix,iy) - q(ivdx(idust),ix,iy))/tstop(idust,ix,iy)
+          force_dust_y(idust,ix,iy)  = force_dust_y(idust,ix,iy)  + (q(ivy,ix,iy) - q(ivdy(idust),ix,iy))/tstop(idust,ix,iy)
+          force_dust_z(idust,ix,iy)  = force_dust_z(idust,ix,iy)  + (q(ivz,ix,iy) - q(ivdz(idust),ix,iy))/tstop(idust,ix,iy)
 
          endif
         end do
@@ -347,19 +347,19 @@ subroutine compute_tstop
         do idust=1,ndust
         sloc                 = sdust(idust)
 #if NDUSTPSCAL>0
-        if(growth_step) sloc = q(ix,iy,idust_pscal(idust,1)) 
+        if(growth_step) sloc = q(idust_pscal(idust,1),ix,iy) 
 #endif    
-        tstop(ix,iy,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sloc/(q(ix,iy,irho)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
+        tstop(idust,ix,iy) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sloc/(q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
 #if NDUSTPSCAL>0
         if(growth_step) then
 
             x_stokes       = 1.0d0
             f_Stokes       = 3.2-1.0d0-x_stokes+2.0d0/(1.+x_stokes)*(1./2.6+x_stokes**3./(1.6+x_stokes))
-            St1            = tstop(ix,iy,idust)/t_l
+            St1            = tstop(idust,ix,iy)/t_l
             vdrift_turb    = sqrt(alpha_turb)*cs(ix,iy)*dsqrt(f_Stokes*St1)
-            sd             = q(ix,iy,idust_pscal(idust,1))
+            sd             = q(idust_pscal(idust,1),ix,iy)
             Hd             = H*min(1.0d0,sqrt(alpha_turb/(min(St1,0.5d0/(1.0d0+St1**2)))))
-            nd             = q(ix,iy,irhod(idust))/(4./3.*pi*sd**3*rhograin/unit_d)/(sqrt(2.0d0*pi)*Hd)
+            nd             = q(irhod(idust),ix,iy)/(4./3.*pi*sd**3*rhograin/unit_d)/(sqrt(2.0d0*pi)*Hd)
             tcoag(ix,iy,idust) = 3.0d0/(pi*sd**2*nd*vdrift_turb)/min(1.0d0,-log10(vdrift_turb*unit_v/vfrag)/log10(5.))
 
         endif

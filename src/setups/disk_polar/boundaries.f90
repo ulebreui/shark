@@ -23,8 +23,8 @@ subroutine apply_boundaries
   do ix = first_active,last_active  
    do iy = 1,nghost   
       do ivar = 1,nvar
-         u_prim(ix,iy,ivar)          = u_prim(ix,last_active_y  - nghost+iy,ivar) 
-         u_prim(ix,ny_max+1-iy,ivar) = u_prim(ix,first_active_y + nghost-iy,ivar)
+         u_prim(ivar,ix,iy)          = u_prim(ivar,ix,last_active_y  - nghost+iy) 
+         u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,first_active_y + nghost-iy)
       end do
 
    end do
@@ -34,15 +34,15 @@ subroutine apply_boundaries
    do ix= 1,nghost 
      do iy= 1,ny_max
          do ivar = 1,nvar
-            u_prim(ix,iy,ivar)          = u_prim(first_active,iy,ivar) 
-            u_prim(nx_max+1-ix,iy,ivar) = u_prim(last_active,iy,ivar)
+            u_prim(ivar,ix,iy)          = u_prim(ivar,first_active,iy) 
+            u_prim(ivar,nx_max+1-ix,iy) = u_prim(ivar,last_active,iy)
          end do     
-         u_prim(nx_max+1-ix,iy,ivx)  = min(u_prim(nx_max+1-ix,iy,ivx),0.0d0)
-         u_prim(ix,iy,ivx)           = max(u_prim(ix,iy,ivx) ,0.0d0)
+         u_prim(ivx,nx_max+1-ix,iy)  = min(u_prim(ivx,nx_max+1-ix,iy),0.0d0)
+         u_prim(ivx,ix,iy)           = max(u_prim(ivx,ix,iy) ,0.0d0)
 #if NDUST>0
         do idust=1,ndust
-           u_prim(nx_max+1-ix,iy,ivdx(idust))  = min(u_prim(nx_max+1-ix,iy,ivdx(idust)),0.0d0)
-           u_prim(ix,iy,ivdx(idust))           = max(u_prim(ix,iy,ivdx(idust)) ,0.0d0)      
+           u_prim(ivdx(idust),nx_max+1-ix,iy)  = min(u_prim(ivdx(idust),nx_max+1-ix,iy),0.0d0)
+           u_prim(ivdx(idust),ix,iy)           = max(u_prim(ivdx(idust),ix,iy) ,0.0d0)      
         end do
 #endif
       end do
@@ -55,21 +55,21 @@ subroutine apply_boundaries
     do iy=first_active_y,last_active_y
         if(phi(last_active,iy)<=phi_mom*pi) then
             maccreted = M_acc/(365.25*24.*3600.)*unit_t
-            vrout     = cs(icell(last_active,iy))
+            vrout     = cs(last_active,iy)
             sigma_out = maccreted/vrout/phi_mom/pi/box_l
 
-            u_prim(nx_max+1-ix,iy,irho) =  sigma_out
-            u_prim(nx_max+1-ix,iy,ivx)  =- sigma_out*vrout
-            u_prim(nx_max+1-ix,iy,ivy)  =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
+            u_prim(irho,nx_max+1-ix,iy) =  sigma_out
+            u_prim(ivx,nx_max+1-ix,iy)  =- sigma_out*vrout
+            u_prim(ivy,nx_max+1-ix,iy)  =  sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
 #if NDUST>0
            do idust=1,ndust
     
-             u_prim(nx_max+1-ix,iy,irhod(idust))  =  dust2gas*sigma_out
-             u_prim(nx_max+1-ix,iy,ivdx(idust))   =  -dust2gas*sigma_out*vrout
-             u_prim(nx_max+1-ix,iy,ivdy(idust))   =  dust2gas*sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
+             u_prim(irhod(idust),nx_max+1-ix,iy)  =  dust2gas*sigma_out
+             u_prim(ivdx(idust),nx_max+1-ix,iy)   =  -dust2gas*sigma_out*vrout
+             u_prim(ivdy(idust),nx_max+1-ix,iy)   =  dust2gas*sigma_out*L_out*sqrt(Mstar/100.)*100./box_l
 #if NDUSTPSCAL>0
             !do ipscal=1,ndustpscal
-            u_prim(nx_max+1-ix,iy,idust_pscal(idust,1))  = dust2gas*sigma_out*scut/unit_l
+            u_prim(idust_pscal(idust,1),nx_max+1-ix,iy)  = dust2gas*sigma_out*scut/unit_l
             !end do
 #endif     
            end do

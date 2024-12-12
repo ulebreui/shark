@@ -1,5 +1,5 @@
 ! Dust drag is computed (implicitely)
-subroutine dust_drag(coeffdt)
+subroutine dust_drag
 
    use parameters
    use commons
@@ -13,51 +13,51 @@ subroutine dust_drag(coeffdt)
    if (static) return
 
    ! Here we apply the Krapp et al. implict scheme to compute the dust drag source terms
-   !$omp parallel do default(shared) private(idust, ix,iy,alphak, pnx, pny, pnz, rhon)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy,alphak, pnx, pny, pnz, rhon)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
 
-         rhon = u_prim(ix,iy,irho)
-         pnx  = u_prim(ix,iy,ivx)
-         pny  = u_prim(ix,iy,ivy)
-         pnz  = u_prim(ix,iy,ivz)
+         rhon = u_prim(irho,ix,iy)
+         pnx  = u_prim(ivx,ix,iy)
+         pny  = u_prim(ivy,ix,iy)
+         pnz  = u_prim(ivz,ix,iy)
 
          do idust = 1, ndust
 
-            alphak(idust) = coeffdt*dt/tstop(ix,iy,idust) ! Half for half dt
+            alphak(idust) = dt/tstop(idust,ix,iy) ! Half for half dt
 
-            pnx = pnx + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ix,iy,ivdx(idust))
-            pny = pny + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ix,iy,ivdy(idust))
-            pnz = pnz + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ix,iy,ivdz(idust))
-            rhon = rhon + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ix,iy,irhod(idust))
+            pnx  = pnx + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ivdx(idust),ix,iy)
+            pny  = pny + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ivdy(idust),ix,iy)
+            pnz  = pnz + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(ivdz(idust),ix,iy)
+            rhon = rhon + alphak(idust)/(1.0d0 + alphak(idust))*u_prim(irhod(idust),ix,iy)
 
          end do
 
          do idust = 1, ndust
 
-            u_prim(ix,iy,ivdx(idust)) = u_prim(ix,iy,ivdx(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnx/rhon*u_prim(ix,iy,irhod(idust))
-            u_prim(ix,iy,ivdy(idust)) = u_prim(ix,iy,ivdy(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pny/rhon*u_prim(ix,iy,irhod(idust))
-            u_prim(ix,iy,ivdz(idust)) = u_prim(ix,iy,ivdz(idust))/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnz/rhon*u_prim(ix,iy,irhod(idust))
+            u_prim(ivdx(idust),ix,iy) = u_prim(ivdx(idust),ix,iy)/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnx/rhon*u_prim(irhod(idust),ix,iy)
+            u_prim(ivdy(idust),ix,iy) = u_prim(ivdy(idust),ix,iy)/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pny/rhon*u_prim(irhod(idust),ix,iy)
+            u_prim(ivdz(idust),ix,iy) = u_prim(ivdz(idust),ix,iy)/(1.0d0 + alphak(idust)) + (alphak(idust)/(1.0d0 + alphak(idust)))*pnz/rhon*u_prim(irhod(idust),ix,iy)
 
          end do
 
          if (dust_back_reaction) then
 
-            u_prim(ix,iy,ivx) = pnx/rhon*u_prim(ix,iy,irho)
-            u_prim(ix,iy,ivy) = pny/rhon*u_prim(ix,iy,irho)
-            u_prim(ix,iy,ivz) = pnz/rhon*u_prim(ix,iy,irho)
+            u_prim(ivx,ix,iy) = pnx/rhon*u_prim(irho,ix,iy)
+            u_prim(ivy,ix,iy) = pny/rhon*u_prim(irho,ix,iy)
+            u_prim(ivz,ix,iy) = pnz/rhon*u_prim(irho,ix,iy)
 
          end if
 
       end do
    end do
    
-   !$omp parallel do default(shared) private(idust, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
    ! Regularisation to avoid negative dust densities
-   do idust = 1, ndust
       do iy = first_active_y, last_active_y
          do ix = first_active, last_active
-            u_prim(ix,iy,irhod(idust)) = max(u_prim(ix,iy,irho)*dust_ratio_min, u_prim(ix,iy,irhod(idust)))
+            do idust = 1, ndust
+               u_prim(irhod(idust),ix,iy) = max(u_prim(irho,ix,iy)*dust_ratio_min, u_prim(irhod(idust),ix,iy))
          end do
       end do
    end do

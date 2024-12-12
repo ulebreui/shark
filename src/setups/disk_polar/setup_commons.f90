@@ -23,6 +23,6 @@ module setup_parameters
   real(dp) :: M_acc       = 1d-7! Solar mass per yer
   real(dp) :: phi_mom     = 2.0d0
   real(dp) :: L_out       = 1.0d0
-  real(dp),dimension(:,:),allocatable :: uprim_condinit 
+  real(dp),dimension(:,:,:),allocatable :: uprim_condinit 
 
 end module setup_parameters

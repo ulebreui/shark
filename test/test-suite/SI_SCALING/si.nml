@@ -3,7 +3,7 @@
 &GRID_PARAMS
 freq_out=5000
 CFL=0.8
-tend=500. 
+tend=0.1
 gamma=1.666667d0
 force_kick=.true.
 slope_type=3

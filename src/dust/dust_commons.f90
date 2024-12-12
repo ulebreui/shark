@@ -69,8 +69,8 @@ module dust_commons
   real(dp), dimension(:)  , allocatable    :: mplus
   real(dp), dimension(:)  , allocatable    :: mminus
   real(dp), dimension(:,:), allocatable    :: epsilondust
-  real(dp), dimension(:), allocatable    :: sdust
-  real(dp), dimension(:), allocatable    :: mdust
+  real(dp), dimension(:)  , allocatable    :: sdust
+  real(dp), dimension(:)  , allocatable    :: mdust
   real(dp), dimension(:,:,:), allocatable  :: force_dust_x
   real(dp), dimension(:,:,:), allocatable  :: force_dust_y
   real(dp), dimension(:,:,:), allocatable  :: force_dust_z

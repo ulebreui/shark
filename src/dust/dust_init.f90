@@ -8,7 +8,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine distribution_dust(initi)
+subroutine distribution_dust
    use parameters
    use commons
    use units
@@ -24,22 +24,18 @@ subroutine distribution_dust(initi)
    m_min = 4./3.*pi*rhograin*smin**3./unit_m
    if (kernel_type == 1) m_min = smin**3.
    if (kernel_type == 2) m_min = smin**3.
-
-   if (initi) then
-      do idust = 1, ndust
-         aminus(idust) = smin*zeta**(idust - 1)/unit_l
-         aplus(idust) = smin*zeta**(idust)/unit_l
-         mminus(idust) = m_min*eta**(idust - 1)
-         mplus(idust) = m_min*eta**(idust)
+   do idust = 1, ndust
+      aminus(idust) = smin*zeta**(idust - 1)/unit_l
+      aplus(idust) = smin*zeta**(idust)/unit_l
+      mminus(idust) = m_min*eta**(idust - 1)
+      mplus(idust) = m_min*eta**(idust)
+   end do
+   do idust = 1, ndust
+      do i = 1, ncells
+         sdust(idust) = sqrt(aminus(idust)*aplus(idust))
       end do
-      do idust = 1, ndust
-         do i = 1, ncells
-            sdust(idust) = sqrt(aminus(idust)*aplus(idust))
-         end do
-      end do
-   end if
+   end do
 
-   If (initi .and. (nrestart .eq. 0)) then !Else we use the updated dust distribution
       if (trim(dust_distribution) .eq. 'mrn' .and. kernel_type == 0) then
          call mrn_distri
       else if (trim(dust_distribution) .eq. 'paruta' .and. kernel_type == 0) then
@@ -73,33 +69,19 @@ subroutine distribution_dust(initi)
          stop
       end if
 
-   else !Else we use the updated dust distribution
-
-      !$omp parallel do default(shared) private(idust, ix,iy)
-      do idust = 1, ndust
-         do iy = 1, ny_max
-            do ix = 1, ny_max
-               epsilondust(icell(ix,iy), idust) = q(ix,iy,irhod(idust))/q(ix,iy,irho)
-            end do
-         end do
-      end do
-      !end do
-   end if
 
    !Add ice mantle
-   if ((initi) .and. kernel_type == 0) then
+   if (kernel_type == 0) then
       sdust = sdust + ice_mantle/unit_l
       aplus = aplus!+ice_mantle/unit_l
       aminus = aminus!+ice_mantle/unit_l
    end if
-   if ((initi)) then
       print *, 'Initial dust distribution, size :'
       print *, sdust(:)*unit_l
       print *, 'Initial dust distribution, epsilon :'
       print *, epsilondust(1, :)
       print *, 'Initial dust distribution, mass :'
       print *, mdust(:)*unit_m
-   end if
 
 end subroutine distribution_dust
 
@@ -116,12 +98,12 @@ subroutine allocate_dust
    allocate (epsilondust(1:ncells, 1:ndust))
    allocate (sdust(1:ndust))
    allocate (mdust(1:ndust))
-   allocate (tstop(1:nx_max, 1:ny_max, 1:ndust))
+   allocate (tstop(1:ndust,1:nx_max, 1:ny_max))
    allocate (tcoag(1:nx_max, 1:ny_max, 1:ndust))
 
-   allocate (force_dust_x(1:nx_max, 1:ny_max, 1:ndust))
-   allocate (force_dust_y(1:nx_max, 1:ny_max, 1:ndust))
-   allocate (force_dust_z(1:nx_max, 1:ny_max, 1:ndust))
+   allocate (force_dust_x(1:ndust,1:nx_max, 1:ny_max))
+   allocate (force_dust_y(1:ndust,1:nx_max, 1:ny_max))
+   allocate (force_dust_z(1:ndust,1:nx_max, 1:ny_max))
 
    allocate (irhod(1:ndust))
    allocate (ivdx(1:ndust))

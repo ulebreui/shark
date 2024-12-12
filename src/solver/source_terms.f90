@@ -12,16 +12,16 @@ subroutine Source_terms
    end if
 
 #if GEOM==2
-   !$omp parallel do default(shared) private(idust, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
-        u_prim(ix,iy,ivx) = u_prim(ix,iy,ivx) + dt*(q(ix,iy,irho)*q(ix,iy,ivy)**2 + q(ix,iy,iP))/radii(ix,iy)
-        u_prim(ix,iy,ivy) = u_prim(ix,iy,ivy) - dt*(q(ix,iy,irho)*q(ix,iy,ivy)*q(ix,iy,ivx)/radii(ix,iy))
+        u_prim(ivx,ix,iy) = u_prim(ivx,ix,iy) + dt*(q(irho,ix,iy)*q(ivy,ix,iy)**2 + q(iP,ix,iy))/radii(ix,iy)
+        u_prim(ivy,ix,iy) = u_prim(ivy,ix,iy) - dt*(q(irho,ix,iy)*q(ivy,ix,iy)*q(ivx,ix,iy)/radii(ix,iy))
 
 #if NDUST>0
          do idust = 1, ndust
-            u_prim(ix,iy,ivdx(idust)) = u_prim(ix,iy,ivdx(idust)) + dt*(q(ix,iy,irhod(idust))*q(ix,iy,ivdy(idust))**2/radii(ix,iy))
-            u_prim(ix,iy,ivdy(idust))   = u_prim(ix,iy,ivdy(idust))-dt*(q(ix,iy,irhod(idust))*q(ix,iy,ivdy(idust))*q(ix,iy,ivdx(idust))/radii(ix,iy))
+            u_prim(ivdx(idust),ix,iy)   = u_prim(ivdx(idust),ix,iy) + dt*(q(irhod(idust),ix,iy)*q(ivdy(idust),ix,iy)**2/radii(ix,iy))
+            u_prim(ivdy(idust),ix,iy)   = u_prim(ivdy(idust),ix,iy)-dt*(q(irhod(idust),ix,iy)*q(ivdy(idust),ix,iy)*q(ivdx(idust),ix,iy)/radii(ix,iy))
          end do
 #endif
 
@@ -30,19 +30,19 @@ subroutine Source_terms
 #endif
 
 #if GEOM==4
-   !$omp parallel do default(shared) private(idust, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
 
         ! vr is still vx but vphi is now vz !
         !No source term to vy (which is vz here)
-        u_prim(ix,iy,ivx) = u_prim(ix,iy,ivx) + dt*(q(ix,iy,irho)*q(ix,iy,ivz)**2 + q(ix,iy,iP))/radii(ix,iy)
-        u_prim(ix,iy,ivz) = u_prim(ix,iy,ivz) - dt*(q(ix,iy,irho)*q(ix,iy,ivz)*q(ix,iy,ivx)/radii(ix,iy))
+        u_prim(ivx,ix,iy) = u_prim(ivx,ix,iy) + dt*(q(irho,ix,iy)*q(ivz,ix,iy)**2 + q(iP,ix,iy))/radii(ix,iy)
+        u_prim(ivz,ix,iy) = u_prim(ivz,ix,iy) - dt*(q(irho,ix,iy)*q(ivz,ix,iy)*q(ivx,ix,iy)/radii(ix,iy))
 
 #if NDUST>0
          do idust = 1, ndust
-            u_prim(ix,iy,ivdx(idust)) = u_prim(ix,iy,ivdx(idust)) + dt*(q(ix,iy,irhod(idust))*q(ix,iy,ivdz(idust))**2/radii(ix,iy))
-            u_prim(ix,iy,ivdz(idust))=u_prim(ix,iy,ivdz(idust))-dt*(q(ix,iy,irhod(idust))*q(ix,iy,ivdz(idust))*q(ix,iy,ivdx(idust))/radii(ix,iy))
+            u_prim(ivdx(idust),ix,iy) = u_prim(ivdx(idust),ix,iy) + dt*(q(irhod(idust),ix,iy)*q(ivdz(idust),ix,iy)**2/radii(ix,iy))
+            u_prim(ivdz(idust),ix,iy)=u_prim(ivdz(idust),ix,iy)-dt*(q(irhod(idust),ix,iy)*q(ivdz(idust),ix,iy)*q(ivdx(idust),ix,iy)/radii(ix,iy))
          end do
 #endif
       end do
