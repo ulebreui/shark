@@ -89,6 +89,17 @@ subroutine setup
 
 
 
+  do i = 1,ncells
+
+      q(i,irho) = rho_0/unit_d 
+
+      cs(i)=cs_0/unit_v
+
+      q(i,iP)=q(i,irho)*cs(i)**2
+
+  end do
+
+
 #if NDUST>0
 
     call distribution_dust(.true.)
@@ -96,8 +107,15 @@ subroutine setup
     do i=1,ncells
       do idust=1,ndust
         sdust(i,idust)    = smax/unit_l !if a single grain
+        mdust(i,idust)    = (4./3.*pi*smax**3*rhograin)/unit_m
         q(i,ivdy(idust)) = delta_vdy/unit_v*(sin(position(i,1)*k_mag)) 
         q(i,ivdz(idust)) = delta_vdz/unit_v*(cos(position(i,1)*k_mag)) !Alfven perturbation
+            !OLD SETUP
+        epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
+        
+
+        q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+
 
 
       end do
@@ -112,24 +130,18 @@ subroutine setup
 
   do i = 1,ncells
 
-      q(i,irho) = rho_0/unit_d 
-
-      cs(i)=cs_0/unit_v
-
-      q(i,iP)=q(i,irho)*cs(i)**2
-
 
 #if TURB>0
-       if (turb_compressive) then 
+       if (decaying_turb_compressive) then 
 
-      !   do i_turb = 1,nb_turb_modes
+        do i_turb = 1,nb_turb_modes
 
-      !     q(i,ivx) = q(i,ivx) + vx_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phix_turb(i_turb))) !Decaying turb (compressive modes) for the gas. Make sure Vrms/cs = Mach.
+          q(i,ivx) = q(i,ivx) + vx_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phix_turb(i_turb))) !Decaying turb (compressive modes) for the gas. Make sure Vrms/cs = Mach.
 
-      !   end do 
-      ! end if
+        end do 
+      end if
 
-      !if (driven_turb_compressive) then !Driven turb initial condition!
+      if (turb_compressive) then !Driven turb initial condition!
 
         do i_turb = 1,nb_turb_modes_driven
 
@@ -151,24 +163,8 @@ subroutine setup
         do idust=1,ndust
 
 
-            !OLD SETUP
-            epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
-            !epsilondust(i,idust) = 1.0d0 
-            
 
 
-            q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
-
-
-
-            !St_0(idust)=1d-2.0d0*10000-9999*1d-2.0d0*(idust-1)
-            !St_0(idust)=1d-2+9999*1d-2.0d0*(idust-1)
-
-            !sdust(i,idust)=St_0(idust)*box_l !TODO edit when adding coagulation
-
-
-         !q(i,ivd(idust)) = 0.0d0
-         !print *, "Vxd=", q(i,ivd(idust))*unit_v
 
         end do
 
@@ -178,7 +174,7 @@ subroutine setup
 #if MHD==1
 if(beta_0>0) then
 
-     q(i,iBx)=dsqrt(rho_0/unit_d)*cs(i)/dsqrt(beta_0) !todo : display
+     q(i,iBx)=dsqrt(4*pi*rho_0/unit_d)*cs(i)/dsqrt(beta_0) !todo : display
 
 endif
 #endif
@@ -187,17 +183,17 @@ endif
 
 #if TURB>0
 
-  ! if (decaying_turb_solenoidal) then
+  if (decaying_turb_solenoidal) then
 
-  !   do i_turb = 1,nb_turb_modes
+    do i_turb = 1,nb_turb_modes
 
-  !     q(i,ivy) = q(i,ivy) + vy_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiy_turb(i_turb))) !Solenoidal modes. Make sure sqrt(sum(vx_turb**2+vy_turb**2))/cs = Mach.
+      q(i,ivy) = q(i,ivy) + vy_turb(i_turb)/unit_v*(sin(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiy_turb(i_turb))) !Solenoidal modes. Make sure sqrt(sum(vx_turb**2+vy_turb**2))/cs = Mach.
 
-  !     q(i,ivz) = q(i,ivz) + vz_turb(i_turb)/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiz_turb(i_turb)))
+      q(i,ivz) = q(i,ivz) + vz_turb(i_turb)/unit_v*(cos(2.0d0*pi*position(i,1)/(box_l)*k_turb(i_turb)+phiz_turb(i_turb)))
     
-  !   end do
+    end do
 
-  ! endif 
+  endif 
 
 
   if (turb_solenoidal) then
@@ -236,20 +232,20 @@ endif
 !!!Correct initial velocity to meet desired initial Mach!!!
 #if TURB>0
 
-  print *,'rndom_vy', random_array_vy
-  print *,'rndom_vz', random_array_vz
+  ! print *,'rndom_vy', random_array_vy
+  ! print *,'rndom_vz', random_array_vz
 
 
   call compute_rms_velocity  !Compute rms for initial velocity profile provided by random generation of random_vx_array
-  print *,'vrms=',V_rms
-  print *,'vy_rms=',Vy_rms
-  print *,'vz_rms=',Vz_rms
-  print *,'vtot_rms=',Vtot_rms
+  ! print *,'vrms=',V_rms
+  ! print *,'vy_rms=',Vy_rms
+  ! print *,'vz_rms=',Vz_rms
+  ! print *,'vtot_rms=',Vtot_rms
 
   call initial_velocity_correction  !Uses the rms_velocity recently calculated
   !print *, 'vx corrected',random_array_vx
-  print *,'rndom_vy corrected', random_array_vy
-  print *,'rndom_vz corrected', random_array_vz
+  ! print *,'rndom_vy corrected', random_array_vy
+  ! print *,'rndom_vz corrected', random_array_vz
 
 
 
@@ -291,10 +287,10 @@ endif
 
 
   call compute_rms_velocity  !Call it again to check if correction performed correctly (read it in output_0000)
-  print *,"updated vrms = ", V_rms
-  print *,"updated vyrms = ", Vy_rms
-  print *,"updated vzrms = ", Vz_rms
-  print *,"updated vtotrms = ", Vtot_rms
+  ! print *,"updated vrms = ", V_rms
+  ! print *,"updated vyrms = ", Vy_rms
+  ! print *,"updated vzrms = ", Vz_rms
+  ! print *,"updated vtotrms = ", Vtot_rms
 
 
 #endif

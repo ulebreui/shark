@@ -62,12 +62,7 @@ box_l = box_l/unit_l
 
 #endif
 
-#if MHD==1
-  q(i,iBx)=0.0d0
-  q(i,iBy)=0.0d0
-  q(i,iBz)=0.0d0
 
-#endif
 
   end do
 
@@ -110,7 +105,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_0,K,dust2gas_ratio,vx_0,kx_wave,cs_0,delta_rho,delta_rho_d,i_coupled_species
+  namelist/setup_params/box_l,rho_0,K,dust2gas_ratio,vx_0,kx_wave,cs_0,delta_rho,delta_rho_d
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

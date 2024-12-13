@@ -32,38 +32,37 @@ subroutine solve(verbose,outputing)
   call compute_tstop  !Re-calc distribution
 #endif
 
+
   if(charging) then
     if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
 
+#if NDUST>0
     if(analytical_charging) call analytical_charge
-  endif
+#endif
+   endif
 
 #if MHD==1
 #if NDUST>0
   if(dust_inertia) then
 
-    if(dusty_nonideal_MHD) then
-        call resistivities_with_dust_inertia !To compute res independently when accounting for dust inertia
-        ! print *,'eta_o=', eta_o(i)
-        ! print *,'eta_a=',eta_a(i)
-        ! print *,'eta_h=',eta_h(i)
-! 
-        call res_units !Needed for the resistivities to be in cm^2/s
-        call effective_diffusion_coef_induction
-
-    endif
-! 
     if(dusty_nonideal_MHD_no_electron) then
-        call effective_diffusion_coef_induction
+    
+        call Hall_factor
+        if (hyper_diffusion) call effective_diffusion_coef_induction 
+        if (call_electric_field) call electric_field
+        if (apply_Lorentz_force) call Lorentz_force
 
 
-       ! call electric_field
-       ! call Lorentz_force
     endif
 
   endif
 #endif
 #endif
+
+
+
+
+
 
   call system_clock ( t4, clock_rate, clock_max )
 
@@ -79,11 +78,16 @@ subroutine solve(verbose,outputing)
 
   ! Flux are computed and added to u_prim
   call add_delta_u
+  !call ctoprim
+  !call apply_boundaries
+
+
   call system_clock ( t7, clock_rate, clock_max )
 
 
   ! Source terms are computed and added to u_prim
 
+  call apply_boundaries
   call source_terms
      ! print*, 'dxBy=', dxBy
      ! print*, 'dxBz=', dxBz
@@ -103,7 +107,11 @@ subroutine solve(verbose,outputing)
 #if NDUST>0
   ! Dust step (dynamics, growth, charging)
   if(drag)   call dust_drag(1.0d0) ! Second half kick
-  if(growth) call dust_growth(verbose)
+  if(growth) then
+     call ctoprim
+     call dust_growth(verbose)
+  endif
+
 #if NDUSTPSCAL > 0 
   if(growth_step) call dust_growth_stepinski(verbose) ! Dust growth with Stepinski /!\ dust size is in the first pscal
 #endif
@@ -126,15 +134,6 @@ subroutine solve(verbose,outputing)
         call kick_phase_drift
         iseed_phase_drift = iseed_phase_drift + 1
      end if 
-
-     !count = count + 1
-     !if (count_bis==0 .or. count == count_bis + 20) then
-        !call adjust_yz_kick_intensity
-        !count_bis = count
-        !print *, 'Vyz_rms', Vyz_rms
-        !print *, 'ay', random_array_ay
-
-     !end if
 
      call add_driven_turb_kick
 #endif

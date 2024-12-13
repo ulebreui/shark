@@ -21,7 +21,7 @@ dust2gas_ratio(1) = 1.0d0
 /
 
 &DUST_PARAMS
-drag=.true.
+drag=.false.
 /
 
 &GRAVITY_PARAMS

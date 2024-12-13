@@ -10,6 +10,8 @@ module setup_parameters
   real(dp) :: alpha_cloud  = 0.25d0
   real(dp) :: T0_cloud     = 10.0d0
   real(dp) :: rho_max_sim  = 1d-10
+  real(dp) :: s_max  = 1.0d-6
+
   logical  :: more_outputs = .false.
   real(dp) :: order_mag
   logical  :: single_size  = .false.

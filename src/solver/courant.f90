@@ -49,7 +49,7 @@ subroutine courant
 #if NDUST>0     
    do idust=1,ndust
 #if MHD==1
-      ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irhod(idust))) !TODO , to modify when accounting for a dust distribution
+      ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/(4*pi*q(i,irhod(idust)))) !TODO , to modify when accounting for a dust distribution
 #endif
       vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust)))
       vmax =  max(vmax,ca+vv)
@@ -74,40 +74,46 @@ if(force_kick) then
 
    end do
 #endif 
+endif
+
 
 #if MHD==1
-if (dusty_nonideal_MHD) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
-
-   ! call effective_diffusion_coef_induction
-   D_max = max(eta_eff_yy(i),eta_eff_yz(i),eta_eff_zy(i),eta_eff_zz(i)) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
-   !print *, D_max
-   dt = min(dt,CFL*dxx**2/D_max)
-
-    ! call electric_field
-    ! call Lorentz_force
-endif
 
 if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
 
-   ! call effective_diffusion_coef_induction
-   D_max = max(eta_eff_ohm(i),eta_eff_Hall_y(i),eta_eff_Hall_z(i)) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
-   !print *, D_max
-   dt = min(dt,CFL*dxx**2/D_max)
+    if (hyper_diffusion) then
+      D_max = max(abs(eta_eff_ohm(i)),abs(eta_eff_Hall_y(i)),abs(eta_eff_Hall_z(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
+      !
+      !print *,'D_max', D_max
+      !print *,'eta_eff_ohm(i)', eta_eff_ohm(i)
 
-    ! call electric_field
-    ! call Lorentz_force
+      if (only_Hall_effect .eqv. .false. .or. friction_effects_only .eqv. .false.) then !To avoid division by zero.
+         dt = min(dt,0.5d0*dxx**2/D_max)
+      endif
+
+
+   endif
+
+
 endif
 
 #if NDUST>0
-if(dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
-   do idust=1,ndust
-      dt = min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x_d(i,idust)**2+FLor_y_d(i,idust)**2+FLor_z_d(i,idust)**2)/q(i,irhod(idust))))
-   end do
+if(dusty_nonideal_MHD_no_electron) then
+
+   if (apply_Lorentz_force) then
+      do idust=1,ndust
+         dt = min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x_d(i,idust)**2+FLor_y_d(i,idust)**2+FLor_z_d(i,idust)**2)/q(i,irhod(idust))))
+      end do
+   endif
+end if
 #endif
 
-   dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
+if(dusty_nonideal_MHD_no_electron) then
+   if (apply_Lorentz_force) then
+      dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
 
-end if
+   endif
+endif
 
 #endif
 
@@ -115,7 +121,7 @@ end if
       fratio = max(force_max*dxx/vv**2,1d-3)
       dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)
    endif
-endif
+
    endif
   end do
 #if NY>1

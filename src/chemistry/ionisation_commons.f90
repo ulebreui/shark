@@ -2,16 +2,26 @@
   use precision
   implicit none
 
-  logical             ::  charging              = .false.   ! Charging is activated
+  logical             ::  charging              = .false.   ! Charging is activated (Marchand 2021 by default)
+  logical             ::  analytical_charging    = .false.   ! Analytical charging is activated
+
   logical             ::  charging_all_the_time = .false.   ! Charging is activated
-  logical             ::  analytical_charging = .false.   ! Prescription from (Fujii et. al 2011) and see Lebreuilly 2020.
+  logical             ::  analytical_charging_Wurster = .false.   ! Prescription from (Fujii et. al 2011) and see Lebreuilly 2020.
+  logical             ::  analytical_charging_Shu = .false.   ! Prescription from (Shu 1987) and see Hennebelle & Lebreuilly 2023.
+
   logical             :: res_Marchand = .true.   ! To compute charges within Marchand algorithm
   logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
   logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
   logical             :: ions = .true.   
   logical             :: dusty_nonideal_MHD = .false.
   logical             :: dusty_nonideal_MHD_no_electron = .false.   
-   
+  logical             ::  force_electroneutrality              = .false.   ! To force electroneutrality within Marchand 2021 ionization scheme
+  logical             ::  hyper_diffusion             = .false.   ! 
+  logical             ::  apply_Lorentz_force              = .false.   ! 
+  logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
+  logical             ::  friction_effects_only         = .false.   ! !Remove Hall effect in induction equation (but the corresponding term in E remains)
+  logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
+  
 
 
 
@@ -75,6 +85,7 @@
   real(dp):: epsilon_ionis  = 1d-6   ! Tolerance of the ionisation scheme
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations
   real(dp):: x              = 5d-17  ! CR Ionisation rate
+  real(dp):: ni_coeff              = 1.0  ! CR Ionisation rate
 
 
   real(dp) :: f_dust_charge = 0.0d0 !Derivative of function to solve in analytical charge scheme

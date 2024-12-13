@@ -40,6 +40,12 @@ subroutine output(iout)
    write(ilun,'("charging       =",I11)')0
   endif 
 
+   if(call_electric_field) then
+   write(ilun,'("call_electric_field       =",I11)')1
+  else
+   write(ilun,'("call_electric_field       =",I11)')0
+  endif 
+
   !call write_setup_info(ilun)
   close(ilun)
   
@@ -123,7 +129,7 @@ subroutine output(iout)
    end do
    close(ilun)
 
-if (charging) then
+if (charging .and. call_electric_field) then
   open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
    do i = 1,ncells
       !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
@@ -183,12 +189,13 @@ endif
   close(ilun)
 #if NDUSTPSCAL>0
  open(ilun,file=trim(path) // trim(nchar)//trim('/dustpscal'), form=format_out,access='stream')
-
+do i=1,ncells
  do idust=1,ndust
    do ipscal=1,ndustpscal
       if(active_cell(i)==1) write(ilun) q(i,idust_pscal(idust,ipscal))
    end do
  end do
+end do
  close(ilun)
 #endif
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
@@ -267,11 +274,34 @@ if(charging) then
       if(active_cell(i)==1) write(ilun) eta_h(i)
    end do
   close(ilun)
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_y'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) eta_eff_Hall_y(i)
+   end do
+  close(ilun)
+   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_z'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) eta_eff_Hall_z(i)
+   end do
+  close(ilun)
+   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_ohm'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) eta_eff_ohm(i)
+   end do
+  close(ilun)
    open(ilun,file=trim(path) // trim(nchar)//trim('/ni'), form=format_out,access='stream')
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) ni(i)
    end do
   close(ilun)
+
+   open(ilun,file=trim(path) // trim(nchar)//trim('/Hall_i'), form=format_out,access='stream')
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) Hall_i(i)
+   end do
+   close(ilun)
+
    open(ilun,file=trim(path) // trim(nchar)//trim('/ne'), form=format_out,access='stream')
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) ne(i)

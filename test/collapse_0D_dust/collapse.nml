@@ -13,16 +13,18 @@ force_kick=.false.
 &SETUP_PARAMS
 M_cloud=1
 more_outputs=.true.
-ntimes_part=3400
+ntimes_part=3430
+s_max    = 1.0d-6
+single_size=.true.
 /
 
 &DUST_PARAMS
 drag                = .true.  ! DUST DYNAMICS PARAMS
 dust_distribution   = 'mrn'   ! DUST DISTRIBUTION PARAMS
-smin     = 1d-3
-scutmin  = 1d-3
-scut     = 1.1d-3
-smax     = 1.1d-3
+smin     = 1d-6
+scutmin  = 1d-6
+scut     = 1.0d-5
+smax     = 1.0
 rhograin = 2.3d0
 dust2gas = 0.01d0
 mrn      = 3.5d0
@@ -51,10 +53,15 @@ clustered_fraction  = 1.0d0   ! DUST IS NOT CLUSTERED
 &IONISATION_PARAMS
 charging=.true.
 res_Marchand=.false.
-dust_inertia=.true.
-electrons=.true.
+dust_inertia=.false.
+electrons=.false.
 ions=.true.
 analytical_charging=.true.
+analytical_charging_Shu=.true.
+analytical_charging_Wurster=.false.
+
+
+
 /
 
 

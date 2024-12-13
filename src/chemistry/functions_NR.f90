@@ -31,11 +31,11 @@ module functions_NR !!!!Function (to find root of with Newton-Raphson method) ne
 
 
 	    !f_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(1/k_i_d - 1/k_e_d) - y
-    	function_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/(rho_d*mu_gas*mH))**2*((1/k_i_d) - (1/k_e_d)) - y
+    	function_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/(rho_d*mu_gas*mH))**2*((1/k_i_d) - (1/k_e_d)) + y
 
     	if (electrons .eqv. .false.) then
 
-    		function_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/(rho_d*mu_gas*mH))**2*((1/k_i_d)) - y
+    		function_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/(rho_d*mu_gas*mH))**2*((1/k_i_d)) + y
 
     	endif
 
@@ -43,7 +43,7 @@ module functions_NR !!!!Function (to find root of with Newton-Raphson method) ne
 
 	end function function_dust_charge
 
-	real(dp) function wrapper_dust_charge(y) !Within which variables not to be passed in Newton_Raphen solver are fixed.
+	real(dp) function wrapper_dust_charge(y) !Within which variables not to be passed in Newton_Raphsen solver are fixed.
 	    use commons
 	    use units
 	    use precision
@@ -80,11 +80,11 @@ module functions_NR !!!!Function (to find root of with Newton-Raphson method) ne
 	    k_prime_i_d = -pi*s_d*dsqrt(8*kB*T/pi/m_i)*(e_el_stat)**2/kB/T
 
 	    !fprime_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(k_prime_e_d/k_e_d**2 - k_prime_i_d/k_i_d**2) - 1
-	    function_prime_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(k_prime_e_d/k_e_d**2 - k_prime_i_d/k_i_d**2) - 1
+	    function_prime_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(k_prime_e_d/k_e_d**2 - k_prime_i_d/k_i_d**2) + 1
 
     	if (electrons .eqv. .false.) then
 
-	    	function_prime_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(- k_prime_i_d/k_i_d**2) - 1
+	    	function_prime_dust_charge = mu_gas*mH*zeta/rho*(m_d*rho/rho_d/mu_gas/mH)**2*(- k_prime_i_d/k_i_d**2) + 1
 
     	endif
 

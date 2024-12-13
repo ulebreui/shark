@@ -32,6 +32,8 @@ module dust_parameters
 
   integer ::  frag_thre       = 0   ! 0 = NRJ, 1= velocity
   integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq
+  logical ::  dust_growth_disk = .false.
+
   
   !Dust distribution
   real(dp)::  smin            = 1d-7    ! Minimum possible dust size 

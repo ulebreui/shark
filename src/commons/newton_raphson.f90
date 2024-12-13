@@ -23,7 +23,7 @@ subroutine solve_newton_raphson(f, fp, y0, y, iters, maxiter, debug)
     real(dp), intent(out) :: y
     integer, intent(inout) :: iters
     integer, intent(in) :: maxiter
-    real(dp)  :: tol = 1.d-14
+    real(dp)  :: tol = 1.d-10
 
 
 

@@ -52,13 +52,13 @@ subroutine random_acceleration_and_velocity(velocity)
     call gaussdev(localseed,rand_nb2)
     random_array_ay(i) = corrector_sol*rand_nb2
     call gaussdev(localseed,rand_nb3)
-    random_array_az(i) = corrector_sol*rand_nb3
+    random_array_az(i) = corrector_sol*rand_nb2
     call ranf(localseed,rand_nb4) !Generate random numbers from a uniform distrib for phases
     random_array_phix(i) = 2.0d0*pi*rand_nb4
     call ranf(localseed,rand_nb5)
     random_array_phiy(i) = 2.0d0*pi*rand_nb5
     call ranf(localseed,rand_nb6)
-    random_array_phiz(i) = 2.0d0*pi*rand_nb6
+    random_array_phiz(i) = 2.0d0*pi*rand_nb5
 
   if (velocity) then
 
@@ -288,7 +288,7 @@ subroutine add_driven_turb_kick
       do i_turb=1,nb_turb_modes_driven
 
        ay_kick = ay_kick + random_array_ay(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phiy(i_turb)) !Beware of the definition of k in your setup/nml
-       az_kick = az_kick + random_array_az(i_turb)*sin(k_turb_driven(i_turb)*position(i,1) + random_array_phiz(i_turb)) !Beware of the definition of k in your setup/nml
+       az_kick = az_kick + random_array_ay(i_turb)*cos(k_turb_driven(i_turb)*position(i,1) + random_array_phiz(i_turb)) !Beware of the definition of k in your setup/nml
       
       end do
 
@@ -357,7 +357,7 @@ subroutine kick_phase_drift
     call ranf(localseed,rand_nb2)
     random_array_phiy(i_turb) = random_array_phiy(i_turb) + 2.0d0*pi*rand_nb2*dt/turnover_time
     call ranf(localseed,rand_nb3)
-    random_array_phiz(i_turb) = random_array_phiz(i_turb)+ 2.0d0*pi*rand_nb3*dt/turnover_time
+    random_array_phiz(i_turb) = random_array_phiz(i_turb)+ 2.0d0*pi*rand_nb2*dt/turnover_time
 
 
   end do
@@ -372,39 +372,6 @@ end subroutine kick_phase_drift
 
 
 
-subroutine adjust_yz_kick_intensity
-!To prevent transversal velocities from endlessly building up, adjust corrector to match targeted Mach
 
-  use commons
-  use parameters
-  use units
-  use precision
-  use random
-
-  implicit none
-
-
- 
-  call compute_rms_velocity
-
-  if (Vyz_rms/cs_0 > Mach_yz_target) then
-
-
-
-      random_array_ay = random_array_ay*0.97  
-      random_array_az = random_array_az*0.97 
-
-  end if 
-
-  if (V_rms/cs_0 > Mach_x_target) then
-
-
-
-      random_array_ax = random_array_ax*0.999  
-
-
-
-  end if
-end subroutine adjust_yz_kick_intensity
 
 

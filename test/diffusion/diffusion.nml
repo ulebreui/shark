@@ -2,7 +2,7 @@
 
 &GRID_PARAMS
 freq_out=1
-CFL=0.5
+CFL=0.4
 /
 
 &SETUP_PARAMS
@@ -10,6 +10,7 @@ box_l       = 1.0d0
 rho_0    = 1.0d0
 cs_0=1.0d0
 D_test_value=1.0d0
+m = 2
 diffusion_test=.true.
 /
 

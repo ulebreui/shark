@@ -27,11 +27,11 @@ module units
 
 
     real(dp),parameter :: unit_l = 1.0d0
+    real(dp),parameter :: unit_t = 1.0d0
 
     real(dp),parameter :: unit_d =1.0d0
     real(dp),parameter :: unit_P = 1.0d0
     real(dp),parameter :: unit_dcol=1.0d0
-    real(dp),parameter :: unit_t = 1.0d0
     real(dp),parameter :: unit_m = unit_l**3*unit_d 
 
     real(dp),parameter :: unit_v = unit_l/unit_t

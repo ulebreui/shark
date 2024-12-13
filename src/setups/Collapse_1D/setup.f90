@@ -36,7 +36,10 @@ subroutine setup
      do idust=1,ndust
         q(i,irhod(idust))   = epsilondust(i,idust)*q(i,irho)
         if(single_size) then
-          sdust(i,idust)    = smax/unit_l
+          print*,'single_size'
+          sdust(i,idust)    = s_max/unit_l
+          mdust(i,idust)    = 4./3.*pi*(s_max/unit_l)**3*rhograin
+
           q(i,irhod(idust)) = 0.01*q(i,irho)
         endif
      end do
@@ -48,10 +51,9 @@ subroutine setup
 #if GRAVITY==1  
   call mtot
 #endif 
-  !if(charging) call charge
-  if(charging) call analytical_charge
 
-  if (dust_inertia) call resistivities_with_dust_inertia
+
+  !if (dust_inertia) call resistivities_with_dust_inertia
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
 #else
   non_standard_eos=1
@@ -82,6 +84,19 @@ subroutine setup
   q=0.d0
 #if NDUST>0
   call distribution_dust(.true.)
+  if(single_size) then
+      print*,'single_size'
+
+      do i=1,ncells
+        do idust=1,ndust
+
+          sdust(i,idust)    = s_max/unit_l
+          mdust(i,idust)    = 4./3.*pi*(s_max/unit_l)**3*rhograin
+
+        end do
+      end do
+
+   endif
 #endif
   do i=1,ncells
         q(i,irho)= rho_particles(ilist)
@@ -98,10 +113,8 @@ subroutine setup
 #endif     
   end do
   call primtoc
-  !if(charging) call charge
-  if(charging) call analytical_charge
 
-  if (dust_inertia) call resistivities_with_dust_inertia
+
 #endif
 end subroutine setup
 
@@ -137,7 +150,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/M_cloud,alpha_cloud,more_outputs,single_size,ntimes_part
+  namelist/setup_params/M_cloud,alpha_cloud,more_outputs,single_size,ntimes_part,s_max
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

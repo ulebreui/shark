@@ -9,6 +9,10 @@ subroutine Source_terms
   real(dp) :: ts,ekin,lap_x_u,lap_y_u,lap_x_v,lap_y_v,cs_eos,barotrop
   real(dp), dimension(:,:)  , allocatable :: S_U
   real(dp), dimension(1:nvar) :: S_diff
+  real(dp), dimension(1:ncells) :: By_inter
+
+    By_inter(:) = 0.0d0 
+
 
 
   if(static) then
@@ -20,7 +24,7 @@ subroutine Source_terms
 
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,ix,iy,idust,ts,lap_x_u,lap_y_u,lap_x_v,lap_y_v,ivar,S_diff)
+  !$OMP PRIVATE(i,ix,iy,idust,ts,lap_x_u,lap_y_u,lap_x_v,lap_y_v,ivar)
   !$OMP DO
 
 ! #if NDUST>0
@@ -106,37 +110,6 @@ subroutine Source_terms
 !Non-ideal MHD hyper diffusion source term in induction equation
 #if MHD==1
 #if GEOM==0
-if (dusty_nonideal_MHD) then
-
-
-    do ivar=1,nvar
-        S_diff(ivar)=0.0d0
-    end do
-
-
-    call effective_diffusion_coef_induction !To compute effective diffusion coeffs
-
-    ! print*, "eta_eff_yy=",eta_eff_yy
-    ! print*, "eta_eff_yz=",eta_eff_yz
-
-
-    !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
-
-    !Hyper diffusion term for By
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_yy(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) !!Resistivities must be in cm^2/s
-    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
-
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_yz(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
-    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
-
-
-    !Hyper diffusion term for Bz
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_zy(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBz)
-    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
-
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_zz(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz)
-    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
-endif
 
 if (dusty_nonideal_MHD_no_electron) then
 
@@ -145,36 +118,60 @@ if (dusty_nonideal_MHD_no_electron) then
         S_diff(ivar)=0.0d0
     end do
 
-
-    call effective_diffusion_coef_induction !To compute effective diffusion coeffs
-
-
-
-    !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
-
-    !Hyper diffusion term for By
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
-    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
-
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
-    S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)
+    if (hyper_diffusion) then
+        !call effective_diffusion_coef_induction !Already include i loop. To be called once in solve
 
 
-    !Hyper diffusion term for Bz
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
-    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
 
-    call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBz)
-    S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)
- endif
+        !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
+
+        !!!Ohm effect!!!
+
+        !Hyper diffusion term for By
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
+        S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+        !Hyper diffusion term for Bz
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
+        S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+        !print*,'S_diff_z',S_diff(iBz)
 
 
-if (dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
+
+        !print*,'S_U(i,iBy)',S_U(i,iBy)
+        !print*,'q(i,iBy)',q(i,iBy)
+  
+        !print*,'S_diff*dt',S_diff(iBy)*dt
+
+        do ivar=1,nvar
+            S_diff(ivar)=0.0d0
+        end do
+
+        !!Hall effect: By and By coupled --> must be solved jointly
+
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
+        S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+        !print*,'S_diff2',S_diff(iBy)
+        By_inter(i) = S_diff(iBy)*dt
+
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i-1,1),dx(i-1,1),dx(i-1,1),i-1,iBy)
+        By_inter(i-1) = S_diff(iBy)*dt
+
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i+1,1),dx(i+1,1),dx(i+1,1),i+1,iBy)
+        By_inter(i+1) = S_diff(iBy)*dt
+
+        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy)+By_inter(:),dx(i,1),dx(i,1),dx(i,1),i,iBz)
+        S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+        !print*,'S_diff_z2',S_diff(iBz)
+
+  endif
+endif
+
+
+if (dusty_nonideal_MHD_no_electron) then
 
         !Lorentz forces
-        call electric_field !Compute electrical current as well as ions and electrons velocity
-        call Lorentz_force
-
+        !call electric_field !Do not call them here: computation will be done again and again for each i. To be called once per timestep in solve.
+    if (apply_Lorentz_force) then
         do idust=1,ndust
             S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 
             S_U(i,ivdy(idust)) = S_U(i,ivdy(idust)) + FLor_y_d(i,idust)*dt
@@ -184,10 +181,12 @@ if (dusty_nonideal_MHD .or. dusty_nonideal_MHD_no_electron) then
 
          end do
 
-        ! ! !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
-        S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions + electrons. 
-        S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions + electrons. 
-        S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions + electrons. 
+        !Now the gas: friction with ions and electrons translates into Lorentz forces (because of their neglected inertia: balance between friction and Lorentz force)
+        S_U(i,ivx) = S_U(i,ivx) + FLor_x(i)*dt !ions  
+        S_U(i,ivy) = S_U(i,ivy) + FLor_y(i)*dt !ions  
+        S_U(i,ivz) = S_U(i,ivz) + FLor_z(i)*dt!ions
+
+    endif
 
 endif
 
@@ -202,19 +201,22 @@ endif
 
 
   !Update state vector
+  !print*,'S_U',S_U(:,iBy)
+
   u_prim=u_prim+S_U
   deallocate(S_U)
 
 end subroutine Source_terms
 
-subroutine hyper_diffusion_induction_eq(S_diff,A,B,Delta_x,Delta_xm,Delta_xp,i,ivar) !In the form: dt(V)=dx(Adx(B))=dx(F)
 
-use parameters
-use commons
-use OMP_LIB
-use units
+
+subroutine hyper_diffusion_induction_eq(S_diff,A,B,Delta_x,Delta_xm,Delta_xp,i,i_variable) !In the form: dt(V)=dx(Adx(B))=dx(F)
+
+   use parameters
+   use commons
+   use units
 implicit none
-integer :: i,ivar
+integer, intent(in) :: i,i_variable
 real(dp) :: dxB,A_mean,Fp,Fm,S
 real(dp) :: Delta_x,Delta_xm,Delta_xp
 !real(dp) :: Ai,Aim1,Aip1,Bi,Bim1,Bip1,Vi
@@ -228,6 +230,10 @@ real(dp), dimension(1:nvar), intent(inout) :: S_diff
 dxB=0.0d0
 A_mean=0.0d0
 Fp=0d0
+
+!print*,'B',B
+!print*,'A',A
+
 !dx(F)=F(i+1/2)-F(i-1/2)/Delta_x=Fp-Fm/Delta_x
 
 
@@ -235,14 +241,18 @@ Fp=0d0
 
 !compute dxB (i+1/2) at cell interface
 dxB=(B(i+1)-B(i))/Delta_xp
+!print*,'dxB',dxB
 !dxB=(Bip1-Bi)/Delta_xp
 
 !Compute A (i+1/2) mean at cell interface
 A_mean=(A(i)+A(i+1))/2
+!print*,'A_mean',A_mean
+
 !A_mean=(Ai+Aip1)/2
 
 !Infer F(i+1/2)
 Fp=A_mean*dxB
+!print*,'Fp',Fp
 
 
 
@@ -262,17 +272,21 @@ A_mean=(A(i-1)+A(i))/2
 
 !Infer F(i-1/2)
 Fm=A_mean*dxB
+!print*,'Fm',Fm
+
+!print*,'(Fp-Fm)/Delta_x',(Fp-Fm)/Delta_x
 
 !Overall source term: 
-S_diff(ivar)=(Fp-Fm)/Delta_x
+!print*,'i',i
+!print*,'i_variable',i_variable
 
-
-
-
-!If testing diffusion (setup diffusion): Comment previous line and substitute with: u_prim=u_prim+S_U*dt plus remove S_U from input param 
+S_diff(i_variable)=(Fp-Fm)/Delta_x
+!print*,'S_diff',S_diff
 
 
 
 end subroutine hyper_diffusion_induction_eq
+
+
 
 
