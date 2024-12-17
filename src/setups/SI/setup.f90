@@ -80,29 +80,29 @@ subroutine setup
         yy=position(ix,iy,2)-half*box_l_y
 
         q(irho,ix,iy)  = rho_init
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivx,ix,iy)    = vx_nak + perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivy,ix,iy)   = perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
         q(ivz,ix,iy)   =  q_shear*Omega_shear*xx+vy_nak + perturbation
         q(iP,ix,iy)    =  q(irho,ix,iy)*cs0**2.0
 #if NDUST>0
      do idust=1,ndust
 
         q(irhod(idust),ix,iy)    = dust2gas_species(idust)*rho_init!+ perturbation
-        epsilondust(i,idust)     = dust2gas_species(idust)
+        epsilondust(i,idust)     = dust2gas_species(idust) !Is this line necessary?
 
         if(.not. stokes_distrib) sdust(idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivdx(idust),ix,iy)      = perturbation+ux_nak(idust)
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivdy(idust),ix,iy)     =  perturbation
-        call get_rhoturb(2d-2*cs0,perturbation)
+        call get_rhoturb(mag_pert*cs0,perturbation)
         q(ivdz(idust),ix,iy)     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
      end do
 #endif
@@ -174,7 +174,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species, theta_dust,Stokes_min,  Stokes_max,  Stokes_cut,stokes_distrib 
+  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
@@ -345,6 +345,8 @@ subroutine compute_tstop
     do ix = first_active,last_active
      do idust=1,ndust
         tstop(idust,ix,iy) = rhograin*sdust(idust)/rho_init/(rad0*Omega_shear*hoverr)
+        St(idust,ix,iy) = tstop(idust,ix,iy)*Omega_shear
+
       end do
      end do
   end do

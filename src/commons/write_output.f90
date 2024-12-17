@@ -60,6 +60,8 @@ subroutine output(iout)
   call write_vdy(iout,unit_v)
   call write_vdz(iout,unit_v)
   call write_sdust(iout,unit_l)
+  call write_St(iout)
+
 
 #if NDUSTPSCAL>0
   call write_rho_pscal(iout)
@@ -486,6 +488,36 @@ subroutine write_vdz(iout,unit_loc)
   end do
   close(ilun)
 end subroutine write_vdz
+
+
+subroutine write_St(iout)
+
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i,ilun,ix,iy,iout,idust
+  real(dp) :: rhod_tot
+  character(LEN = 5) :: nchar
+  character(len=80)  :: path, format_out
+
+  path='output_'
+  format_out=trim("unformatted")
+  ilun=20
+  call title(iout,nchar)
+
+  open(ilun,file=trim(path) // trim(nchar)//trim('/St'), form=format_out,access='stream')
+  do idust=1,ndust
+      do iy = first_active_y,last_active_y
+         do ix = first_active,last_active
+            write(ilun) St(idust,ix,iy)
+         end do
+      end do
+  end do
+  close(ilun)
+end subroutine write_St
+
+
 
 
 #endif

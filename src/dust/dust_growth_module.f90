@@ -3,13 +3,15 @@ module smoluchowski
 
 	subroutine dust_growth_shark(dt,K_0,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
 	   &eta,dvij,rho_gas,sticking_efficiency,eps_threshold,rhodust_min,&
-	   &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag)
+	   &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,SI,vfrag)
 
 	   use precision
 
 	   implicit none
 	   integer  :: ndust,ic1,ic2,idust,jdust,kdust,ifrag2
 	   real(dp) :: dt,dt_growth,time_growth,massmin,eta,rho_gas,K_0,Ebr,Ecol
+
+	   logical :: SI
 
 	   real(dp) :: CFL_growth
 	   real(dp), dimension(1:ndust)           :: dust_dens,sdust,mdust
@@ -20,7 +22,7 @@ module smoluchowski
 
 	   integer  :: niter_growth
 	   integer  :: frag_test
-	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2
+	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2,vfrag
 	   real(dp) :: epsilon_mass,rhodust_min
 
 	   real(dp) , dimension(1:ndust) :: drhodt
@@ -58,6 +60,11 @@ module smoluchowski
 	               Ecol = 0.5d0*(m1*m2)/(m1 + m2)*dvij(idust, jdust)**2
 	               Ebr = (m1 + m2)/m_mono*Ebr_mono
 	               f_frag = max(min((Ecol - 0.1d0*Ebr)/(4.9d0*Ebr), 1.0d0), 0.0d0)
+	               if (SI) then
+                     !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/(0.9*vfrag),1.0d0),0.0d0) ! velocity threshold
+                     if (dvij(idust,jdust) < vfrag) f_frag = 0.0d0
+                     if (dvij(idust,jdust) > vfrag) f_frag = 1.0d0
+                   endif
 
 	            end if
 
@@ -115,9 +122,10 @@ module smoluchowski
 
 	end subroutine dust_growth_shark
 
-	function dv_ormel(alpha_turb,cs,ts1,ts2,Reynolds,t_L)
+	function dv_ormel(alpha_turb,cs,ts1,ts2,Reynolds,t_L,SI)
 	  use precision
 	  implicit none
+	  logical :: SI
 	  real(dp)  :: dv_ormel
 	  real(dp)  :: alpha_turb,cs,ts1,ts2,Reynolds,t_L,x_stokes,f_Stokes,vclass2,vclass3,vclass1,St1,St2,t_eta  
 
@@ -126,13 +134,17 @@ module smoluchowski
        St1 = max(ts1/t_l,ts2/t_l)
        St2 = min(ts1/t_l,ts2/t_l)
 
-       vclass1 = alpha_turb*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
-       vclass2 = alpha_turb*cs*sqrt(f_Stokes*St1)
-       vclass3 = alpha_turb*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
+       vclass1 = dsqrt(alpha_turb)*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
+       vclass2 = dsqrt(alpha_turb)*cs*sqrt(f_Stokes*St1)
+       vclass3 = dsqrt(alpha_turb)*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
 
        dv_ormel = vclass2
        if (ts1 < t_eta) dv_ormel  = vclass1
        if (ts1 > t_L)   dv_ormel  = vclass3
+
+       if (SI) then
+           dv_ormel = vclass2
+       endif
 
 	end function dv_ormel
 

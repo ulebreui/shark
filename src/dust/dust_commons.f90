@@ -27,6 +27,8 @@ module dust_parameters
 
 
   logical ::  dust_growth_disk = .false.
+  logical             ::  SI = .false.     ! To compute growth within Streaming Instability setup
+
   !Dust distribution
   real(dp)::  smin            = 1d-7    ! Minimum possible dust size 
   real(dp)::  scutmin         = 5d-7    ! MRN - Minimum dust size of the initial distribution
@@ -77,6 +79,9 @@ module dust_commons
 
   real(dp), dimension(:,:,:), allocatable    :: tstop
   real(dp), dimension(:,:,:), allocatable    :: tcoag
+  real(dp), dimension(:,:,:), allocatable    :: St
+
+
 
   ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod
