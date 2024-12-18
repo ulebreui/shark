@@ -60,6 +60,7 @@ subroutine dust_growth(verbose)
       redistribute_fragments(:, idust) = redistribute_fragments(:, idust)/sum(redistribute_fragments(:, idust))
    end do
 
+
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          T        = (cs(ix,iy)*unit_v)**2*sqrt(mu_gas*mH/gamma/kB)
@@ -83,11 +84,6 @@ subroutine dust_growth(verbose)
                   &+(q(ivdz(idust),ix,iy)-q(ivdz(jdust),ix,iy))**2)
             end do
          end do
-      end do
-   end do
-
-   do iy = first_active_y, last_active_y
-      do ix = first_active, last_active
          do idust = 1, ndust
               dust_dens(idust) = u_prim(irhod(idust),ix,iy)
          end do

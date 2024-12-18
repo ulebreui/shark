@@ -122,7 +122,7 @@ module smoluchowski
 
 	end subroutine dust_growth_shark
 
-	function dv_ormel(alpha_turb,cs,ts1,ts2,Reynolds,t_L,SI)
+	function dv_ormel(alpha_turb,cs,ts1,ts2,Reynolds,t_L)
 	  use precision
 	  implicit none
 	  logical :: SI
@@ -142,9 +142,7 @@ module smoluchowski
        if (ts1 < t_eta) dv_ormel  = vclass1
        if (ts1 > t_L)   dv_ormel  = vclass3
 
-       if (SI) then
-           dv_ormel = vclass2
-       endif
+  
 
 	end function dv_ormel
 

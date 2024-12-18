@@ -93,7 +93,6 @@ subroutine setup
      do idust=1,ndust
 
         q(irhod(idust),ix,iy)    = dust2gas_species(idust)*rho_init!+ perturbation
-        epsilondust(i,idust)     = dust2gas_species(idust) !Is this line necessary?
 
         if(.not. stokes_distrib) sdust(idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(mag_pert*cs0,perturbation)
