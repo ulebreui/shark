@@ -105,6 +105,7 @@ module smoluchowski
 	         end if
 	      end do
 	      !stop
+	      dt_growth=min(dt_growth,dt-time_growth)
 	      do idust = 1, ndust
 	         dust_dens(idust) = max(dust_dens(idust) + drhodt(idust)*dt_growth, rhodust_min)
 	      end do

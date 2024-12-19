@@ -131,7 +131,7 @@ subroutine ctoprim
             q(ivdz(idust),ix,iy)  = u_prim(ivdz(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               q(idust_pscal(idust,ipscal),ix,iy) = u_prim(ix,iy,idust_pscal(idust, ipscal))/u_prim(irhod(idust),ix,iy)
+               q(idust_pscal(idust,ipscal),ix,iy) = u_prim(idust_pscal(idust, ipscal),ix,iy)/u_prim(irhod(idust),ix,iy)
             end do
 #endif
          end do
@@ -205,7 +205,7 @@ subroutine primtoc
             u_prim(ivdz(idust),ix,iy)  = q(irhod(idust),ix,iy)*q(ivdz(idust),ix,iy)
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               u_prim(ix,iy,idust_pscal(idust, ipscal)) = q(irhod(idust),ix,iy)*q(idust_pscal(idust,ipscal),ix,iy)
+               u_prim(idust_pscal(idust, ipscal),ix,iy) = q(irhod(idust),ix,iy)*q(idust_pscal(idust,ipscal),ix,iy)
             end do
 #endif
          end do

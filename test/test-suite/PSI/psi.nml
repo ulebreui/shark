@@ -1,0 +1,28 @@
+&GRID_PARAMS
+freq_out = 10000
+CFL = 0.800000000000000
+tend = 500.000000000000000
+gamma = 1.666667000000000
+slope_type = 3
+force_kick = .false.
+/
+
+&SETUP_PARAMS
+box_l = 40.000000000000000
+box_l_y = 40.000000000000000
+omega_shear = 1.000000000000000
+rho_init = 1.000000000000000
+HoverR = 0.100000000000000
+Stokes_min = 0.001000000000000
+Stokes_max = 10.000000000000000
+Stokes_cut = 2.000000000000000
+Stokes_distrib = .true.
+Q_shear = 1.500000000000000
+theta_dust = 1d-11
+/
+
+&DUST_PARAMS
+drag = .true.
+dust_back_reaction = .true.
+dust2gas = 0.200000000000000
+/

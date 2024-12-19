@@ -6,7 +6,6 @@ CFL = 0.800000000000000
 tend = 2000.000000000000000
 gamma = 1.666666666666667
 force_kick = .true.
-viscosity = .false.
 slope_type = 1
 / 
 
@@ -31,11 +30,4 @@ dust_back_reaction = .true.
 drag = .true.
 / 
 
-&GRAVITY_PARAMS
-self_gravity = .false.
-/ 
-
-&IONISATION_PARAMS
-charging = .false.
-/ 
 

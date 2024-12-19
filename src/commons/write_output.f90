@@ -348,7 +348,7 @@ subroutine write_rho_pscal(iout)
   use commons
   use units
   implicit none
-  integer  :: i,ilun,ix,iy,iout,idust
+  integer  :: i,ilun,ix,iy,iout,idust,ipscal
   real(dp) :: rhod_tot
   character(LEN = 5) :: nchar
   character(len=80)  :: path, format_out
@@ -367,6 +367,7 @@ subroutine write_rho_pscal(iout)
             write(ilun) q(idust_pscal(idust,ipscal),ix,iy)
       end do
    end do
+ end do
  end do
  close(ilun)
  end subroutine write_rho_pscal

@@ -2,9 +2,9 @@
  
 &GRID_PARAMS
 freq_out = 5000
-CFL = 0.800000000000000
-tend = 2000.000000000000000
-gamma = 1.666666666666667
+CFL      = 0.800000000000000
+tend     = 30000.000000000000000
+gamma    = 1.666666666666667
 force_kick = .true.
 slope_type = 1
 / 
@@ -24,9 +24,13 @@ accretion = .true.
 
 &DUST_PARAMS
 dust_distribution = "mrn"
-scut = 0.100000000000000
-dust2gas = 0.010000000000000
+scut      = 1e-5
+dust2gas  = 0.010000000000000
 dust_back_reaction = .true.
 drag = .true.
+growth_step=.true.
+alpha_turb=1e-2
+vfrag=1e3
 / 
+
 

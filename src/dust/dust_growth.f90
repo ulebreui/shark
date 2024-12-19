@@ -23,6 +23,7 @@ subroutine dust_growth(verbose)
    real(dp) :: vdrift_turb, vdrift_brow, vdrift_hydro
    
    real(dp), dimension(1:ndust, 1:ndust)  :: dvij        
+     
    real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
    real(dp), dimension(1:ndust)           :: t_sdust
    real(dp), dimension(1:ndust)           :: dust_dens
@@ -62,6 +63,7 @@ subroutine dust_growth(verbose)
 
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
+
          T        = (cs(ix,iy)*unit_v)**2*sqrt(mu_gas*mH/gamma/kB)
          Reynolds = 6.2d7*dsqrt(q(irho,ix,iy)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
          t_L      = sqrt(3.*pi/(32.*grav*q(irho,ix,iy)*unit_d))/unit_t
@@ -80,11 +82,7 @@ subroutine dust_growth(verbose)
                   &+(q(ivdz(idust),ix,iy)-q(ivdz(jdust),ix,iy))**2)
             end do
          end do
-      end do
-   end do
 
-   do iy = first_active_y, last_active_y
-      do ix = first_active, last_active
          do idust = 1, ndust
               dust_dens(idust) = u_prim(irhod(idust),ix,iy)
          end do
