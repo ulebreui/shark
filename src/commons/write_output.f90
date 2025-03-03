@@ -13,6 +13,7 @@ subroutine output(iout)
   path='output_'
   format_out=trim("unformatted")
   ilun=20
+  if(iout==nrestart) return
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)
@@ -40,7 +41,7 @@ subroutine output(iout)
 
 #if GEOM==2
   unit_dloc = unit_dcol
-  unit_Ploc =unit_P*unit_l
+  unit_Ploc =unit_P!*unit_l
 #endif
  
   call write_backup(iout)
@@ -237,7 +238,7 @@ subroutine write_vy(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ivx,ix,iy)*unit_loc
+         write(ilun) q(ivy,ix,iy)*unit_loc
       end do 
   end do
 
@@ -264,7 +265,7 @@ subroutine write_vz(iout,unit_loc)
 
   do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-         write(ilun) q(ivx,ix,iy)*unit_loc
+         write(ilun) q(ivz,ix,iy)*unit_loc
       end do 
   end do
 
@@ -290,7 +291,7 @@ subroutine write_P(iout,unit_loc)
    do iy = first_active_y,last_active_y
       do ix = first_active,last_active
 
-         write(ilun) q(iP,ix,iy)*unit_P*unit_loc
+         write(ilun) q(iP,ix,iy)*unit_P
 
       end do
   end do

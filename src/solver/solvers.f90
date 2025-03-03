@@ -547,7 +547,7 @@ contains
    end subroutine solver_hllc_dust
 
 #if SOLVERDUST==1
-   subroutine solver_dust_llf(qleft, qright, flx, idim)
+   subroutine solver_dust_llf(qleft, qright, flx, csl, csr,idim)
 
       use parameters
       use commons
@@ -558,10 +558,10 @@ contains
       real(dp), dimension(1:nvar), intent(inout) :: flx
       integer  :: idim, idust, i_u, i_v, i_rho, i_w
 
-      real(dp) :: S_lft, S_rgt, lambda_llf_d, csl, csr
+      real(dp) :: S_lft, S_rgt,lambda_llf_g, lambda_llf_d, csl, csr
 
       real(dp) :: rho_lft, rho_rgt, u_lft, u_rgt, v_lft, v_rgt, w_lft, w_rgt
-      real(dp) :: mom_u_lft, mom_u_rgt, mom_v_lft, mom_v_rgt, mom_w_lft, mom_w_rgt
+      real(dp) :: mom_u_lft, mom_u_rgt, mom_v_lft, mom_v_rgt, mom_w_lft, mom_w_rgt,ug_lft,ug_rgt
       real(dp) :: flx_rho_lft, flx_mom_u_lft, flx_mom_v_lft, flx_mom_w_lft, flx_P_lft
       real(dp) :: flx_rho_rgt, flx_mom_u_rgt, flx_mom_v_rgt, flx_mom_w_rgt, flx_P_rgt
 
@@ -585,6 +585,10 @@ contains
          w_rgt = qright(i_w)
          w_lft = qleft(i_w)
 
+         !Gas normal velocity
+         ug_lft=qright(index_vn(idim))
+         ug_rgt=qright(index_vn(idim))
+
          mom_u_rgt = rho_rgt*u_rgt
          mom_u_lft = rho_lft*u_lft
          mom_v_rgt = rho_rgt*v_rgt
@@ -605,7 +609,9 @@ contains
          flx_mom_w_lft = rho_lft*u_lft*w_lft
 
          lambda_llf_d = max(abs(u_lft), abs(u_rgt))
+         lambda_llf_g = max(abs(ug_lft) + csl, abs(ug_rgt) + csr)
 
+         if(lambda_llf_g>lambda_llf_d) lambda_llf_d =lambda_llf_g
          flx(i_rho) = 0.d0
          flx(i_u) = 0.d0
          flx(i_v) = 0.d0
@@ -681,7 +687,7 @@ contains
          flx_mom_v_lft = rho_lft*u_lft*v_lft
 
          flx_mom_w_rgt = rho_rgt*u_rgt*w_rgt
-         flx_mom_w_lft = rho_lft*u_lft*w_lf
+         flx_mom_w_lft = rho_lft*u_lft*w_lft
 
          S_rgt = max(max(u_lft, u_rgt), 0.0d0)
          S_lft = min(min(u_lft, u_rgt), 0.0d0)

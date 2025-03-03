@@ -82,14 +82,6 @@ subroutine predictor
          sw0 = -u*dwx - v*dwy
 #endif
 
-!Disk (edge-on) geometry
-#if GEOM==4
-         sr0 = -u*drx - v*dry - (dux + dvy)*r_rho - r_rho*u/radii(ix,iy)
-         sp0 = -u*dpx - v*dpy - (dux + dvy)*gamma*p - gamma*p*u/radii(ix,iy)
-         su0 = -u*dux - v*duy - (dpx)/r_rho + (w**2.)/radii(ix,iy)
-         sv0 = -u*dvx - v*dvy - (dpy)/r_rho
-         sw0 = -u*dwx - v*dwy - u*w/radii(ix,iy)
-#endif
 
          !direction x
          dx_loc = dx(ix,iy,1)
@@ -161,13 +153,6 @@ subroutine predictor
             sv0 = sv0 - u*v/radius_polar
 #endif
 
-#if GEOM==4
-            !Polar geometry source terms -- TODO add the missing source terms
-            sr0 = sr0 - r_rho*u/radii(ix,iy)
-            su0 = su0 + w**2./radii(ix,iy)
-            sw0 = sw0 - u*w/radii(ix,iy)
-#endif
-
             !Direction x
             dx_loc = dx(ix,iy,1)
             qm_x(irho_spe,ix,iy) = r_rho + half*dt*sr0 + half*drx*dx_loc
@@ -201,10 +186,6 @@ subroutine predictor
 #if GEOM==2
                !Polar geometry source terms
                sr0 = sr0 - r_rho*u/radius_polar
-#endif
-#if GEOM==4
-               !Polar geometry source terms
-               sr0 = sr0 - r_rho*u/radii(ix,iy)
 #endif
                ! Direction x
 
@@ -256,7 +237,7 @@ subroutine add_delta_u
 
 
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ivar, ix,iy, qleft, qright, flx, csr, csl)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix,iy, qleft, qright, flx, csr, csl)
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
 
@@ -316,8 +297,27 @@ subroutine add_delta_u
       end do
    end do
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ivar, ix,iy)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix, iy)
       do iy = first_active_y, last_active_y
+         if(no_flux_x_rho_in) then
+           if(u_prim(irho,first_active,iy)<rho_sink) then 
+             flux_x(irho,first_active,iy)   = 0.0d0
+             flux_x(ivx,first_active,iy)    = 0.0d0
+              flux_x(ivy,first_active,iy)   = 0.0d0
+           else
+              flux_x(irho,first_active,iy)  = min(0.0d0,flux_x(irho,first_active,iy))
+              flux_x(ivx,first_active,iy)   = min(0.0d0,flux_x(ivx,first_active,iy))
+              flux_x(ivy,first_active,iy)   = min(0.0d0,flux_x(ivy,first_active,iy))
+           endif
+
+           flux_x(irho,last_active+1,iy) = max(0.0d0,flux_x(irho,last_active+1,iy))
+           flux_x(ivx,last_active+1,iy)  = max(0.0d0,flux_x(ivx,last_active+1,iy))
+           flux_x(ivy,last_active+1,iy)  = max(0.0d0,flux_x(ivy,last_active+1,iy))
+#if NDUST>0
+         print *, 'Careful dust boundary flux not correctly implemented'
+         stop  
+#endif
+         endif 
          do ix = first_active, last_active
                do ivar = 1, nvar
                   u_prim(ivar,ix,iy)=u_prim(ivar,ix,iy) + (flux_x(ivar,ix,iy)*surf(ix,iy,1)-flux_x(ivar,ix+1,iy) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
@@ -362,7 +362,7 @@ subroutine solve_wrapper(qleft, qright, flx, csl, csr, idim)
 #endif
 
 #if SOLVERDUST==1
-   call solver_dust_llf(qleft, qright, flx, idim)
+   call solver_dust_llf(qleft, qright, flx,csl, csr, idim)
 #endif
 
 #if SOLVERDUST==2

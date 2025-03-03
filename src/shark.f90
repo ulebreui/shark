@@ -33,6 +33,7 @@ program shark
   write (*, *) 'Source terms              ', t87, ' seconds'
   write (*, *) 'Dust                      ', t98, ' seconds'
   write (*, *) 'Force kick + setup action ', t109, ' seconds'
+  
   open (20,file=trim('metrics.dat'))   
   write(20,*) real ( t2- t1 ) / real ( clock_rate )  
   write(20,*) t21
@@ -83,7 +84,6 @@ subroutine time_loop
   
   !Actual time loop, continues until continue_sim=.false.
   call flag_continue(continue_sim)
-
   do while(continue_sim)
 
      verbose= .false.
@@ -94,7 +94,6 @@ subroutine time_loop
      else
         restarting=0
      endif
-     
 #if NDUST>0
      if(kernel_type>0) verbose=.true.
 #endif     
@@ -194,7 +193,7 @@ subroutine prompt
     write(*,*) ' You are using static scheduling'
 
     !call omp_set_schedule(omp_sched_static,8)
-    call omp_set_schedule(omp_sched_static,8)
+    call omp_set_schedule(omp_sched_static,1)
 
 #endif    
 end subroutine prompt

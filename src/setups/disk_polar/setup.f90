@@ -169,8 +169,9 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
-   integer :: icount,iout
+   integer :: icount,iout,ix,iy
    logical :: outputing,verbose
+   real(dp) :: Mtot
 
         !We make an output at a certain frequency rate of for specific values of the density. This can be tuned at will
      if(icount.eq.freq_out) then
@@ -185,7 +186,15 @@ subroutine read_setup_params(ilun,nmlfile)
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
      if(outputing) print *, "Outputing data "
-     if(outputing) print *, "Total mass is", sum(u_prim(irho,:,:))
+     if(outputing) then
+        Mtot = 0.0d0
+        do iy=first_active_y,last_active_y
+            do ix=first_active,last_active
+            Mtot = Mtot + q(irho,ix,iy)*vol(ix,iy)
+            enddo
+        enddo
+     endif
+     if(outputing) print *, "Total mass is", Mtot
      if(outputing) print *, "Total momentum is", sum(u_prim(ivx,:,:)+u_prim(ivy,:,:))
 
      outputing=.false.

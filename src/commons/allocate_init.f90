@@ -40,7 +40,11 @@ subroutine allocate_init
   allocate(qm_y(1:nvar,1:nx_max,1:ny_max))
   allocate(qp_y(1:nvar,1:nx_max,1:ny_max))
   allocate(cs(1:nx_max,1:ny_max))
-
+  if(self_gravity) then
+    allocate(phi_grav(1:nx_max,1:ny_max))
+    allocate(grad_phi_sg_x(1:nx_max,1:ny_max))
+    allocate(grad_phi_sg_y(1:nx_max,1:ny_max))
+  endif
   ! Fluxes 
   allocate(flux_x(1:nvar,1:nx_max,1:ny_max))
   allocate(flux_y(1:nvar,1:nx_max,1:ny_max))
@@ -65,8 +69,12 @@ subroutine allocate_init
   qp_x     = 0.0d0
   qm_y     = 0.0d0
   qp_y     = 0.0d0
-  cs     = 0.0d0
- 
+  cs       = 0.0d0
+  if(self_gravity) then
+    phi_grav = 0.0d0
+    grad_phi_sg_x = 0.0d0
+    grad_phi_sg_y = 0.0d0
+  endif
   force_x  = 0.0d0
   force_y  = 0.0d0
   force_z  = 0.0d0

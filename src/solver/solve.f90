@@ -116,7 +116,7 @@ subroutine ctoprim
    real(dp):: ekin, cs_eos, barotrop
 
    ! Gas related primitive quantities
-   !$omp parallel do schedule(RUNTIME) default(shared) private(ekin,idust, ipscal, ix,iy)
+   !$omp parallel do schedule(static,2) default(shared) private(ekin,idust, ipscal, ix,iy)
    do iy = 1, ny_max
       do ix = 1, nx_max
          q(irho,ix,iy) = max(u_prim(irho,ix,iy), smallr)
@@ -141,16 +141,16 @@ subroutine ctoprim
 
 
    if (non_standard_eos == 1) then
-      !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy)
+      !$omp parallel do schedule(static,2) default(shared) private(ix,iy)
       do iy = 1, ny_max
          do ix = 1, nx_max
             cs(ix,iy)   = cs_eos(barotrop(q(irho,ix,iy)))
-            q(iP,ix,iy) = u_prim(irho,ix,iy)*cs(ix,iy)**2
+            q(iP,ix,iy) = q(irho,ix,iy)*cs(ix,iy)**2
          end do
       end do
 
    else if (iso_cs == 1 ) then 
-      !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy)
+      !$omp parallel do schedule(static,2) default(shared) private(ix,iy)
       do iy = 1, ny_max
          do ix = 1, nx_max
             q(iP,ix,iy) = u_prim(irho,ix,iy)*cs(ix,iy)**2
@@ -158,7 +158,7 @@ subroutine ctoprim
       end do
 
    else
-     !$omp parallel do schedule(RUNTIME) default(shared) private(ix,iy,ekin)
+     !$omp parallel do schedule(static,2) default(shared) private(ix,iy,ekin)
       do iy = 1, ny_max
          do ix = 1, nx_max
             ekin        = half*u_prim(irho,ix,iy)*((u_prim(ivx,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivy,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivz,ix,iy)/u_prim(irho,ix,iy))**2.0)

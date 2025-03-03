@@ -11,21 +11,18 @@ subroutine dust_growth(verbose)
 
    integer :: ix,iy
 
-   integer :: idust, jdust, kdust
+   integer :: idust, jdust
 
    integer  :: frag_test, turbgrow, driftgrow, browgrow
-   real(dp) :: eta, zeta, massmin, m1, m2, s1, s2, m_mono, a_mu
-   real(dp) :: f_frag, p_frag, p_coag
+   real(dp) :: eta, zeta, massmin, m_mono, a_mu
 
    real(dp) :: T
-   real(dp) :: Ecol, Ebr, Ebr_mono
+   real(dp) :: Ebr_mono
    real(dp) :: t_L, t_eta, Reynolds
    real(dp) :: vdrift_turb, vdrift_brow, vdrift_hydro
    
    real(dp), dimension(1:ndust, 1:ndust)  :: dvij        
-     
    real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
-   real(dp), dimension(1:ndust)           :: t_sdust
    real(dp), dimension(1:ndust)           :: dust_dens
    real(dp):: dt_growth, time_growth
 
@@ -61,6 +58,7 @@ subroutine dust_growth(verbose)
       redistribute_fragments(:, idust) = redistribute_fragments(:, idust)/sum(redistribute_fragments(:, idust))
    end do
 
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust, jdust, T, t_L, t_eta, Reynolds,dvij,dust_dens)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
 

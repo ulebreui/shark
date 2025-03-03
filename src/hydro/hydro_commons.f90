@@ -3,7 +3,11 @@ module hydro_commons
   real(dp), dimension(:,:,:), allocatable :: q
   real(dp), dimension(:,:,:),   allocatable :: u_prim
 
-  
+  real(dp), dimension(:,:),   allocatable :: phi_grav
+  real(dp), dimension(:,:),   allocatable :: grad_phi_sg_x
+  real(dp), dimension(:,:),   allocatable :: grad_phi_sg_y
+
+
   real(dp), dimension(:,:),     allocatable :: cs
 
   real(dp), dimension(:,:,:), allocatable :: qm_x
@@ -42,5 +46,7 @@ module hydro_commons
   integer, dimension(1:2) :: index_vn
   integer, dimension(1:2) :: index_vt
 
+  logical :: no_flux_x_rho_in = .false.
+  real(dp) :: rho_sink = 1e11
 
 end module hydro_commons

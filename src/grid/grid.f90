@@ -104,17 +104,33 @@ subroutine gridinit(rmax_x, rmax_y)
 
 #if GEOM==2
 #if NY>1
+#if GRIDSPACE==0
    subroutine gridinit_disk_log(rmax_x, inner_r)
+#endif
+#if GRIDSPACE==1
+   subroutine gridinit_disk_log(rmax_x, inner_r)
+#endif
+#if GRIDSPACE==2
+   subroutine gridinit_disk_log(rmax_x, inner_r,rcut,nxcut)
+
+#endif
       use parameters
       use commons
       use units
       implicit none
 
-      real(dp):: rmax_x, rmax_y, inner_r
+      real(dp):: rmax_x, rmax_y, inner_r,rplus,rminus
       integer :: i, ix,iy,icell
+      real(dp), dimension(1:nx_max+1):: radii_left
 #if GRIDSPACE==1
       !real(dp), dimension(1,nx+1):: radii_edges
       real(dp) :: zeta_r
+#endif
+#if GRIDSPACE==2
+      !real(dp), dimension(1,nx+1):: radii_edges
+      real(dp) :: zeta_r
+      real(dp) :: rcut
+      integer :: nxcut
 #endif
       print *, 'Number of cells        =', Ncells
       print *, 'Number of active cells =', Ncells_active
@@ -141,27 +157,100 @@ subroutine gridinit(rmax_x, rmax_y)
 #endif
 #if GRIDSPACE==1
       print *, 'You are using a log space cylindrical grid.'
-
-      zeta_r = (rmax_x/(inner_r))**(1.0d0/(nx - 1))
+      radii_left=0.0d0
+      zeta_r = (rmax_x/(inner_r))**(1.0d0/(nx+1)) 
+      do ix = 1, nghost
+         radii_left(ix) = inner_r/((zeta_r)**(nghost-ix+1))
+      end do
+      radii_left(1)=0.0d0
+      radii_left(first_active)= inner_r
+      do ix = first_active+1, nx_max+1
+         radii_left(ix)= radii_left(ix-1)*zeta_r
+      end do      
       do iy = 1, ny_max
          do ix = 1, nx_max
-            radii(ix,iy) = inner_r*half*(zeta_r**(ix - first_active) + zeta_r**(ix + 1 - first_active))
-            dx(ix,iy,1) = inner_r*(zeta_r**(ix + 1 - first_active) - zeta_r**(ix - first_active))
-            dx(ix,iy,2) = 2.0d0*pi/DBLE(ny) ! d_Phi
-            phi(ix,iy) = (DBLE(iy - first_active_y) + half)*2.0d0*pi/DBLE(ny)
+            radii(ix,iy) = 0.5d0*(radii_left(ix)+radii_left(ix+1))
+            dx(ix,iy,1)  = half*(radii_left(ix+1)-radii_left(ix))
+            dx(ix,iy,2)  = 2.0d0*pi/DBLE(ny) ! d_Phi
+            phi(ix,iy) = (DBLE(iy - first_active_y)+half)*2.0d0*pi/DBLE(ny)
             position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
             position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy))
-            surf(ix,iy,1) = inner_r*(zeta_r**(ix - first_active))*(dx(ix,iy,2))  ! r dphi
+            surf(ix,iy,1) = radii_left(ix)*(dx(ix,iy,2))  ! r dphi
             surf(ix,iy,2) = dx(ix,iy,1)! dr
-            vol(ix,iy) = radii(ix,iy)*dx(ix,iy,1)*dx(ix,iy,2)
+            vol(ix,iy) = pi/DBLE(ny)*(radii_left(ix+1)**2-radii_left(ix)**2)
          end do
-         do ix = 1, nghost
-            radii(ix,iy) = inner_r*0.5d0
-            radii(nx_max + 1 - ix,iy) = rmax_x + 0.5d0*dx(last_active, iy,1)
-            dx(ix,iy,1) = dx(first_active, iy,1)
-            dx(nx_max + 1 - ix,iy,1) = dx(last_active, iy,1)
-         end do
+
       end do
+      print*, radii_left
+     ! We make sure of the azimuthal periodicity
+     do ix = 1,nx_max
+      do iy = 1,nghost   
+         position(ix,iy,1)          = position(ix,last_active_y  - nghost+iy,1) 
+         position(ix,ny_max+1-iy,1) = position(ix,first_active_y + nghost-iy,1)
+         position(ix,iy,2)          = position(ix,last_active_y  - nghost+iy,2) 
+         position(ix,ny_max+1-iy,2) = position(ix,first_active_y + nghost-iy,2)
+
+         ! surf(ix,iy,1)          = surf(ix,last_active_y  - nghost+iy,1) 
+         ! surf(ix,ny_max+1-iy,1) = surf(ix,first_active_y + nghost-iy,1)
+         ! surf(ix,iy,2)          = surf(ix,last_active_y  - nghost+iy,2) 
+         ! surf(ix,ny_max+1-iy,2) = surf(ix,first_active_y + nghost-iy,2)        
+
+         ! radii(ix,iy)          = radii(ix,last_active_y  - nghost+iy) 
+         ! radii(ix,ny_max+1-iy) = radii(ix,first_active_y + nghost-iy)
+
+         phi(ix,iy)          = phi(ix,last_active_y  - nghost+iy) 
+         phi(ix,ny_max+1-iy) = phi(ix,first_active_y + nghost-iy)
+         end do
+   end do
+#endif
+
+#if GRIDSPACE==2
+      print *, 'You are using a lin-log space cylindrical grid.'
+      radii_left=0.0d0
+
+      do ix = 1,nxcut
+         radii_left(ix)=DBLE(ix-1)*rcut/nxcut
+      end do
+
+      zeta_r = (rmax_x/(rcut))**(1.0d0/(nx-nxcut+1)) 
+      do ix = nxcut+1, nx_max+1
+         radii_left(ix)= radii_left(ix-1)*zeta_r
+      end do      
+      do iy = 1, ny_max
+         do ix = 1, nx_max
+            radii(ix,iy) = 0.5d0*(radii_left(ix)+radii_left(ix+1))
+            dx(ix,iy,1)  = half*(radii_left(ix+1)-radii_left(ix))
+            dx(ix,iy,2)  = 2.0d0*pi/DBLE(ny) ! d_Phi
+            phi(ix,iy) = (DBLE(iy - first_active_y)+half)*2.0d0*pi/DBLE(ny)
+            position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
+            position(ix,iy,2) = radii(ix,iy)*sin(phi(ix,iy))
+            surf(ix,iy,1) = radii_left(ix)*(dx(ix,iy,2))  ! r dphi
+            surf(ix,iy,2) = dx(ix,iy,1)! dr
+            vol(ix,iy) = pi/DBLE(ny)*(radii_left(ix+1)**2-radii_left(ix)**2)
+         end do
+
+      end do
+      print*, radii_left
+     ! We make sure of the azimuthal periodicity
+     do ix = 1,nx_max
+      do iy = 1,nghost   
+         position(ix,iy,1)          = position(ix,last_active_y  - nghost+iy,1) 
+         position(ix,ny_max+1-iy,1) = position(ix,first_active_y + nghost-iy,1)
+         position(ix,iy,2)          = position(ix,last_active_y  - nghost+iy,2) 
+         position(ix,ny_max+1-iy,2) = position(ix,first_active_y + nghost-iy,2)
+
+         ! surf(ix,iy,1)          = surf(ix,last_active_y  - nghost+iy,1) 
+         ! surf(ix,ny_max+1-iy,1) = surf(ix,first_active_y + nghost-iy,1)
+         ! surf(ix,iy,2)          = surf(ix,last_active_y  - nghost+iy,2) 
+         ! surf(ix,ny_max+1-iy,2) = surf(ix,first_active_y + nghost-iy,2)        
+
+         ! radii(ix,iy)          = radii(ix,last_active_y  - nghost+iy) 
+         ! radii(ix,ny_max+1-iy) = radii(ix,first_active_y + nghost-iy)
+
+         phi(ix,iy)          = phi(ix,last_active_y  - nghost+iy) 
+         phi(ix,ny_max+1-iy) = phi(ix,first_active_y + nghost-iy)
+         end do
+   end do
 #endif
 
    end subroutine gridinit_disk_log
