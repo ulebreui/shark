@@ -22,7 +22,7 @@ subroutine courant
    end if
 
    dt = 2d44
-   !$omp parallel do default(shared) schedule(static,32) private(idust, ix,iy,vmax, dxx) reduction(min: dt)
+   !$omp parallel do default(shared) schedule(static,1) private(idust, ix,iy,vmax, dxx) reduction(min: dt)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          !Cas 1D
@@ -41,7 +41,7 @@ subroutine courant
    end do
 
 if (force_kick) then
-   !$omp parallel do default(shared) schedule(static,32) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
+   !$omp parallel do default(shared) schedule(static,1) private(idust, ix,iy,vmax, dxx, force_max, vv, fratio) reduction(min: dt)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          !Cas 1D

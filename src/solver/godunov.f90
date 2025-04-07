@@ -300,15 +300,15 @@ subroutine add_delta_u
    !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix, iy)
       do iy = first_active_y, last_active_y
          if(no_flux_x_rho_in) then
-           if(u_prim(irho,first_active,iy)<rho_sink) then 
-             flux_x(irho,first_active,iy)   = 0.0d0
-             flux_x(ivx,first_active,iy)    = 0.0d0
-              flux_x(ivy,first_active,iy)   = 0.0d0
-           else
-              flux_x(irho,first_active,iy)  = min(0.0d0,flux_x(irho,first_active,iy))
-              flux_x(ivx,first_active,iy)   = min(0.0d0,flux_x(ivx,first_active,iy))
-              flux_x(ivy,first_active,iy)   = min(0.0d0,flux_x(ivy,first_active,iy))
-           endif
+           ! if(u_prim(irho,first_active,iy)<rho_sink) then 
+           !   flux_x(irho,first_active,iy)   = 0.0d0
+           !   flux_x(ivx,first_active,iy)    = 0.0d0
+           !   flux_x(ivy,first_active,iy)    = 0.0d0
+           ! else
+           !    flux_x(irho,first_active,iy)  = min(0.0d0,flux_x(irho,first_active,iy))
+           !    flux_x(ivx,first_active,iy)   = min(0.0d0,flux_x(ivx,first_active,iy))
+           !    flux_x(ivy,first_active,iy)   = min(0.0d0,flux_x(ivy,first_active,iy))
+           ! endif
 
            flux_x(irho,last_active+1,iy) = max(0.0d0,flux_x(irho,last_active+1,iy))
            flux_x(ivx,last_active+1,iy)  = max(0.0d0,flux_x(ivx,last_active+1,iy))

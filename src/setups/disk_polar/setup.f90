@@ -19,7 +19,7 @@ subroutine setup
 
   print *, 'tend = ', tend
 
-  call gridinit_disk_log(box_l,smooth_r)
+  call gridinit_disk_log(box_l,smooth_r,smooth_r)
   q      = 0.0d0
   iso_cs = 1
 

@@ -105,13 +105,13 @@ subroutine gridinit(rmax_x, rmax_y)
 #if GEOM==2
 #if NY>1
 #if GRIDSPACE==0
-   subroutine gridinit_disk_log(rmax_x, inner_r)
+   subroutine gridinit_disk_log(rmax_x, inner_r,lsoft)
 #endif
 #if GRIDSPACE==1
-   subroutine gridinit_disk_log(rmax_x, inner_r)
+   subroutine gridinit_disk_log(rmax_x, inner_r,lsoft)
 #endif
 #if GRIDSPACE==2
-   subroutine gridinit_disk_log(rmax_x, inner_r,rcut,nxcut)
+   subroutine gridinit_disk_log(rmax_x, inner_r,rcut,nxcut,lsoft)
 
 #endif
       use parameters
@@ -119,8 +119,8 @@ subroutine gridinit(rmax_x, rmax_y)
       use units
       implicit none
 
-      real(dp):: rmax_x, rmax_y, inner_r,rplus,rminus
-      integer :: i, ix,iy,icell
+      real(dp):: rmax_x, rmax_y, inner_r,rplus,rminus,lsoft,xx,yy
+      integer :: i, ix,iy,icell,ixx,iyy
       real(dp), dimension(1:nx_max+1):: radii_left
 #if GRIDSPACE==1
       !real(dp), dimension(1,nx+1):: radii_edges
@@ -170,7 +170,7 @@ subroutine gridinit(rmax_x, rmax_y)
       do iy = 1, ny_max
          do ix = 1, nx_max
             radii(ix,iy) = 0.5d0*(radii_left(ix)+radii_left(ix+1))
-            dx(ix,iy,1)  = half*(radii_left(ix+1)-radii_left(ix))
+            dx(ix,iy,1)  = (radii_left(ix+1)-radii_left(ix))
             dx(ix,iy,2)  = 2.0d0*pi/DBLE(ny) ! d_Phi
             phi(ix,iy) = (DBLE(iy - first_active_y)+half)*2.0d0*pi/DBLE(ny)
             position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
@@ -219,7 +219,7 @@ subroutine gridinit(rmax_x, rmax_y)
       do iy = 1, ny_max
          do ix = 1, nx_max
             radii(ix,iy) = 0.5d0*(radii_left(ix)+radii_left(ix+1))
-            dx(ix,iy,1)  = half*(radii_left(ix+1)-radii_left(ix))
+            dx(ix,iy,1)  = (radii_left(ix+1)-radii_left(ix))
             dx(ix,iy,2)  = 2.0d0*pi/DBLE(ny) ! d_Phi
             phi(ix,iy) = (DBLE(iy - first_active_y)+half)*2.0d0*pi/DBLE(ny)
             position(ix,iy,1) = radii(ix,iy)*cos(phi(ix,iy))
@@ -251,8 +251,19 @@ subroutine gridinit(rmax_x, rmax_y)
          phi(ix,ny_max+1-iy) = phi(ix,first_active_y + nghost-iy)
          end do
    end do
-#endif
 
+#endif
+   do iy = 1, ny_max
+      do ix = 1, nx_max
+               xx = position(ix,iy,1)
+               yy = position(ix,iy,2)
+               do iyy = 1, ny_max
+                  do ixx = 1, nx_max
+                     distance(ix,iy,ixx,iyy)= sqrt((xx-position(ixx,iyy,1))**2+(yy-position(ixx,iyy,2))**2+radii(ix,iy)**2*lsoft**2)      
+                  end do 
+               end do
+            enddo
+         enddo
    end subroutine gridinit_disk_log
 #endif
 
