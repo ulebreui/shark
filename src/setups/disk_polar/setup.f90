@@ -36,7 +36,7 @@ subroutine setup
       if(test_planet_disk) q(irho,ix,iy) = sigma_R0*(rr/R0_disk)**(-0.5d0)
 
       !if(rr>R_out_disk) q(irho,ix,iy)  = sigma_R0*(R0_disk/rr)*decrease_density
-      q(ivx,ix,iy)                     = 0.0
+      q(ivx,ix,iy)                     = 0.0d0
       !q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*2.0d0)
       q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
       if(test_planet_disk)q(ivy,ix,iy) = omega*rr
@@ -226,7 +226,7 @@ subroutine setup_inloop
 
    !Relaxation in the inner boundary
 
-   do ix= 1,first_active
+   do ix= 1,last_active
         do iy=first_active_y,last_active_y
             if(radii(ix,iy)<r_relax) then
                 t_rel=n_rel*2.0d0*pi/(sqrt(Mstar/(radii(ix,iy))**3))-n_rel*2.0d0*pi/(sqrt(Mstar/smooth_r**3))! Relaxation timescale

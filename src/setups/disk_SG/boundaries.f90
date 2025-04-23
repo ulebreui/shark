@@ -39,8 +39,8 @@ subroutine apply_boundaries
             u_prim(ivar,nx_max+1-ix,iy) = u_prim(ivar,last_active,iy)
          end do 
         ! u_prim(irho,ix,iy)          = sigma_sink
-        ! u_prim(ivx,ix,iy)           = sigma_sink*u_prim(ivx,first_active,iy) /u_prim(irho,first_active,iy) 
-        ! u_prim(ivy,ix,iy)           = sigma_sink*sqrt((Mdisk+Mstar)/radii(ix,iy))
+        !u_prim(ivx,ix,iy)           = 0.0d0
+        !u_prim(ivy,ix,iy)           = u_prim(irho,ix,iy)*sqrt((Mdisk+Mstar)/radii(ix,iy))
         ! ! Prevents any inflow
         ! u_prim(ivx,nx_max+1-ix,iy)  = min(u_prim(ivx,nx_max+1-ix,iy),0.0d0)
         !u_prim(ivx,ix,iy)           = max(u_prim(ivx,ix,iy) ,0.0d0)  

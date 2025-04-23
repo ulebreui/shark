@@ -253,17 +253,17 @@ subroutine gridinit(rmax_x, rmax_y)
    end do
 
 #endif
-   do iy = 1, ny_max
-      do ix = 1, nx_max
-               xx = position(ix,iy,1)
-               yy = position(ix,iy,2)
-               do iyy = 1, ny_max
-                  do ixx = 1, nx_max
-                     distance(ix,iy,ixx,iyy)= sqrt((xx-position(ixx,iyy,1))**2+(yy-position(ixx,iyy,2))**2+radii(ix,iy)**2*lsoft**2)      
-                  end do 
-               end do
-            enddo
-         enddo
+   ! do iy = 1, ny_max
+   !    do ix = 1, nx_max
+   !             xx = position(ix,iy,1)
+   !             yy = position(ix,iy,2)
+   !             do iyy = 1, ny_max
+   !                do ixx = 1, nx_max
+   !                   distance(ix,iy,ixx,iyy)= sqrt((xx-position(ixx,iyy,1))**2+(yy-position(ixx,iyy,2))**2+radii(ix,iy)**2*lsoft**2)      
+   !                end do 
+   !             end do
+   !          enddo
+   !       enddo
    end subroutine gridinit_disk_log
 #endif
 

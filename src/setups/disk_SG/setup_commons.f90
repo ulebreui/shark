@@ -38,7 +38,7 @@ module setup_parameters
   real(dp) :: alpha_cloud = 0.25
   real(dp) :: beta_cloud  = 0.01
 
-  logical :: BB_test = .true.
+  logical :: BB_test = .false.
   real(dp),dimension(:,:,:),allocatable :: uprim_condinit 
 
 end module setup_parameters

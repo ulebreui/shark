@@ -301,9 +301,9 @@ subroutine add_delta_u
       do iy = first_active_y, last_active_y
          if(no_flux_x_rho_in) then
            ! if(u_prim(irho,first_active,iy)<rho_sink) then 
-           !   flux_x(irho,first_active,iy)   = 0.0d0
-           !   flux_x(ivx,first_active,iy)    = 0.0d0
-           !   flux_x(ivy,first_active,iy)    = 0.0d0
+             flux_x(irho,first_active,iy)   = 0.0d0
+             flux_x(ivx,first_active,iy)    = 0.0d0
+             flux_x(ivy,first_active,iy)    = 0.0d0
            ! else
            !    flux_x(irho,first_active,iy)  = min(0.0d0,flux_x(irho,first_active,iy))
            !    flux_x(ivx,first_active,iy)   = min(0.0d0,flux_x(ivx,first_active,iy))

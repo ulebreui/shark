@@ -118,17 +118,15 @@ subroutine setup
       non_standard_eos =1
       do iy = 1,ny_max
         do ix = 1,nx_max
-          xx       = position(ix,iy,1)  ! Boxlen already in pc
-          yy       = position(ix,iy,2)
-          rr       = radii(ix,iy)
-
-    
-      q(irho,ix,iy) = r0*sigma_0/sqrt(rr**2+r0**2)
-      q(ivx,ix,iy)  = 0.d0
-      q(ivy,ix,iy)  = 2.0d0*Omega_0*(r0/rr)**2*(sqrt(1+(rr/r0)**2)-1.0d0)
-      q(ivz,ix,iy)  = 0.d0
-      cs(ix,iy)     = cs0
-      q(iP,ix,iy)   = q(irho,ix,iy)*cs(ix,iy)**2
+            xx       = position(ix,iy,1)  ! Boxlen already in pc
+            yy       = position(ix,iy,2)
+            rr       = radii(ix,iy)
+            q(irho,ix,iy) = r0*sigma_0/sqrt(rr**2+r0**2)
+            q(ivx,ix,iy)  = 0.d0
+            q(ivy,ix,iy)  = 2.0d0*Omega_0*(r0/rr)**2*(sqrt(1+(rr/r0)**2)-1.0d0)
+            q(ivz,ix,iy)  = 0.d0
+            cs(ix,iy)     = cs0
+            q(iP,ix,iy)   = q(irho,ix,iy)*cs(ix,iy)**2
           !print*, rr
       enddo
       enddo
@@ -252,8 +250,8 @@ subroutine read_setup_params(ilun,nmlfile)
         vol_tot=0.0d0
         do iy=first_active_y,last_active_y
             do ix=first_active,last_active
-                Mtot    = Mtot + q(irho,ix,iy)*vol(ix,iy)
-                vol_tot = vol_tot+vol(ix,iy)
+                Mtot    = Mtot    + q(irho,ix,iy)*vol(ix,iy)
+                vol_tot = vol_tot + vol(ix,iy)
             enddo
         enddo
      endif  
