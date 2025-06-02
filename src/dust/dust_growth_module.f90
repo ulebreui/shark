@@ -124,12 +124,12 @@ module smoluchowski
 
 	end subroutine dust_growth_shark
 
-	function dv_ormel(alpha_turb,cs,ts1,ts2,Reynolds,t_L)
+	function dv_ormel(alpha_turb,cs,epsilondust1,epsilondust2,ts1,ts2,Reynolds,t_L,modifield_Ormel)
 	  use precision
 	  implicit none
-	  logical :: SI
-	  real(dp)  :: dv_ormel
-	  real(dp)  :: alpha_turb,cs,ts1,ts2,Reynolds,t_L,x_stokes,f_Stokes,vclass2,vclass3,vclass1,St1,St2,t_eta  
+	  logical :: SI,modifield_Ormel
+	  real(dp)  :: dv_ormel,dust2gas_modified_ormel
+	  real(dp)  :: alpha_turb,cs,ts1,ts2,Reynolds,t_L,x_stokes,f_Stokes,vclass2,vclass3,vclass1,St1,St2,t_eta,epsilondust1,epsilondust2 
 
        x_stokes = min(ts2/ts1,ts1/ts2)
        f_Stokes = 3.2 - 1.0d0 - x_stokes + 2.0d0/(1.+x_stokes)*(1./2.6 + x_stokes**3./(1.6 + x_stokes))
@@ -138,6 +138,13 @@ module smoluchowski
 
        vclass1 = dsqrt(alpha_turb)*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
        vclass2 = dsqrt(alpha_turb)*cs*sqrt(f_Stokes*St1)
+
+  	   if (modifield_Ormel) then !Select the individual dust2gas ratio associated with St1, i.e. the larger grain. This is the one we need in class2 involving equal size collisions
+       		if (ts1/t_l > ts2/t_l) dust2gas_modified_ormel = epsilondust1
+            if (ts1/t_l < ts2/t_l) dust2gas_modified_ormel = epsilondust2
+
+       		vclass2 = dsqrt(alpha_turb)*cs*dsqrt((1+St1)/(1+St1+dust2gas_modified_ormel))*sqrt(f_Stokes*St1) !cs is reduced due to backreaction of the grain
+       	end if
        vclass3 = dsqrt(alpha_turb)*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
 
        dv_ormel = vclass2

@@ -11,6 +11,8 @@ module dust_parameters
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
+  logical             ::  modified_Ormel    = .false.      ! Add the dust back-reaction
+
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
 
   real(dp)            ::  dtcontrol_growth  = -1.0d0

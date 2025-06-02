@@ -9,7 +9,7 @@ subroutine dust_growth(verbose)
    implicit none
    logical :: verbose
 
-   integer :: ix,iy
+   integer :: ix,iy,icell
 
    integer :: idust, jdust, kdust
 
@@ -79,7 +79,7 @@ subroutine dust_growth(verbose)
          dvij = 0.0d0
          do idust = 1, ndust
             do jdust = 1, ndust
-               if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(idust,ix,iy),tstop(jdust,ix,iy),Reynolds,t_L)
+               if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),epsilondust(icell(ix,iy),idust),epsilondust(icell(ix,iy),jdust),tstop(idust,ix,iy),tstop(jdust,ix,iy),Reynolds,t_L,modified_Ormel)
                if (browgrow  == 1)  dvij(idust,jdust)  = dsqrt(dvij(idust,jdust)**2.&
                   &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust)))**2.)
                if (driftgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&

@@ -323,7 +323,7 @@ subroutine read_dust_params(ilun, nmlfile)
    &, CFL_growth, rhodust_threshold, dust_ratio_min, dust_distribution, aO_themis, acut_themis, awidthcut_themis,&
    & themis_slope, sigma_themis, kernel_type, turb_in_growth, drift_in_growth, brownian_in_growth,&
    & slope_mono, ice_mantle, gamma_grains, estar_grains, sticking_efficiency, &
-   & dtcontrol_growth, alpha_turb, SI
+   & dtcontrol_growth, alpha_turb, SI, modified_Ormel
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
    print *, "Dust namelist reading  !"
