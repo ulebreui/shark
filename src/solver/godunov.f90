@@ -372,6 +372,11 @@ subroutine solve_wrapper(qleft, qright, flx, csl, csr, idim)
 #if SOLVERDUST==3
    call solver_hllc_dust(qleft, qright, flx, csl, csr, idim)
 #endif
+
+#if SOLVERDUST==4
+   call solver_dust_llf_gd(qleft, qright, flx, csl, csr,idim)
+#endif
+
 #endif
 
 end subroutine solve_wrapper

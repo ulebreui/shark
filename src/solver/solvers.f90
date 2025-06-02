@@ -297,6 +297,7 @@ contains
 
    end subroutine solver_hllc
 
+
 #if NDUST>0
 #if SOLVERDUST==0
 
@@ -416,6 +417,7 @@ contains
 #endif
 
 #if NDUST>0
+#if SOLVERDUST==3
    subroutine solver_hllc_dust(qleft, qright, flx, csl, csr, idim)
       use parameters
       use commons
@@ -545,7 +547,11 @@ contains
 
       end do
    end subroutine solver_hllc_dust
+#endif
+#endif
 
+
+#if NDUST>0
 #if SOLVERDUST==1
    subroutine solver_dust_llf(qleft, qright, flx, idim)
 
@@ -711,5 +717,91 @@ contains
 
 #endif
 #endif
+
+
+#if NDUST>0
+#if SOLVERDUST==4
+
+   subroutine solver_dust_llf_gd(qleft, qright, flx, csl, csr,idim)
+
+      use parameters
+      use commons
+
+      implicit none
+
+      real(dp), dimension(1:nvar), intent(in) :: qright, qleft
+      real(dp), dimension(1:nvar), intent(inout) :: flx
+      integer  :: idim, idust, i_u, i_v, i_rho, i_w
+
+      real(dp) :: S_lft, S_rgt,lambda_llf_g, lambda_llf_d, csl, csr
+
+      real(dp) :: rho_lft, rho_rgt, u_lft, u_rgt, v_lft, v_rgt, w_lft, w_rgt
+      real(dp) :: mom_u_lft, mom_u_rgt, mom_v_lft, mom_v_rgt, mom_w_lft, mom_w_rgt,ug_lft,ug_rgt
+      real(dp) :: flx_rho_lft, flx_mom_u_lft, flx_mom_v_lft, flx_mom_w_lft, flx_P_lft
+      real(dp) :: flx_rho_rgt, flx_mom_u_rgt, flx_mom_v_rgt, flx_mom_w_rgt, flx_P_rgt
+
+      do idust = 1, ndust
+
+         i_rho = irhod(idust)
+         i_u = index_vdn(idust, idim)
+         i_v = index_vdt(idust, idim)
+         i_w = ivdz(idust)
+         !print *, idust, i_rho,i_n,i_t,i_z
+         !Dust density
+         rho_rgt = qright(i_rho)
+         rho_lft = qleft(i_rho)
+         !Dust momentum
+         u_rgt = qright(i_u)
+         u_lft = qleft(i_u)
+         !Dust transverse momentum
+         v_rgt = qright(i_v)
+         v_lft = qleft(i_v)
+         !Dust second transverse momentum
+         w_rgt = qright(i_w)
+         w_lft = qleft(i_w)
+
+         !Gas normal velocity
+         ug_lft=qright(index_vn(idim))
+         ug_rgt=qright(index_vn(idim))
+
+         mom_u_rgt = rho_rgt*u_rgt
+         mom_u_lft = rho_lft*u_lft
+         mom_v_rgt = rho_rgt*v_rgt
+         mom_v_lft = rho_lft*v_lft
+         mom_w_rgt = rho_rgt*w_rgt
+         mom_w_lft = rho_lft*w_lft
+
+         flx_rho_rgt = rho_rgt*u_rgt
+         flx_rho_lft = rho_lft*u_lft
+
+         flx_mom_u_rgt = rho_rgt*u_rgt**2
+         flx_mom_u_lft = rho_lft*u_lft**2
+
+         flx_mom_v_rgt = rho_rgt*u_rgt*v_rgt
+         flx_mom_v_lft = rho_lft*u_lft*v_lft
+
+         flx_mom_w_rgt = rho_rgt*u_rgt*w_rgt
+         flx_mom_w_lft = rho_lft*u_lft*w_lft
+
+         lambda_llf_d = max(abs(u_lft), abs(u_rgt))
+         lambda_llf_g = max(abs(ug_lft) + csl, abs(ug_rgt) + csr)
+
+         if(lambda_llf_g>lambda_llf_d) lambda_llf_d =lambda_llf_g
+         flx(i_rho) = 0.d0
+         flx(i_u) = 0.d0
+         flx(i_v) = 0.d0
+         flx(i_w) = 0.d0
+
+         flx(i_rho) = half*(flx_rho_lft + flx_rho_rgt) - half*lambda_llf_d*(rho_rgt - rho_lft)
+         flx(i_u) = half*(flx_mom_u_lft + flx_mom_u_rgt) - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
+         flx(i_v) = half*(flx_mom_v_lft + flx_mom_v_rgt) - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
+         flx(i_w) = half*(flx_mom_w_lft + flx_mom_w_rgt) - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
+
+      end do
+   end subroutine solver_dust_llf_gd
+
+#endif
+#endif
+
 
 end module hydro_solvers

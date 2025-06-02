@@ -26,6 +26,10 @@ subroutine dust_growth(verbose)
    real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
    real(dp), dimension(1:ndust)           :: t_sdust
    real(dp), dimension(1:ndust)           :: dust_dens
+   real(dp), dimension(1:ndust)           :: v_dust_x_tampon
+   real(dp), dimension(1:ndust)           :: v_dust_y_tampon
+   real(dp), dimension(1:ndust)           :: v_dust_z_tampon
+
    real(dp):: dt_growth, time_growth
 
    ! Flags
@@ -60,7 +64,7 @@ subroutine dust_growth(verbose)
       redistribute_fragments(:, idust) = redistribute_fragments(:, idust)/sum(redistribute_fragments(:, idust))
    end do
 
-
+!$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust, jdust, T, t_L, t_eta, Reynolds,dvij,dust_dens)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          T        = (cs(ix,iy)*unit_v)**2*sqrt(mu_gas*mH/gamma/kB)
@@ -75,7 +79,7 @@ subroutine dust_growth(verbose)
          dvij = 0.0d0
          do idust = 1, ndust
             do jdust = 1, ndust
-               if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(idust,ix,iy),tstop(jdust,ix,iy),Reynolds,t_L,SI)
+               if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(idust,ix,iy),tstop(jdust,ix,iy),Reynolds,t_L)
                if (browgrow  == 1)  dvij(idust,jdust)  = dsqrt(dvij(idust,jdust)**2.&
                   &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust)))**2.)
                if (driftgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
@@ -86,6 +90,12 @@ subroutine dust_growth(verbose)
          end do
          do idust = 1, ndust
               dust_dens(idust) = u_prim(irhod(idust),ix,iy)
+              ! if (SI) then 
+              !  v_dust_x_tampon(idust) = u_prim(ivdx(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+              !  v_dust_y_tampon(idust) = u_prim(ivdy(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+              !  v_dust_z_tampon(idust) = u_prim(ivdz(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+              ! endif
+
          end do
 
          call dust_growth_shark(dt,pi,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
@@ -94,6 +104,12 @@ subroutine dust_growth(verbose)
 
          do idust = 1, ndust
             u_prim(irhod(idust),ix,iy) = dust_dens(idust)
+            ! if (SI) then
+            !    u_prim(ivdx(idust),ix,iy)=u_prim(irhod(idust),ix,iy)*v_dust_x_tampon(idust)
+            !    u_prim(ivdy(idust),ix,iy)=u_prim(irhod(idust),ix,iy)*v_dust_y_tampon(idust)
+            !    u_prim(ivdz(idust),ix,iy)=u_prim(irhod(idust),ix,iy)*v_dust_z_tampon(idust)
+
+            ! endif
          end do         
       end do
    end do

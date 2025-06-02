@@ -13,6 +13,8 @@ subroutine output(iout)
   path='output_'
   format_out=trim("unformatted")
   ilun=20
+  if(iout==nrestart) return
+
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)
@@ -573,7 +575,6 @@ subroutine write_backup(iout)
   format_out=trim("unformatted")
   ilun=20
   call title(iout,nchar)
-
   open(ilun,file=trim(path) // trim(nchar)//trim('/uprim'), form=format_out,access='stream')
   do ivar=1,nvar
       do iy = 1,ny_max

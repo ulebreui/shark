@@ -36,6 +36,11 @@ subroutine setup
   scut    = Stokes_cut*rho_init*cs0/rhograin/omega_shear
   scutmin = Stokes_min*rho_init*cs0/rhograin/omega_shear
 
+  !if logn distrib
+  aO_themis = aO_themis*rho_init*cs0/rhograin/omega_shear
+  sigma_themis = sigma_themis*rho_init*cs0/rhograin/omega_shear
+
+
 
   vfrag = vfrag * cs0 ! Quantify vfrag in terms of cs
   call distribution_dust
@@ -198,6 +203,13 @@ subroutine read_setup_params(ilun,nmlfile)
    !Here you can add flags to kill the simulation
    if(time>=tend) continue_sim=.false.
 
+
+ if (static) then
+
+    dt = tend/1000
+
+  endif
+  
  end subroutine flag_continue
 
  subroutine check_output(icount,iout,outputing,verbose)
@@ -247,7 +259,8 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
-  
+
+ 
 end subroutine setup_preloop
 
 subroutine setup_inloop
@@ -260,6 +273,11 @@ subroutine setup_inloop
    real(dp) :: Ohmdt
    real(dp) ::  u, v, AA, BB,d
    
+
+
+
+
+
    if(force_kick) return
 
    Ohmdt = Omega_shear*dt
