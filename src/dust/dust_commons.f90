@@ -7,11 +7,12 @@ module dust_parameters
   logical             ::  growth                = .false.     ! Dust growth is activated
   logical             ::  growth_step           = .false.     ! Dust growth is activated with Stepinski solver
   logical             ::  fragmentation         = .false.     ! Fragmentation is activated
+  logical             ::  bouncing              = .false.     ! Bouncing is activated
   logical             ::  drift_in_growth       = .false.     ! Drift velocity included in growth
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
-  logical             ::  modified_Ormel    = .false.      ! Add the dust back-reaction
+  logical             ::  modified_Ormel    = .false.      
 
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
 
@@ -55,6 +56,11 @@ module dust_parameters
   real(dp)::  estar_grains = 2.8d11 ! dyn cm-2  
 
   real(dp)::  vfrag = 100 ! cm/s
+
+  !Bouncing
+  real(dp)::  v_bouncing = 100 ! cm/s
+
+
   !Monomer properties
   real(dp):: size_mono   = 1d-5    ! 0.1 micron
   real(dp):: slope_mono  = 3.5d0   ! Index of power law monomer size distribution

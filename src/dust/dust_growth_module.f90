@@ -3,7 +3,7 @@ module smoluchowski
 
 	subroutine dust_growth_shark(dt,K_0,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
 	   &eta,dvij,rho_gas,sticking_efficiency,eps_threshold,rhodust_min,&
-	   &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,SI,vfrag)
+	   &frag_test,bouncing_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,SI,vfrag,v_bouncing)
 
 	   use precision
 
@@ -21,8 +21,8 @@ module smoluchowski
 	   real(dp) :: f_frag,p_coag,sticking_efficiency,eps_threshold_frag,eps_threshold
 
 	   integer  :: niter_growth
-	   integer  :: frag_test
-	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2,vfrag
+	   integer  :: frag_test,bouncing_test
+	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2,vfrag,v_bouncing
 	   real(dp) :: epsilon_mass,rhodust_min
 
 	   real(dp) , dimension(1:ndust) :: drhodt
@@ -55,7 +55,8 @@ module smoluchowski
 	            f_frag = 0.0d0
 	            p_coag = 1.0d0
 
-	            If (frag_test == 1) then
+	            !Fragmentation condition
+	            if (frag_test == 1) then
 
 	               Ecol = 0.5d0*(m1*m2)/(m1 + m2)*dvij(idust, jdust)**2
 	               Ebr = (m1 + m2)/m_mono*Ebr_mono
@@ -67,6 +68,17 @@ module smoluchowski
                    endif
 
 	            end if
+
+	            !Bouncing condition
+	            if (bouncing_test == 1) then
+	            	!print*, 'dv=', dvij(idust,jdust)
+	            	if (dvij(idust,jdust) > v_bouncing) then
+	            		p_coag = 0.0d0
+	            		!print*, 'Ca BOUNCE'
+	            	endif
+
+	            endif
+
 
 	            dndt = K_0*(s1+s2)**2.*dvij(idust, jdust)*dust_dens(idust)*dust_dens(jdust)/m1/m2 ! K n1 n2
 	            if (idust == jdust) dndt = dndt/2.0d0
@@ -84,6 +96,7 @@ module smoluchowski
 
 	            epsilon_mass = 1.0d0
 	            if (ic1 < ic2) epsilon_mass = min((mdust(ic2) - (1.0d0 - f_frag)*(m1 + m2))/(mdust(ic2) - mdust(ic1)), 1.0d0)
+
 
 	            ! Coagulation/sticking
 	            if (p_coag .ge. 0.0d0) then
@@ -124,11 +137,11 @@ module smoluchowski
 
 	end subroutine dust_growth_shark
 
-	function dv_ormel(alpha_turb,cs,epsilondust1,epsilondust2,ts1,ts2,Reynolds,t_L,modifield_Ormel)
+	function dv_ormel(alpha_turb,cs,epsilondust1,epsilondust2,ts1,ts2,Reynolds,t_L,SI,modified_Ormel,cs_modified)
 	  use precision
 	  implicit none
-	  logical :: SI,modifield_Ormel
-	  real(dp)  :: dv_ormel,dust2gas_modified_ormel
+	  logical :: SI,modified_Ormel
+	  real(dp)  :: dv_ormel,cs_modified
 	  real(dp)  :: alpha_turb,cs,ts1,ts2,Reynolds,t_L,x_stokes,f_Stokes,vclass2,vclass3,vclass1,St1,St2,t_eta,epsilondust1,epsilondust2 
 
        x_stokes = min(ts2/ts1,ts1/ts2)
@@ -138,18 +151,35 @@ module smoluchowski
 
        vclass1 = dsqrt(alpha_turb)*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
        vclass2 = dsqrt(alpha_turb)*cs*sqrt(f_Stokes*St1)
-
-  	   if (modifield_Ormel) then !Select the individual dust2gas ratio associated with St1, i.e. the larger grain. This is the one we need in class2 involving equal size collisions
-       		if (ts1/t_l > ts2/t_l) dust2gas_modified_ormel = epsilondust1
-            if (ts1/t_l < ts2/t_l) dust2gas_modified_ormel = epsilondust2
-
-       		vclass2 = dsqrt(alpha_turb)*cs*dsqrt((1+St1)/(1+St1+dust2gas_modified_ormel))*sqrt(f_Stokes*St1) !cs is reduced due to backreaction of the grain
-       	end if
        vclass3 = dsqrt(alpha_turb)*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
 
        dv_ormel = vclass2
-       if (ts1 < t_eta) dv_ormel  = vclass1
-       if (ts1 > t_L)   dv_ormel  = vclass3
+       if (ts1 < t_eta) then
+       		dv_ormel  = vclass1
+       		!print*,'Regime I'
+       	endif
+
+       if (ts1 > t_L) then
+       		dv_ormel  = vclass3
+       		!print*,'Regime III'
+       	endif
+
+
+	    if (SI) then
+	      	if (modified_Ormel) then 
+
+		   		vclass2 = dsqrt(alpha_turb)*cs_modified*sqrt(f_Stokes*St1) !cs is reduced due to backreaction of the grain
+
+	     	endif
+	     	! print*, 'alpha_turb=', alpha_turb
+	     	! print*, 'cs=', cs
+	     	! print*, 'f_Stokes=', f_Stokes
+	     	! print*, 'St1=', St1
+
+	     	dv_ormel = vclass2
+
+	   	end if
+
 
   
 

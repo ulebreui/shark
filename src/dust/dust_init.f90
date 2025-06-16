@@ -318,8 +318,8 @@ subroutine read_dust_params(ilun, nmlfile)
    character(len=70):: nmlfile
    integer :: io, ilun
    logical::nml_ok
-   namelist /dust_params/ frag_thre, vfrag, drag, dust_back_reaction, smin, smax, scut, scutmin, mrn, rhograin&
-   &, dust2gas, growth, fragmentation, eps_threshold, eps_threshold_frag, growth_step &
+   namelist /dust_params/ frag_thre, vfrag, v_bouncing, drag, dust_back_reaction, smin, smax, scut, scutmin, mrn, rhograin&
+   &, dust2gas, growth, fragmentation, bouncing, eps_threshold, eps_threshold_frag, growth_step &
    &, CFL_growth, rhodust_threshold, dust_ratio_min, dust_distribution, aO_themis, acut_themis, awidthcut_themis,&
    & themis_slope, sigma_themis, kernel_type, turb_in_growth, drift_in_growth, brownian_in_growth,&
    & slope_mono, ice_mantle, gamma_grains, estar_grains, sticking_efficiency, &

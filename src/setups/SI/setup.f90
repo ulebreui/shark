@@ -43,6 +43,8 @@ subroutine setup
 
 
   vfrag = vfrag * cs0 ! Quantify vfrag in terms of cs
+  v_bouncing = v_bouncing * cs0 ! Quantify vfrag in terms of cs
+
   call distribution_dust
 
   if(stokes_distrib) then
