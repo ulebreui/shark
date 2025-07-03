@@ -171,6 +171,9 @@ subroutine allocate_init
     allocate(eta_eff_ohm(1:ncells))
     allocate(eta_eff_Hall_y(1:ncells))
     allocate(eta_eff_Hall_z(1:ncells))
+    allocate(Jy(1:ncells))
+    allocate(Jz(1:ncells))
+
 
 
 
@@ -207,6 +210,8 @@ subroutine allocate_init
     eta_eff_ohm = 0.0d0
     eta_eff_Hall_y = 0.0d0
     eta_eff_Hall_z = 0.0d0
+    Jy = 0.0d0
+    Jz = 0.0d0
 
 
 

@@ -811,15 +811,17 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
 
     use parameters
     use commons
+    use slope_limiter
+
 
     implicit none
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,il,ir,ix,iy,icell,ixx,iyy
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d
-    real(dp) :: ca_lft,ca_rgt
+    real(dp) :: ca_lft,ca_rgt,cw_rgt,cw_lft
 
 
 
@@ -832,8 +834,7 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt 
 
 
-    real(dp) ::flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt
-
+    real(dp) ::flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right
     Bx_lft   = qleft(iBx)
     Bx_rgt   = qright(iBx)
     By_lft   = qleft(iBy)
@@ -850,6 +851,51 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
     mag_tension_y_rgt = -By_rgt*Bx_rgt
     mag_tension_z_lft = -Bz_lft*Bx_lft
     mag_tension_z_rgt = -Bz_rgt*Bx_rgt
+
+     if (dusty_nonideal_MHD_no_electron) then !Need to compute left and right Whistler wave 
+
+            idust = i_coupled_species
+        
+            i_rho= irhod(idust)
+
+            i_u  = index_vdn(idust,idim)
+            i_v  = index_vdt(idust,idim)
+            i_w  = ivdz(idust)
+            !print *, idust, i_rho,i_n,i_t,i_z
+
+            !Dust momentum
+            u_rgt     = qright(i_u)
+            u_lft     = qleft(i_u)
+              !Dust transverse momentum
+            v_rgt     = qright(i_v)
+            v_lft     = qleft(i_v)
+              !Dust second transverse momentum
+            w_rgt     = qright(i_w)
+            w_lft     = qleft(i_w)
+
+            rho_rgt   = qright(i_rho)
+            rho_lft   = qleft(i_rho)
+
+
+            ix=ixx(i)
+            iy=iyy(i)
+
+            if(slope_type>0) then
+                il = icell(ix-1,iy)
+                ir = icell(ix+1,iy)
+
+
+                deta_Hall = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i)) - abs(eta_eff_Hall_y(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(eta_eff_Hall_y(ir)) - abs(eta_eff_Hall_y(i)))/(dx(ir,1)+dx(i,1)))
+                deta_Hall_l = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i-1)) - abs(eta_eff_Hall_y(il-1)))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(abs(eta_eff_Hall_y(ir-1)) - abs(eta_eff_Hall_y(i-1)))/(dx(ir-1,1)+dx(i-1,1)))
+
+                eta_Hall_y_left = abs(eta_eff_Hall_y(il)) + half*deta_Hall_l*dx(il,1)
+                eta_Hall_y_right = abs(eta_eff_Hall_y(i))- half*deta_Hall*dx(i,1)
+
+
+
+
+            endif
+    end if
 #endif
 
 
@@ -912,7 +958,12 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
         flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*mag_tension_z_lft
 
 
+
+
+
 #endif
+
+
 
 
 
@@ -951,6 +1002,9 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
 
     S_rgt  = max(max(u_lft,u_rgt) +max(ca_lft,ca_rgt),0.0d0) 
     S_lft  = min(min(u_lft,u_rgt) -max(ca_lft,ca_rgt),0.0d0)
+
+
+
 
     flx(i_rho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
     flx(i_u)  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
@@ -1393,9 +1447,9 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,lambda_llf_B
     real(dp) :: u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt,rho_rgt,rho_lft
     real(dp) :: S_lft,S_rgt
-    real(dp) :: ca_lft,ca_rgt,magnetosonic_fast_lft,magnetosonic_fast_rgt,csl,csr
+    real(dp) :: ca_lft,ca_rgt,magnetosonic_fast_lft,magnetosonic_fast_rgt,csl,csr,cw_lft,cw_rgt,dJy,dJz,dJy_l,dJz_l,Jy_left,Jy_right,Jz_left,Jz_right
 
-    real(dp) :: deta_o,deta_h,deta_a,deta_o_il,deta_h_il,deta_a_il,eta_o_left,eta_h_left,eta_a_left,eta_o_right,eta_h_right,eta_a_right,dzd,dzd_il,zd_left,zd_right
+    real(dp) :: deta_o,deta_h,deta_a,deta_o_il,deta_h_il,deta_a_il,eta_o_left,eta_h_left,eta_a_left,eta_o_right,eta_h_right,eta_a_right,dzd,dzd_il,zd_left,zd_right,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right,eta_Hall_z_left,eta_Hall_z_right
 
     real(dp) :: nd_zd_over_ni,nd_zd_over_ni_left,nd_zd_over_ni_right,dne,dne_il,ne_left,ne_right,dni,dni_il,ni_left,ni_right,dhall_i,dhall_il,hall_i_left,hall_i_right
     real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,total_dust_current_z_lft,total_dust_current_y_lft,total_dust_current_x_lft,total_dust_current_z_rgt,total_dust_current_y_rgt,total_dust_current_x_rgt,B_norm_lft,B_norm_rgt
@@ -1527,6 +1581,29 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
                 hall_i_left = Hall_i(il) + half*dhall_il*dx(il,1)
                 hall_i_right = Hall_i(i) - half*dhall_i*dx(i,1)
 
+                deta_Hall = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i)) - abs(eta_eff_Hall_y(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(eta_eff_Hall_y(ir)) - abs(eta_eff_Hall_y(i)))/(dx(ir,1)+dx(i,1)))
+                deta_Hall_l = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i-1)) - abs(eta_eff_Hall_y(il-1)))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(abs(eta_eff_Hall_y(ir-1)) - abs(eta_eff_Hall_y(i-1)))/(dx(ir-1,1)+dx(i-1,1)))
+
+                eta_Hall_y_left = abs(eta_eff_Hall_y(il)) + half*deta_Hall_l*dx(il,1)
+                eta_Hall_y_right = abs(eta_eff_Hall_y(i))- half*deta_Hall*dx(i,1)
+
+                eta_Hall_z_left = - eta_Hall_y_left
+                eta_Hall_z_right = - eta_Hall_y_right
+
+                dJy = slope_limit(2.0d0*(Jy(i) - Jy(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jy(ir) - Jy(i))/(dx(ir,1)+dx(i,1))) !Total current
+                dJy_l = slope_limit(2.0d0*(Jy(i-1) - Jy(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jy(ir-1) - Jy(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
+
+                dJz = slope_limit(2.0d0*(Jz(i) - Jz(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jz(ir) - Jz(i))/(dx(ir,1)+dx(i,1))) !Total current
+                dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
+
+                Jy_left = Jy(il) + half*dJy_l*dx(il,1)
+                Jy_right = Jy(i) - half*dJy_l*dx(il,1)
+
+                Jz_left = Jz(il) + half*dJz_l*dx(il,1)
+                Jz_right = Jz(i) - half*dJz_l*dx(il,1)
+
+
+
 
             endif
 
@@ -1558,19 +1635,15 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
         flx_Bz_lft = flx_Bz_lft + B_norm_lft/hall_i_left*(v_lft - qleft(index_vt(idim)))
         flx_Bz_rgt = flx_Bz_rgt + B_norm_rgt/hall_i_right*(v_rgt - qright(index_vt(idim)))
 
-        if (only_Hall_effect) then
+        if (Hall_effect) then
+            !Hall term
+            flx_By_lft = flx_By_lft + eta_Hall_y_left*Jy_left
+            flx_By_rgt = flx_By_rgt + eta_Hall_y_right*Jy_right
 
-            flx_By_lft = -Bx_lft*v_lft + By_lft*u_lft
-            flx_By_rgt = -Bx_rgt*v_rgt + By_rgt*u_rgt
-
-            flx_Bz_lft = -Bx_lft*w_lft + Bz_lft*u_lft
-            flx_Bz_rgt = -Bx_rgt*w_rgt + Bz_rgt*u_rgt
-
+            flx_Bz_lft = flx_Bz_lft - eta_Hall_z_left*Jz_left
+            flx_Bz_rgt = flx_Bz_rgt - eta_Hall_z_right*Jz_right
 
         endif
-     
-
-
     endif
 
 
@@ -1627,10 +1700,205 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     S_rgt  = max(max(u_lft,u_rgt) +max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0) 
     S_lft  = min(min(u_lft,u_rgt) -max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0)
 #endif
+
+    if (Hall_effect) then
+    !Hall effect introduces new waves
+
+        cw_lft = eta_Hall_y_left*pi/(2*dx(i,1)) + dsqrt((eta_Hall_y_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave
+        cw_rgt = eta_Hall_y_right*pi/(2*dx(i+1,1)) + dsqrt((eta_Hall_y_right*pi/(2*dx(i+1,1)))**2 + ca_rgt**2) !Whistler wave 
+
+        S_rgt  = max(max(u_lft,u_rgt) +max(cw_lft,cw_rgt),0.0d0) 
+        S_lft  = min(min(u_lft,u_rgt) -max(cw_lft,cw_rgt),0.0d0)
+
+    endif
+
+
     flx(iBy)            = (S_rgt*flx_By_lft  -S_lft*flx_By_rgt  + S_rgt*S_lft*(By_rgt-By_lft))      / (S_rgt-S_lft)
     flx(iBz)            = (S_rgt*flx_Bz_lft  -S_lft*flx_Bz_rgt  + S_rgt*S_lft*(Bz_rgt-Bz_lft))      / (S_rgt-S_lft)
 
 end subroutine solver_induction_hll
 #endif
 #endif
+
+
+#if MHD==1
+#if NDUST==1
+#if SOLVERB==2
+
+subroutine solver_Hall_hll(qleft,qright,flx,csl,csr,idim,i)
+    use parameters
+    use commons
+    use slope_limiter
+
+    implicit none
+
+    real(dp),dimension(1:nvar),intent(in) :: qright,qleft
+    real(dp),dimension(1:nvar),intent(inout) :: flx
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,il,ir,ix,iy,icell,ixx,iyy
+
+    real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,lambda_llf_B
+    real(dp) :: u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt,rho_rgt,rho_lft
+    real(dp) :: S_lft,S_rgt
+    real(dp) :: ca_lft,ca_rgt,magnetosonic_fast_lft,magnetosonic_fast_rgt,csl,csr,cw_lft,cw_rgt,dJy,dJz,dJy_l,dJz_l,Jy_left,Jy_right,Jz_left,Jz_right
+
+    real(dp) :: deta_o,deta_h,deta_a,deta_o_il,deta_h_il,deta_a_il,eta_o_left,eta_h_left,eta_a_left,eta_o_right,eta_h_right,eta_a_right,dzd,dzd_il,zd_left,zd_right,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right,eta_Hall_z_left,eta_Hall_z_right
+
+    real(dp) :: nd_zd_over_ni,nd_zd_over_ni_left,nd_zd_over_ni_right,dne,dne_il,ne_left,ne_right,dni,dni_il,ni_left,ni_right,dhall_i,dhall_il,hall_i_left,hall_i_right
+    real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,total_dust_current_z_lft,total_dust_current_y_lft,total_dust_current_x_lft,total_dust_current_z_rgt,total_dust_current_y_rgt,total_dust_current_x_rgt,B_norm_lft,B_norm_rgt
+
+
+    Bx_lft   = qleft(iBx)
+    Bx_rgt   = qright(iBx)
+    By_lft   = qleft(iBy)
+    By_rgt   = qright(iBy)
+    Bz_lft   = qleft(iBz)
+    Bz_rgt   = qright(iBz)
+
+
+
+
+
+    flx_Bx_lft = 0.0d0
+    flx_Bx_rgt = 0.0d0
+   
+    flx_By_lft = 0.0d0
+    flx_By_rgt = 0.0d0
+
+    flx_Bz_lft = 0.0d0
+    flx_Bz_rgt = 0.0d0   
+
+
+
+
+
+
+
+      if (dusty_nonideal_MHD_no_electron) then !Additional terms in the fluxes for the induction equation
+
+            idust = i_coupled_species
+        
+            i_rho= irhod(idust)
+
+            i_u  = index_vdn(idust,idim)
+            i_v  = index_vdt(idust,idim)
+            i_w  = ivdz(idust)
+            !print *, idust, i_rho,i_n,i_t,i_z
+
+            !Dust momentum
+            u_rgt     = qright(i_u)
+            u_lft     = qleft(i_u)
+              !Dust transverse momentum
+            v_rgt     = qright(i_v)
+            v_lft     = qleft(i_v)
+              !Dust second transverse momentum
+            w_rgt     = qright(i_w)
+            w_lft     = qleft(i_w)
+
+            rho_rgt   = qright(i_rho)
+            rho_lft   = qleft(i_rho)
+
+
+            ix=ixx(i)
+            iy=iyy(i)
+
+            if(slope_type>0) then
+                il = icell(ix-1,iy)
+                ir = icell(ix+1,iy)
+    
+                deta_Hall = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i)) - abs(eta_eff_Hall_y(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(eta_eff_Hall_y(ir)) - abs(eta_eff_Hall_y(i)))/(dx(ir,1)+dx(i,1)))
+                deta_Hall_l = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i-1)) - abs(eta_eff_Hall_y(il-1)))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(abs(eta_eff_Hall_y(ir-1)) - abs(eta_eff_Hall_y(i-1)))/(dx(ir-1,1)+dx(i-1,1)))
+
+                eta_Hall_y_left = abs(eta_eff_Hall_y(il)) + half*deta_Hall_l*dx(il,1)
+                eta_Hall_y_right = abs(eta_eff_Hall_y(i))- half*deta_Hall*dx(i,1)
+
+                eta_Hall_z_left = - eta_Hall_y_left
+                eta_Hall_z_right = - eta_Hall_y_right
+
+                dJy = slope_limit(2.0d0*(Jy(i) - Jy(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jy(ir) - Jy(i))/(dx(ir,1)+dx(i,1))) !Total current
+                dJy_l = slope_limit(2.0d0*(Jy(i-1) - Jy(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jy(ir-1) - Jy(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
+
+                dJz = slope_limit(2.0d0*(Jz(i) - Jz(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jz(ir) - Jz(i))/(dx(ir,1)+dx(i,1))) !Total current
+                dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
+
+                Jy_left = Jy(il) + half*dJy_l*dx(il,1)
+                Jy_right = Jy(i) - half*dJy_l*dx(il,1)
+
+                Jz_left = Jz(il) + half*dJz_l*dx(il,1)
+                Jz_right = Jz(i) - half*dJz_l*dx(il,1)
+
+
+
+
+            endif
+
+
+
+        !Beware: here signs are reversed with respect to predictor step (fluxes are defined in the left-hand side of the equation) 
+
+        !Hall term
+        flx_By_lft = flx_By_lft + eta_Hall_y_left*Jy_left
+        flx_By_rgt = flx_By_rgt + eta_Hall_y_right*Jy_right
+
+        flx_Bz_lft = flx_Bz_lft - eta_Hall_z_left*Jz_left
+        flx_Bz_rgt = flx_Bz_rgt - eta_Hall_z_right*Jz_right
+
+    endif
+
+
+
+
+
+!HLL
+
+
+    idust=i_coupled_species !Is the grain species considered in the magnetosonic/Alfven velocity expressions
+
+    i_rho= irhod(idust)
+
+    i_u  = index_vdn(idust,idim)
+    i_v  = index_vdt(idust,idim)
+    i_w  = ivdz(idust)
+    !print *, idust, i_rho,i_n,i_t,i_z
+
+    !Dust momentum
+    u_rgt     = qright(i_u)
+    u_lft     = qleft(i_u)
+      !Dust transverse momentum
+    v_rgt     = qright(i_v)
+    v_lft     = qleft(i_v)
+      !Dust second transverse momentum
+    w_rgt     = qright(i_w)
+    w_lft     = qleft(i_w)
+
+    rho_rgt   = qright(i_rho)
+    rho_lft   = qleft(i_rho)
+
+
+
+
+    ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
+    ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
+
+
+
+    !Hall effect introduces new waves
+
+    cw_lft = eta_Hall_y_left*pi/(2*dx(i,1)) + dsqrt((eta_Hall_y_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave
+    cw_rgt = eta_Hall_y_right*pi/(2*dx(i+1,1)) + dsqrt((eta_Hall_y_right*pi/(2*dx(i+1,1)))**2 + ca_rgt**2) !Whistler wave 
+
+    S_rgt  = max(max(u_lft,u_rgt) +max(cw_lft,cw_rgt),0.0d0) 
+    S_lft  = min(min(u_lft,u_rgt) -max(cw_lft,cw_rgt),0.0d0)
+
+
+
+    flx(iBy)            = flx(iBy) + (S_rgt*flx_By_lft  -S_lft*flx_By_rgt  + S_rgt*S_lft*(By_rgt-By_lft))      / (S_rgt-S_lft)
+    flx(iBz)            = flx(iBz) + (S_rgt*flx_Bz_lft  -S_lft*flx_Bz_rgt  + S_rgt*S_lft*(Bz_rgt-Bz_lft))      / (S_rgt-S_lft)
+
+end subroutine solver_Hall_hll
+#endif
+#endif
+#endif
+
+
+
 end module hydro_solvers

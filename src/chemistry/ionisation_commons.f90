@@ -21,7 +21,7 @@
   logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
   logical             ::  friction_effects_only         = .false.   ! !Remove Hall effect in induction equation (but the corresponding term in E remains)
   logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
-  
+  logical             ::  Hall_effect         = .true.   !Activate or deactivate Hall effect
 
 
 
@@ -39,6 +39,11 @@
   real(dp), dimension(:), allocatable      :: eta_eff_ohm
   real(dp), dimension(:), allocatable      :: eta_eff_Hall_y
   real(dp), dimension(:), allocatable      :: eta_eff_Hall_z
+
+  real(dp), dimension(:), allocatable      :: Jz
+  real(dp), dimension(:), allocatable      :: Jy
+
+
 
 
 
@@ -85,7 +90,7 @@
   real(dp):: epsilon_ionis  = 1d-6   ! Tolerance of the ionisation scheme
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations
   real(dp):: x              = 5d-17  ! CR Ionisation rate
-  real(dp):: ni_coeff              = 1.0  ! CR Ionisation rate
+  real(dp):: ni_coeff              = 1.0  ! ion abundance
 
 
   real(dp) :: f_dust_charge = 0.0d0 !Derivative of function to solve in analytical charge scheme

@@ -48,7 +48,10 @@ subroutine solve(verbose,outputing)
     if(dusty_nonideal_MHD_no_electron) then
     
         call Hall_factor
-        if (hyper_diffusion) call effective_diffusion_coef_induction 
+        if (hyper_diffusion) then
+            call effective_diffusion_coef_induction 
+            call total_current
+        endif
         if (call_electric_field) call electric_field
         if (apply_Lorentz_force) call Lorentz_force
 

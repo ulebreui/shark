@@ -22,7 +22,7 @@ subroutine predictor
   real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd
   real(dp) :: total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd
   real(dp) :: vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a
-  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni
+  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz
   integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
@@ -149,11 +149,16 @@ subroutine predictor
       dB_norm = (2*Bx*dBx_x+2*By*dBy_x+2*Bz*dBz_x)/(2*SQRT(Bx**2+By**2+Bz**2))
 
        if (dusty_nonideal_MHD_no_electron) then
-          dHall_i = slope_limit(2.0d0*(Hall_i(i) - Hall_i(il))/(dx(i,1)+dx(il,1)),2.0d0*(Hall_i(ir) - Hall_i(i))/(dx(ir,1)+dx(i,1)))
-          ! dni = slope_limit(2.0d0*(ni(i) - ni(il))/(dx(i,1)+dx(il,1)),2.0d0*(ni(ir) - ni(i))/(dx(ir,1)+dx(i,1)))
-          ! dzd = slope_limit(2.0d0*(zd(i,idust) - zd(il,idust))/(dx(i,1)+dx(il,1)),2.0d0*(zd(ir,idust) - zd(i,idust))/(dx(ir,1)+dx(i,1)))
+          dHall_i = slope_limit(2.0d0*(Hall_i(i) - Hall_i(il))/(dx(i,1)+dx(il,1)),2.0d0*(Hall_i(ir) - Hall_i(i))/(dx(ir,1)+dx(i,1))) !ion Hall factor
+
           dB_over_hall = (dB_norm*Hall_i(i)-B_norm*dHall_i)/Hall_i(i)**2 !Initialize Hall_i =/ 0 to avoid Nan at first timestep
-          ! dndzd_over_ni = ((dq(i,irhod(idust),1)/mdust(i,idust)*zd(i,idust)+q(i,irhod(idust))/mdust(i,idust)*dzd)*(ni(i)-ne(i)) - (q(i,irhod(idust))/mdust(i,idust)*zd(i,idust))*(dni-dne))/(ni(i)+ne(i))**2
+
+        
+          deta_Hall_y = slope_limit(2.0d0*(abs(eta_eff_Hall_y(i)) - abs(eta_eff_Hall_y(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(eta_eff_Hall_y(ir)) - abs(eta_eff_Hall_y(i)))/(dx(ir,1)+dx(i,1))) !Hall resistivity
+          deta_Hall_z = - deta_Hall_y
+                
+          dJy = slope_limit(2.0d0*(abs(Jy(i)) - abs(Jy(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(Jy(ir)) - abs(Jy(i)))/(dx(ir,1)+dx(i,1))) !Total current
+          dJz = slope_limit(2.0d0*(abs(Jz(i)) - abs(Jz(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(Jz(ir)) - abs(Jz(i)))/(dx(ir,1)+dx(i,1)))
 
 
       endif
@@ -412,6 +417,14 @@ subroutine predictor
         sBz = sBz - dB_over_hall*(v - q(i,ivy)) - B_norm/Hall_i(i)*(dvx - dq(i,ivy,1))
         !sBz = sBz - B_norm/Hall_i(i)*(-dvx + dq(i,ivy,1)) 
 
+        !Hall effect as conservative term
+
+        if (Hall_effect) then
+            sBy = sBy - (deta_Hall_y*Jy(i) + dJy*eta_eff_Hall_y(i))
+            sBz = sBz + (deta_Hall_z*Jz(i) + dJz*eta_eff_Hall_z(i))
+        endif
+
+
 
 
     endif
@@ -661,6 +674,11 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
 
 #if SOLVERB==2
     call solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
+#if NDUST==1
+    if (hyper_diffusion) then
+        !call solver_Hall_hll(qleft,qright,flx,csl,csr,idim,i)
+    endif
+#endif
 #endif
 
 #endif

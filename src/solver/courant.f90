@@ -15,7 +15,7 @@ subroutine courant
   implicit none
 
   integer :: i,idust
-  real(dp) :: vmax,dxx,force_max,ca,magnetosonic_fast,vv,fratio,D_max
+  real(dp) :: vmax,dxx,force_max,ca,cw,magnetosonic_fast,vv,fratio,D_max
 
 
   if(static)then
@@ -90,9 +90,18 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
       if (only_Hall_effect .eqv. .false. .or. friction_effects_only .eqv. .false.) then !To avoid division by zero.
          dt = min(dt,0.5d0*dxx**2/D_max)
       endif
-
+ 
 
    endif
+
+   if (Hall_effect) then
+
+      cw = abs(eta_eff_Hall_y(i))*pi/(2*dxx) + dsqrt((abs(eta_eff_Hall_y(i))*pi/(2*dxx))**2 + ca**2) 
+
+      vmax = max(vmax,cw+vv)
+
+      dt = min(dt,CFL*dxx/abs(vmax))
+    endif
 
 
 endif

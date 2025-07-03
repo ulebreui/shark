@@ -711,6 +711,88 @@ end subroutine electric_field
 #endif
 #endif
 
+
+
+#if MHD==1
+#if NDUST>0
+subroutine total_current
+  use parameters
+  use commons
+  use units
+  !use OMP_LIB 
+  use slope_limiter
+
+  implicit none
+
+
+
+  real(dp), dimension(1:ncells) ::  Bym,Byp,Bzm,Bzp
+  real(dp) :: dxBy,dxBz,dBy,dBz
+  integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx
+
+
+
+  do i=1,ncells
+    if(active_cell_predictor(i)==1) then
+
+        ix=ixx(i)
+        iy=iyy(i)
+
+
+
+        if(slope_type>0) then
+            il = icell(ix-1,iy)
+            ir = icell(ix+1,iy)
+            dBy = slope_limit(2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBy) - q(i,iBy))/(dx(ir,1)+dx(i,1)))
+            dBz = slope_limit(2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBz) - q(i,iBz))/(dx(ir,1)+dx(i,1)))
+
+            !dBy = 2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1))
+            !dBz = 2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1))
+
+            !Infer magnetic field at cell surfaces
+
+
+            Bym(i) = q(i,iBy) + half*dBy*dx(i,1)
+            Byp(i) = q(i,iBy) - half*dBy*dx(i,1)
+            Bzm(i) = q(i,iBz) + half*dBz*dx(i,1)
+            Bzp(i) = q(i,iBz) - half*dBz*dx(i,1)
+
+        endif
+    endif
+
+   end do
+
+
+
+
+    if (dusty_nonideal_MHD_no_electron) then
+
+    do i=1,ncells
+        if (active_cell_predictor(i)==1) then
+
+
+        idust = i_coupled_species
+
+
+        dxBy=(Bym(i)-Byp(i))/dx(i,1)
+        dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
+
+        ! print*,'dxBy',dxBy
+        ! print*,'dxBz',dxBz
+
+        Jy(i) = -dxBz
+        Jz(i) = dxBy
+
+        endif
+    end do
+
+    endif
+
+end subroutine total_current
+#endif
+#endif
+
+
 #if MHD==1
 #if NDUST>0
 subroutine Lorentz_force

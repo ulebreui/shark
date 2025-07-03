@@ -10,8 +10,12 @@ subroutine Source_terms
   real(dp), dimension(:,:)  , allocatable :: S_U
   real(dp), dimension(1:nvar) :: S_diff
   real(dp), dimension(1:ncells) :: By_inter
+  real(dp), dimension(1:ncells) :: Bz_inter
 
-    By_inter(:) = 0.0d0 
+
+    By_inter(:) = 0.0d0
+    Bz_inter(:) = 0.0d0 
+
 
 
 
@@ -32,7 +36,7 @@ subroutine Source_terms
 ! #endif
 
   do i=1,ncells
-    if(active_cell(i)==1) then
+    if(active_cell_predictor(i)==1) then
 
 #if GEOM==1
       S_U(i,ivx) = S_U(i,ivx)-dt*(- 2.0d0*q(i,irho)*cs(i)**2./radii_c(i))
@@ -130,9 +134,13 @@ if (dusty_nonideal_MHD_no_electron) then
         !Hyper diffusion term for By
         call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
         S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+        !By_inter(i) = q(i,iBy) + S_diff(iBy)*dt
+
         !Hyper diffusion term for Bz
         call hyper_diffusion_induction_eq(S_diff(:),eta_eff_ohm(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
         S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+        !Bz_inter(i) = q(i,iBz) + S_diff(iBz)*dt
+
         !print*,'S_diff_z',S_diff(iBz)
 
 
@@ -146,22 +154,21 @@ if (dusty_nonideal_MHD_no_electron) then
             S_diff(ivar)=0.0d0
         end do
 
-        !!Hall effect: By and By coupled --> must be solved jointly
+        !!Hall effect
 
-        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
-        S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+        !call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
+        !S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+        !By_inter(i) = q(i,iBy) + S_diff(iBy)*dt
         !print*,'S_diff2',S_diff(iBy)
-        By_inter(i) = S_diff(iBy)*dt
 
-        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i-1,1),dx(i-1,1),dx(i-1,1),i-1,iBy)
-        By_inter(i-1) = S_diff(iBy)*dt
 
-        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i+1,1),dx(i+1,1),dx(i+1,1),i+1,iBy)
-        By_inter(i+1) = S_diff(iBy)*dt
+        !call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBz)
+        !S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+        !Bz_inter(i) = q(i,iBz) + S_diff(iBz)*dt
 
-        call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy)+By_inter(:),dx(i,1),dx(i,1),dx(i,1),i,iBz)
-        S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
         !print*,'S_diff_z2',S_diff(iBz)
+
+
 
   endif
 endif
@@ -195,18 +202,28 @@ endif
 #endif
 
     endif !active cell if
-  end do !i loop 
-  !$OMP END DO
-  !$OMP END PARALLEL
+  end do !i loop
 
 
-  !Update state vector
-  !print*,'S_U',S_U(:,iBy)
+!$OMP END DO
+!$OMP END PARALLEL
+
 
   u_prim=u_prim+S_U
+
+
   deallocate(S_U)
 
 end subroutine Source_terms
+
+
+
+
+
+
+
+
+
 
 
 

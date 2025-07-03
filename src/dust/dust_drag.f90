@@ -43,7 +43,7 @@ subroutine dust_drag(coeffdt)
 
                !!!Effective alpha due to extra dust/gas coupling caused by ions.
 
-                alphak(idust) = coeffdt * dt * (1.0 / tstop(i,idust) - e_el_stat*zd(i,idust)*B_norm/(clight*Hall_i(i)*mdust(i,idust)))  ! Half for half dt
+               alphak(idust) = coeffdt * dt * (1.0 / tstop(i,idust) - e_el_stat*zd(i,idust)*B_norm/(clight*Hall_i(i)*mdust(i,idust)))  ! Half for half dt
 
          endif
 #endif

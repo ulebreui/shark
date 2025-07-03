@@ -155,7 +155,7 @@ subroutine compute_rms_velocity
   implicit none
 
   real(dp) :: lenght 
-  real (dp) :: vx_mean,vy_mean,vz_mean
+  real (dp) :: vx_mean,vy_mean,vz_mean,v,vyz_mean,vtot_mean
   integer :: i
 
 
@@ -187,6 +187,10 @@ subroutine compute_rms_velocity
     vy_mean = vy_mean + q(i,ivy)*dx(i,1)/lenght   
     vz_mean = vz_mean + q(i,ivz)*dx(i,1)/lenght
 
+    vyz_mean = vyz_mean + dsqrt(q(i,ivy)**2+q(i,ivz)**2)*dx(i,1)/lenght
+    vtot_mean = vtot_mean + dsqrt(q(i,ivx)**2+q(i,ivy)**2+q(i,ivz)**2)*dx(i,1)/lenght
+
+
     endif
   end do
 
@@ -197,15 +201,19 @@ subroutine compute_rms_velocity
     Vy_rms = Vy_rms + (q(i,ivy)-vy_mean)**2*dx(i,1)/lenght
     Vz_rms = Vz_rms + (q(i,ivz)-vz_mean)**2*dx(i,1)/lenght
 
+    Vyz_rms = Vyz_rms + (dsqrt(q(i,ivy)**2+q(i,ivz)**2)-vyz_mean)**2*dx(i,1)/lenght !Those are the correct versions to keep in the future
+    Vtot_rms = Vtot_rms + (dsqrt(q(i,ivx)**2+q(i,ivy)**2+q(i,ivz)**2)-vtot_mean)**2*dx(i,1)/lenght!Those are the correct versions to keep in the future
+
+
     endif
   end do
 
 
 
 
-  Vtot_rms = SQRT(V_rms+Vy_rms+Vz_rms) !Here V_rms is actually V_rms**2
-  Vyz_rms = SQRT(Vy_rms+Vz_rms) !Here V_rms is actually V_rms**2
-  V_rms = SQRT(V_rms) !Take sqrt to get right V_rms. We should probably define a new variable
+  Vtot_rms = SQRT(Vtot_rms) 
+  Vyz_rms = SQRT(Vyz_rms) !Here V_rms is actually V_rms**2 !!
+  V_rms = SQRT(V_rms) 
   Vy_rms = SQRT(Vy_rms)
   Vz_rms = SQRT(Vz_rms)
 

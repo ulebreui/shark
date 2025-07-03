@@ -97,6 +97,12 @@ subroutine setup
 
       q(i,iP)=q(i,irho)*cs(i)**2
 
+      q(i,ivx) = delta_vx/unit_v*(cos(position(i,1)*k_mag)) 
+
+
+      q(i,ivy) = delta_vy/unit_v*(sin(position(i,1)*k_mag)) 
+      q(i,ivz) = delta_vz/unit_v*(cos(position(i,1)*k_mag)) 
+
   end do
 
 
@@ -108,6 +114,9 @@ subroutine setup
       do idust=1,ndust
         sdust(i,idust)    = smax/unit_l !if a single grain
         mdust(i,idust)    = (4./3.*pi*smax**3*rhograin)/unit_m
+
+        q(i,ivdx(idust)) = delta_vdx/unit_v*(cos(position(i,1)*k_mag)) 
+
         q(i,ivdy(idust)) = delta_vdy/unit_v*(sin(position(i,1)*k_mag)) 
         q(i,ivdz(idust)) = delta_vdz/unit_v*(cos(position(i,1)*k_mag)) !Alfven perturbation
             !OLD SETUP
@@ -347,7 +356,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,beta_0,cs_0,k_mag,delta_B,T_cloud,delta_vdy,delta_vdz
+  namelist/setup_params/box_l,rho_0,St_0,dust2gas_ratio,beta_0,cs_0,k_mag,delta_B,T_cloud,delta_vdx,delta_vdy,delta_vdz,delta_vx,delta_vy,delta_vz
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"

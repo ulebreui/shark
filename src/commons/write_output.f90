@@ -259,21 +259,21 @@ end do
 
 
 if(charging) then
-  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_a(i)
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_o(i)
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_h(i)
-   end do
-  close(ilun)
+  ! open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
+  !  do i = 1,ncells
+  !     if(active_cell(i)==1) write(ilun) eta_a(i)
+  !  end do
+  !  close(ilun)
+  !  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
+  !  do i = 1,ncells
+  !     if(active_cell(i)==1) write(ilun) eta_o(i)
+  !  end do
+  !  close(ilun)
+  !  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
+  !  do i = 1,ncells
+  !     if(active_cell(i)==1) write(ilun) eta_h(i)
+  !  end do
+  ! close(ilun)eta_eff_ohm
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_y'), form=format_out,access='stream')
    do i = 1,ncells
