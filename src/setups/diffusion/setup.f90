@@ -166,7 +166,7 @@ subroutine read_setup_params(ilun,nmlfile)
 
 
 #if MHD==1
-  !if(time==0.0) return
+  if(time==0.0) return
 
   if(diffusion_test) then 
 
@@ -334,7 +334,7 @@ real (dp) function Barenblatt_Pattle_Lebreuilly_CI(x,t,x_width,By_initial)
 
 
   !Barenblatt-Pattle solution
-  Barenblatt_Pattle_Lebreuilly_CI = DMAX1(0.d0,(2*t) ** (-1/3) *( C - 1/6 * (x-0.5)**2/(2*t)**(2/3) ))
+  Barenblatt_Pattle_Lebreuilly_CI = DMAX1(0.d0,(2*t) ** (-1/3) *( C - 1/6 * (x-5)**2/(2*t)**(2/3) ))
   ! print*,'C',C
 
 
@@ -353,7 +353,7 @@ real (dp) function Initial_condition(x,x_width,By_initial)
 
 
 
-  Initial_condition = DMAX1(0.d0,By_initial*(1 - ((x-0.5)/x_width)**2 ))
+  Initial_condition = DMAX1(0.d0,By_initial*(1 - ((x-5)/x_width)**2 ))
 
 
 end function Initial_condition

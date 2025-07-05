@@ -1,0 +1,60 @@
+!This is a namelist for the SHARK code 
+ 
+&GRID_PARAMS
+freq_out = 4000
+CFL = 0.800000000000000
+tend = 9856956996958.871093750000000
+tend = 5000000000000.0
+gamma = 1.666666666666667
+slope_type = 1
+/ 
+
+&SETUP_PARAMS
+box_l = 48136282805052720.000000000000000
+cs_0 = 24417.415445712111250
+rho_0 = 3.8577d-18
+beta_0 = 1.000000000000000
+St_0 = 0.010020309885711
+dust2gas_ratio(1) = 0.010000000000000
+delta_B = 0.000000000000000
+T_cloud = 10.000000000000000
+k_mag = 3.9158688568350635d-16
+/ 
+
+&TURB_PARAMS
+new_seed = .true.
+nb_turb_modes_driven = 10
+Mach_nb_ini = 0.000000000000000
+driven_turb = .true.
+turb_compressive = .true.
+turb_solenoidal = .true.
+corrector = 0.000000371576372
+corrector_sol = 0.000000024771758
+k_min = 2.610579237890042d-16
+k_max = 3.9158688568350635d-16
+phase_drift = .true.
+turnover_time = 1971391399391.774169921875000
+/ 
+
+&DUST_PARAMS
+drag = .true.
+i_coupled_species = 1
+smax = 0.001000000000000
+/ 
+
+&GRAVITY_PARAMS
+/ 
+
+&IONISATION_PARAMS
+charging = .true.
+ions = .true.
+electrons = .false.
+dusty_nonideal_MHD = .false.
+analytical_charging = .true.
+dusty_nonideal_MHD_no_electron = .true.
+hyper_diffusion = .true.
+apply_Lorentz_force = .true.
+analytical_charging_Shu = .true.
+Hall_effect = .true.
+/ 
+

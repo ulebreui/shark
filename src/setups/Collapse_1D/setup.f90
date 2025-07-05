@@ -53,7 +53,6 @@ subroutine setup
 #endif 
 
 
-  !if (dust_inertia) call resistivities_with_dust_inertia
   print *, 'Total mass is',M_tot*unit_m/2d33, 'Solar masses'
 #else
   non_standard_eos=1

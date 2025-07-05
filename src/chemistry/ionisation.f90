@@ -155,25 +155,7 @@ subroutine charge
      end do
      ne(i)=eps_psi*ni(i)
 
-     if (force_electroneutrality) then
-        nd_zd_total = 0.0d0
 
-        do idust=1,ndust
-            nd_zd_total = nd_zd_total + n_k(idust)*zd(i,idust)
-            ! print*,'nd_zd_total',nd_zd_total
-            ! print*,'n_k(idust)',n_k(idust)
-            ! print*,'mdust(i,idust)',mdust(i,idust)
-            ! print*,'sdust(i,idust)',sdust(i,idust)
-
-            ! print*,'4/3*pi*sdust(i,idust)**3',4./3.*pi*sdust(i,idust)**3*rhograin
-
-
-
-        end do
-            ne(i) = ni(i) + nd_zd_total
-            !print *,'ne(i)-n(i)-nd_zd_total',ne(i)-ni(i)-nd_zd_total
-            !print*,'ne(i)',ne(i)
-     endif
 
      if(electrons .eqv. .false.) then
 
@@ -188,10 +170,9 @@ subroutine charge
         psi_old(i)=psi0
      end if
 
-     ! Resistivity computation
+     ! Resistivity computation including dust contribution (i.e. if no dust inertia)
 
-     if (res_Marchand) then
-
+     if (dusty_nonideal_MHD .eqv. .false.) then
         !B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
         B_gauss = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field
 
@@ -233,10 +214,11 @@ subroutine charge
         do idust=1,ndust
            gamma_d(i,idust)=t_sdust(idust)*omegas_dust(idust)
         end do
-      end if
 
 
-     !endif
+    endif
+
+
 end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -454,6 +436,7 @@ end subroutine resistivities_with_dust_inertia
 
 #if MHD==1
 subroutine effective_diffusion_coef_induction
+!Resistivities for the setup with a single grain and no electron (Vallucci-Goy +25)
   use parameters
   use commons
   use units
@@ -494,12 +477,6 @@ subroutine effective_diffusion_coef_induction
         eta_eff_Hall_z(i) = -q(i,iBx)*clight/(e_el_stat*(ni(i))*4*pi) 
 
 
-        if (friction_effects_only) then
-
-            eta_eff_Hall_y(i) = 0.0d0
-            eta_eff_Hall_z(i) = 0.0d0
-
-        endif
 
 
     end if

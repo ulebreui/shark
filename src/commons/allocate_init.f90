@@ -150,10 +150,6 @@ subroutine allocate_init
     allocate(ni(1:ncells))
     allocate(ne(1:ncells))
     allocate(psi_old(1:ncells))
-    allocate(eta_eff_yy(1:ncells))
-    allocate(eta_eff_yz(1:ncells))
-    allocate(eta_eff_zy(1:ncells))
-    allocate(eta_eff_zz(1:ncells))
     allocate(Hall_e(1:ncells))
     allocate(Hall_i(1:ncells))
     allocate(E_x(1:ncells))
@@ -189,10 +185,6 @@ subroutine allocate_init
     ni     =0.0d0
     ne     =0.0d0
     psi_old=0.0d0
-    eta_eff_yy=0.0d0
-    eta_eff_yz=0.0d0
-    eta_eff_zy=0.0d0
-    eta_eff_zz=0.0d0
     Hall_i     =1.0d0 !Appears in denominators in godunov --> initialize at 1.0d0
     Hall_e     =1.0d0
     E_x=0.0d0

@@ -34,7 +34,7 @@ subroutine solve(verbose,outputing)
 
 
   if(charging) then
-    if (analytical_charging .eqv. .false.) call charge !Set res_Marchand=True to compute charges AND res
+    if (analytical_charging .eqv. .false.) call charge 
 
 #if NDUST>0
     if(analytical_charging) call analytical_charge
@@ -43,7 +43,6 @@ subroutine solve(verbose,outputing)
 
 #if MHD==1
 #if NDUST>0
-  if(dust_inertia) then
 
     if(dusty_nonideal_MHD_no_electron) then
     
@@ -58,7 +57,6 @@ subroutine solve(verbose,outputing)
 
     endif
 
-  endif
 #endif
 #endif
 

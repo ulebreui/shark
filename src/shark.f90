@@ -66,7 +66,6 @@ subroutine time_loop
 #endif
    endif
 
-  !if (dust_inertia) call resistivities_with_dust_inertia
 
   !Actual time loop, continues until continue_sim=.false.
 

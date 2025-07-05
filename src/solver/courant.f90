@@ -87,9 +87,7 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
       !print *,'D_max', D_max
       !print *,'eta_eff_ohm(i)', eta_eff_ohm(i)
 
-      if (only_Hall_effect .eqv. .false. .or. friction_effects_only .eqv. .false.) then !To avoid division by zero.
-         dt = min(dt,0.5d0*dxx**2/D_max)
-      endif
+      dt = min(dt,0.5d0*dxx**2/D_max)
  
 
    endif

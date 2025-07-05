@@ -9,17 +9,13 @@
   logical             ::  analytical_charging_Wurster = .false.   ! Prescription from (Fujii et. al 2011) and see Lebreuilly 2020.
   logical             ::  analytical_charging_Shu = .false.   ! Prescription from (Shu 1987) and see Hennebelle & Lebreuilly 2023.
 
-  logical             :: res_Marchand = .true.   ! To compute charges within Marchand algorithm
-  logical             :: dust_inertia = .false.   ! To compute res accounting for dust inertia
   logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
   logical             :: ions = .true.   
   logical             :: dusty_nonideal_MHD = .false.
   logical             :: dusty_nonideal_MHD_no_electron = .false.   
-  logical             ::  force_electroneutrality              = .false.   ! To force electroneutrality within Marchand 2021 ionization scheme
   logical             ::  hyper_diffusion             = .false.   ! 
   logical             ::  apply_Lorentz_force              = .false.   ! 
   logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
-  logical             ::  friction_effects_only         = .false.   ! !Remove Hall effect in induction equation (but the corresponding term in E remains)
   logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
   logical             ::  Hall_effect         = .true.   !Activate or deactivate Hall effect
 
@@ -31,10 +27,7 @@
   real(dp), dimension(:), allocatable      :: eta_o
   real(dp), dimension(:), allocatable      :: eta_h
 
-  real(dp), dimension(:), allocatable      :: eta_eff_yy
-  real(dp), dimension(:), allocatable      :: eta_eff_yz
-  real(dp), dimension(:), allocatable      :: eta_eff_zy
-  real(dp), dimension(:), allocatable      :: eta_eff_zz
+
 
   real(dp), dimension(:), allocatable      :: eta_eff_ohm
   real(dp), dimension(:), allocatable      :: eta_eff_Hall_y
