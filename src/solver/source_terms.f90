@@ -123,11 +123,6 @@ if (dusty_nonideal_MHD_no_electron) then
     end do
 
     if (hyper_diffusion) then
-        !call effective_diffusion_coef_induction !Already include i loop. To be called once in solve
-
-
-
-        !Keep variables in right hand part of the equation a time n (By et By are coupled)!!! --> ok since we work with q() and update u_prim
 
         !!!Ohm effect!!!
 
@@ -154,27 +149,56 @@ if (dusty_nonideal_MHD_no_electron) then
             S_diff(ivar)=0.0d0
         end do
 
-        !!Hall effect
-
-        !call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_y(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBy)
-        !S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
-        !By_inter(i) = q(i,iBy) + S_diff(iBy)*dt
-        !print*,'S_diff2',S_diff(iBy)
-
-
-        !call hyper_diffusion_induction_eq(S_diff(:),eta_eff_Hall_z(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBz)
-        !S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
-        !Bz_inter(i) = q(i,iBz) + S_diff(iBz)*dt
-
-        !print*,'S_diff_z2',S_diff(iBz)
 
 
 
-  endif
+    endif
 endif
 
 
-if (dusty_nonideal_MHD_no_electron) then
+if (dusty_nonideal_MHD) then
+
+
+    do ivar=1,nvar
+        S_diff(ivar)=0.0d0
+    end do
+
+    if (hyper_diffusion) then
+
+
+        !!!Ohmic dissipation!!!
+
+        !Hyper diffusion term for By
+        call hyper_diffusion_induction_eq(S_diff(:),clight**2/(4*pi)*eta_o(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
+        S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+
+        !Hyper diffusion term for Bz
+        call hyper_diffusion_induction_eq(S_diff(:),clight**2/(4*pi)*eta_o(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
+        S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+
+
+        !!!Ambipolar diffusion (appears explicitly in the eq because of inertialess electrons)
+
+
+        call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
+        S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
+
+        call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
+        S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
+
+        do ivar=1,nvar
+            S_diff(ivar)=0.0d0
+        end do
+
+
+
+
+    endif
+endif
+
+
+
+if (dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
         !Lorentz forces
         !call electric_field !Do not call them here: computation will be done again and again for each i. To be called once per timestep in solve.

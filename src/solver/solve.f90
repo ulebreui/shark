@@ -57,6 +57,20 @@ subroutine solve(verbose,outputing)
 
     endif
 
+    if(dusty_nonideal_MHD) then
+
+
+        call res_electrons_ions !For test
+        call Hall_factor !For test
+        call total_current
+        call total_dust_current
+
+        if (call_electric_field) call electric_field
+        if (apply_Lorentz_force) call Lorentz_force
+
+
+    endif
+
 #endif
 #endif
 

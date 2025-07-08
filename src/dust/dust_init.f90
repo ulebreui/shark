@@ -149,13 +149,19 @@ subroutine allocate_dust
     allocate(FLor_x_d(1:ncells,1:ndust))
     allocate(FLor_y_d(1:ncells,1:ndust))
     allocate(FLor_z_d(1:ncells,1:ndust))
+    allocate(Jdx_tot(1:ncells))
+    allocate(Jdy_tot(1:ncells))
+    allocate(Jdz_tot(1:ncells))
 
     gamma_d = 0.0d0
     zd      = 0.0d0
     FLor_x_d = 0.0d0
     FLor_y_d = 0.0d0
     FLor_z_d = 0.0d0
-
+    Jdx_tot = 0.0d0
+    Jdy_tot = 0.0d0
+    Jdz_tot = 0.0d0
+    
   endif
 
 end subroutine allocate_dust

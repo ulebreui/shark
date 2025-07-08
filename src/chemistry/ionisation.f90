@@ -19,7 +19,7 @@ subroutine charge
   real(dp) :: dni_dpsi
   real(dp) :: eps_theta
   integer  :: niter_ionis,niter_ionis_max
-  real(dp) :: T,barotrop,nH_loc
+  real(dp) :: T,B,barotrop,nH_loc
   real(dp) :: B_field,cross_sec,nd_zd_total
 
   as_He_dust = 1.28
@@ -218,6 +218,66 @@ subroutine charge
 
     endif
 
+     if (dusty_nonideal_MHD .eqv. .true.) then !Because dust inertia is accounted for, should not appear in the analytical resistivities
+        !B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
+        B_gauss = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field
+
+#if TURB==1
+#if MHD==1
+              T = T_cloud
+              B = dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
+           
+#endif
+#endif
+
+
+        mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
+        mu_e=2.0d0*mH*m_el/(m_el+2.0d0*mH)
+
+        vrms_i =dsqrt(8.0d0*kB*T/(pi*mu_i))*1d-5  ! /!\ /!\ These velocities need to be in km/s for the Pinto & Galli 2008 fit
+        vrms_el=dsqrt(8.0d0*kB*T/(pi*mu_e))*1d-5
+
+        sigmav_el  = 3.16d-11*vrms_el**1.3
+        sigmav_ions= 2.4d-9  *vrms_i**0.6
+
+        t_sel  = 1.0d0/as_He_el*((m_el+2.0d0*mH)/(2.0d0*mH))/sigmav_el/nH_loc
+        t_sions= 1.0d0/as_He_ions*((mu_ions*mH+2.0d0*mH)/(2.0d0*mH))/sigmav_ions/nH_loc
+
+        sigmas_el     = (ne(i))*e_el_stat**2.*t_sel/m_el
+        sigmas_ions   = (ni(i))*e_el_stat**2*t_sions/(mu_ions*mH)
+
+        omegas_el     = -e_el_stat*B_gauss/clight/m_el
+        omegas_ions   = e_el_stat *B_gauss/clight/(mu_ions*mH)
+
+         if (electrons .eqv. .false.) then
+               sigmas_el     = 0.0
+               omegas_el = 0.0
+          end if
+         if (ions .eqv. .false.) then
+               sigmas_ions     = 0.0
+               omegas_ions = 0.0
+          end if
+
+         !Hall factors
+         Hall_e(i) = omegas_el*t_sel
+         Hall_i(i) = omegas_ions*t_sions
+
+
+        ! Conductivities
+        sigma_o(i)=sigmas_ions+sigmas_el
+        sigma_p(i)=sigmas_ions/(1.0d0+(omegas_ions*t_sions)**2.0)+sigmas_el/(1.0d0+(omegas_el*t_sel)**2.0)
+        sigma_H(i)=-sigmas_ions*(omegas_ions*t_sions)/(1.0d0+(omegas_ions*t_sions)**2.0)-sigmas_el*(omegas_el*t_sel)/(1.0d0+(omegas_el*t_sel)**2.0)
+
+        ! Resistivities
+        eta_o(i)=1.0d0/sigma_o(i)
+        eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
+        eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
+
+
+
+
+      end if      
+
 
 end do
 !$OMP END DO
@@ -309,7 +369,9 @@ end subroutine charge
 #endif
 
 
-subroutine resistivities_with_dust_inertia
+
+
+subroutine res_electrons_ions
   use parameters
   use commons
   use units
@@ -325,47 +387,28 @@ subroutine resistivities_with_dust_inertia
   real(dp) :: dni_dpsi
   real(dp) :: eps_theta
   integer  :: niter_ionis,niter_ionis_max
-  real(dp) :: T,barotrop,nH
-  real(dp) :: B,cross_sec
+  real(dp) :: T,B,barotrop,nH_loc
+  real(dp) :: B_field,cross_sec
 
   as_He_ions = 1.14
   as_He_el   = 1.16
-  !Limit for epsilon cannot be 1.
-  epsone     = 0.99999d0
 
-  convergence_ionis = 1d4
-  niter_ionis=0
-
-  !Now we compute the actual ionisation
   do i=1,ncells
-  !if (active_cell(i)==1) then
+     ! Temperature
+     T            = barotrop(q(i,irho))
 
-      !Magnetic field intensity
-      !B = dsqrt(Bx(i)**2+By(i)**2+Bz(i)**2) !If computed directly by induction equation
-      !Else: use analytical prescription
-      B = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field for collapse
-      T            = barotrop(q(i,irho))   !Temperature for collapse
+     ! Resistivity computation
+
+     B_gauss = min(B_0_lee*sqrt(q(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
+
 
 #if TURB==1
 #if MHD==1
-      T = T_cloud
-      B = dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
-   
+              T = T_cloud
+              B = dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
+           
 #endif
 #endif
-     ! Ion electron collisional cross-section
-     sigmav_ie=(2d-7)/dsqrt(T/300.0d0)
-     ! Reduced dust temperature
-     ! Ion thermal velocity
-     vi=dsqrt(8.0d0*kB*T/(pi*mu_ions*mH))
-
-     ! Gas number density
-     nH=q(i,irho)*unit_nh
-
-     ! print*,'nh=',nH
-
-
-     ! Resistivity computation
 
 
      mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
@@ -377,44 +420,14 @@ subroutine resistivities_with_dust_inertia
      sigmav_el  = 3.16d-11*vrms_el**1.3
      sigmav_ions= 2.4d-9*vrms_i**0.6
 
-     t_sel  = 1.0d0/as_He_el*((m_el+2.0d0*mH)/(2.0d0*mH))/sigmav_el/nH
-     t_sions= 1.0d0/as_He_ions*((mu_ions*mH+2.0d0*mH)/(2.0d0*mH))/sigmav_ions/nH
+     t_sel  = 1.0d0/as_He_el*((m_el+2.0d0*mH)/(2.0d0*mH))/sigmav_el/nH_loc
+     t_sions= 1.0d0/as_He_ions*((mu_ions*mH+2.0d0*mH)/(2.0d0*mH))/sigmav_ions/nH_loc
 
      sigmas_el     = (ne(i))*e_el_stat**2.*t_sel/m_el
-     sigmas_ions   = (ni(i))*e_el_stat**2.*t_sions/(mu_ions*mH)
+     sigmas_ions   = (ni(i))*e_el_stat**2*t_sions/(mu_ions*mH)
 
-     ! print*,'ne(i)==',ne(i)
-     ! print*,'ni(i)==',ni(i)
-
-
-     ! print*,'sigmas_ions=',sigmas_ions
-     ! print*,'sigmas_el=',sigmas_el
-
-
-
-     if (electrons .eqv. .false.) then
-           sigmas_el     = 0.0
-           omegas_el = 0.0
-      end if
-     if (ions .eqv. .false.) then
-           sigmas_ions     = 0.0
-           omegas_ions = 0.0
-
-      end if      
-
-     omegas_el     = -e_el_stat*B/clight/m_el
-     omegas_ions   = e_el_stat*B/clight/(mu_ions*mH)
-
-
-     !Hall factors
-     Hall_e(i) = omegas_el*t_sel
-     Hall_i(i) = omegas_ions*t_sions
-
-     if (only_Hall_effect) Hall_i(i) = 1.0e25
-
-
-     ! print*,'omega_ions=',omegas_ions
-     ! print*,'omega_el=',omegas_el
+     omegas_el     = -e_el_stat*B_gauss/clight/m_el
+     omegas_ions   = e_el_stat*B_gauss/clight/(mu_ions*mH)
 
      ! Conductivities
      sigma_o(i)=sigmas_ions+sigmas_el
@@ -425,11 +438,11 @@ subroutine resistivities_with_dust_inertia
      eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
      eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
 
+end do
 
-!endif
-   end do
+end subroutine res_electrons_ions
 
-end subroutine resistivities_with_dust_inertia
+
 
 
 
@@ -741,14 +754,10 @@ subroutine total_current
 
 
 
-
-    if (dusty_nonideal_MHD_no_electron) then
-
     do i=1,ncells
         if (active_cell_predictor(i)==1) then
 
 
-        idust = i_coupled_species
 
 
         dxBy=(Bym(i)-Byp(i))/dx(i,1)
@@ -757,17 +766,52 @@ subroutine total_current
         ! print*,'dxBy',dxBy
         ! print*,'dxBz',dxBz
 
-        Jy(i) = -dxBz
+        Jy(i) = -dxBz !Beware: note that there is a c/4pi missing. Not a current strictly speaking.
         Jz(i) = dxBy
 
         endif
     end do
 
-    endif
 
 end subroutine total_current
 #endif
 #endif
+
+
+#if MHD==1
+#if NDUST>0
+subroutine total_dust_current
+!This current is correct units.
+  use parameters
+  use commons
+  use units
+  !use OMP_LIB 
+  use slope_limiter
+
+  implicit none
+  integer :: i,idust
+
+
+
+  do i=1,ncells
+    if(active_cell_predictor(i)==1) then !Dust total current with gas velocity sustracted.
+
+
+
+        Jdx_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdx(:))-q(i,ivx)),DIM=1)
+        Jdy_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdy(:))-q(i,ivy)),DIM=1)
+        Jdz_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdz(:))-q(i,ivz)),DIM=1)
+
+
+    endif
+
+   end do
+
+
+end subroutine total_dust_current
+#endif
+#endif
+
 
 
 #if MHD==1
@@ -797,7 +841,7 @@ subroutine Lorentz_force
 
 
 
-  if (dusty_nonideal_MHD_no_electron) then
+  if (dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
 
 
@@ -996,6 +1040,16 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
                 zd(i,idust) = -ni(i)/(q(i,irhod(idust))/mdust(i,idust))
 
          end do   
+
+      if (dusty_nonideal_MHD) then !Tune electron density
+
+        do i=1,ncells
+                ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
+                ne(i) = ni(i)/100
+                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust))
+
+         end do 
+      endif
     endif
 
 ! $OMP END DO

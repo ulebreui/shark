@@ -74,6 +74,11 @@
   real(dp), dimension(:,:), allocatable      :: FLor_x_d
   real(dp), dimension(:,:), allocatable      :: FLor_y_d
   real(dp), dimension(:,:), allocatable      :: FLor_z_d
+  real(dp), dimension(:), allocatable      :: Jdx_tot
+  real(dp), dimension(:), allocatable      :: Jdy_tot
+  real(dp), dimension(:), allocatable      :: Jdz_tot
+
+
 #endif
 
   real(dp) :: B_0_lee       = 3d-5   ! Value of the B field at 10^4

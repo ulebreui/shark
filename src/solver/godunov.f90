@@ -22,7 +22,7 @@ subroutine predictor
   real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd
   real(dp) :: total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd
   real(dp) :: vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a
-  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz
+  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz,dJdx_tot,dJdy_tot,dJdz_tot
   integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
 
 
@@ -74,14 +74,6 @@ subroutine predictor
   deta_h = 0.0d0
   deta_o = 0.0d0
   dzd = 0.0d0
-  vz_derivative_total_nd_zd_eta_o = 0.0d0
-  vy_derivative_total_nd_zd_eta_o = 0.0d0
-  vx_derivative_total_nd_zd_eta_h = 0.0d0
-  vy_derivative_total_nd_zd_eta_h = 0.0d0
-  vz_derivative_total_nd_zd_eta_h = 0.0d0
-  vx_derivative_total_nd_zd_eta_a = 0.0d0
-  vy_derivative_total_nd_zd_eta_a = 0.0d0
-  vz_derivative_total_nd_zd_eta_a = 0.0d0
 
 
 
@@ -162,6 +154,23 @@ subroutine predictor
 
 
       endif
+
+
+        if (dusty_nonideal_MHD) then
+
+            dJy = slope_limit(2.0d0*(abs(Jy(i)) - abs(Jy(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(Jy(ir)) - abs(Jy(i)))/(dx(ir,1)+dx(i,1))) !Total current
+            dJz = slope_limit(2.0d0*(abs(Jz(i)) - abs(Jz(il)))/(dx(i,1)+dx(il,1)),2.0d0*(abs(Jz(ir)) - abs(Jz(i)))/(dx(ir,1)+dx(i,1)))
+
+
+            dJdx_tot = slope_limit(2.0d0*(Jdx_tot(i) - Jdx_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdx_tot(ir) - Jdx_tot(i))/(dx(ir,1)+dx(i,1))) !Total dust current
+
+            dJdy_tot = slope_limit(2.0d0*(Jdy_tot(i) - Jdy_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdy_tot(ir) - Jdy_tot(i))/(dx(ir,1)+dx(i,1))) !Total dust current
+
+            dJdz_tot = slope_limit(2.0d0*(Jdz_tot(i) - Jdz_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdz_tot(ir) - Jdz_tot(i))/(dx(ir,1)+dx(i,1))) !Total dust current
+
+
+        endif
+
            
 
 
@@ -426,6 +435,29 @@ subroutine predictor
 
 
 
+
+    endif
+
+
+    if (dusty_nonideal_MHD) then !With electrons and NDUST grains
+
+
+        sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
+        sBz =  -(q(i,ivx)*dBz_x + Bz*dq(i,ivx,1)) + Bx*dq(i,ivz,1) !"ideal term" 
+
+
+        !Ohm
+        sBy = sBy - clight*eta_o(i)*dJdz_tot
+        sBz = sBz + clight*eta_o(i)*dJdy_tot
+
+        !AD
+        sBy = sBy - clight*eta_a(i)*2*dJdz_tot + clight*eta_a(i)*dJdx_tot + clight*eta_a(i)*dJdy_tot - clight**2/(4*pi)*eta_a(i)*dJy
+        sBz = sBz + clight*eta_a(i)*2*dJdy_tot - clight*eta_a(i)*dJdx_tot - clight*eta_a(i)*dJdz_tot + clight**2/(4*pi)*eta_a(i)*dJz
+
+        if (Hall_effect) then
+            sBy = sBy - clight*eta_H(i)*dJdx_tot + clight*eta_H(i)*dJdy_tot - clight**2/(4*pi)*eta_H(i)*dJy
+            sBz = sBz - clight*eta_H(i)*dJdx_tot + clight*eta_H(i)*dJdz_tot - clight**2/(4*pi)*eta_H(i)*dJz
+        endif
 
     endif
 #endif
