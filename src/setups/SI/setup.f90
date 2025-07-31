@@ -31,31 +31,48 @@ subroutine setup
   ice_mantle = 0.0d0 ! No ice for SI test
   rhograin   = rho_init/theta_dust
 
-  smin    = Stokes_min*rho_init*cs0/rhograin/omega_shear
-  smax    = Stokes_max*rho_init*cs0/rhograin/omega_shear
-  scut    = Stokes_cut*rho_init*cs0/rhograin/omega_shear
-  scutmin = Stokes_min*rho_init*cs0/rhograin/omega_shear
+  smin    = Stokes_min*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
+  smax    = Stokes_max*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
+  scut    = Stokes_cut*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
+  scutmin = Stokes_min*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
+  print *,'scut=',scut
 
   !if logn distrib
-  aO_themis = aO_themis*rho_init*cs0/rhograin/omega_shear
-  sigma_themis = sigma_themis*rho_init*cs0/rhograin/omega_shear
+  aO_themis = aO_themis*rho_init*cs0/rhograin/omega_shear/sqrt(8/pi)
+  sigma_themis = sigma_themis*rho_init*cs0/rhograin/omega_shear/sqrt(8/pi)
 
 
 
   vfrag = vfrag * cs0 ! Quantify vfrag in terms of cs
   v_bouncing = v_bouncing * cs0 ! Quantify vfrag in terms of cs
 
-  call distribution_dust
 
   if(stokes_distrib) then
 
+  call distribution_dust !Initalize distrib
+
     do idust=1,ndust
         dust2gas_species(idust) = epsilondust(1,idust)
-        stokes_species(idust)   = sdust(idust)/(rho_init*cs0/rhograin/omega_shear)
+
+        stokes_species(idust)   = sdust(idust)/(rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.))
+
     end do
 
   endif
 
+
+#if NDUSTPSCAL > 0
+
+  do idust=1,ndust
+    !NB: if one wants to work with more than one stepinski fluid, then Stokes_step and dust2gas should be reset as an array
+    q(idust_pscal(idust,1),:,:) = Stokes_step*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.) !Define the stepinski size from the Stokes provided in the namelist
+    stokes_species(idust)   = Stokes_step
+    dust2gas_species(idust) = dust2gas
+
+  end do 
+#endif
+
+   
   A_nak = 0.0d0
   B_nak = 1.0d0
 
@@ -78,7 +95,8 @@ subroutine setup
 
   call gridinit(box_l,box_l_y)
 
-  q = 0.0d0
+
+  !q = 0.0d0
   iso_cs = 1
   do i =1,ncells
         ix=ixx(i)
@@ -180,7 +198,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert 
+  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert,Stokes_step 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
@@ -363,8 +381,17 @@ subroutine compute_tstop
    do iy = first_active_y,last_active_y
     do ix = first_active,last_active
      do idust=1,ndust
-        tstop(idust,ix,iy) = rhograin*sdust(idust)/rho_init/(rad0*Omega_shear*hoverr)
+#if NDUSTPSCAL == 0
+        tstop(idust,ix,iy) = sqrt(pi/8.)*rhograin*sdust(idust)/rho_init/(rad0*Omega_shear*hoverr)
         St(idust,ix,iy) = tstop(idust,ix,iy)*Omega_shear
+
+#endif
+
+#if NDUSTPSCAL > 0
+        tstop(idust,ix,iy) = sqrt(pi/8.)*rhograin*q(idust_pscal(idust,1),ix,iy)/rho_init/(rad0*Omega_shear*hoverr)
+        St(idust,ix,iy) = tstop(idust,ix,iy)*Omega_shear
+
+#endif
 
       end do
      end do
@@ -373,4 +400,61 @@ subroutine compute_tstop
 
 end subroutine compute_tstop
 #endif
+
+#if NDUST>0
+! Dust stopping time
+subroutine compute_tcoag
+  
+  use parameters
+  use commons
+  use units
+  use OMP_LIB
+
+  implicit none
+  real(dp):: dv_ormel_step,mgrain_step,cs_modified,St_frag
+
+
+   integer :: idust,ix,iy
+   !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
+   do iy = first_active_y,last_active_y
+    do ix = first_active,last_active
+     do idust=1,ndust
+
+        mgrain_step = 4./3. * pi * q(idust_pscal(idust,1),ix,iy)**3 * rhograin
+
+        dv_ormel_step = dsqrt(alpha_turb)*cs(ix,iy)*dsqrt(1.97*St(idust,ix,iy))
+
+        if (modified_Ormel .eqv. .true.) then !Modify soundspeed due to dust backreaction
+
+          cs_modified = cs(ix,iy)/dsqrt(1+SUM((q(irhod(:),ix,iy)/q(irho,ix,iy))/(1+St(:,ix,iy))))
+          dv_ormel_step = dsqrt(alpha_turb)*cs_modified*dsqrt(1.97*St(idust,ix,iy))
+
+        endif
+
+        !t_coag -> 3*t_coag in equa diff of grain size
+        tcoag(idust,ix,iy) =  3.0/(sqrt(8/3*pi)*pi*4*q(idust_pscal(idust,1),ix,iy)**2*dv_ormel_step*q(irhod(idust),ix,iy)/mgrain_step)
+
+        if (frag_step) then
+
+          St_frag = vfrag**2/(1.97*alpha_turb*cs(ix,iy)**2)
+          !print*, 'St_frag=',St_frag
+
+          if (modified_Ormel .eqv. .true.) St_frag = vfrag**2/(1.97*alpha_turb*cs_modified**2)
+          !print*, 'St_frag_MO=',St_frag
+
+
+          sfrag(idust,ix,iy) = St_frag*rho_init*cs(ix,iy)/rhograin/omega_shear/sqrt(pi/8.) !Define the stepinski size from the Stokes provided in the namelist
+          !print*, 'sfrag=',sfrag(idust,ix,iy)
+
+
+        endif
+
+      end do
+     end do
+  end do
+
+
+end subroutine compute_tcoag
+#endif
+
 

@@ -21,6 +21,7 @@ module setup_parameters
   real(dp) :: Stokes_min  = 1d-3
   real(dp) :: Stokes_max  = 1.0d0
   real(dp) :: Stokes_cut  = 0.01d0
+  real(dp) :: Stokes_step = 1e-2 !Stepinski initial size
   real(dp) :: theta_dust  = 1d-11 ! Ratio between disk density and dust grain density
 
   logical  :: stokes_distrib = .false. ! Use a MRN like distribution

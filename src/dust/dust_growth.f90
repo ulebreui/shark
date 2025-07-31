@@ -140,11 +140,18 @@ subroutine dust_growth_stepinski
    logical :: verbose
    integer :: idust, jdust, ipscal, ix,iy
 
+!$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust)
+
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
          ! Differential velocity loop
          do idust = 1, ndust
-           u_prim(idust_pscal(idust,1),ix,iy)=max(u_prim(idust_pscal(idust,1),ix,iy)*(1.0d0+dt/tcoag(ix,iy,idust)),q(irhod(idust),ix,iy)*sminstep/unit_l)
+           !Sticking
+           u_prim(idust_pscal(idust,1),ix,iy)=u_prim(idust_pscal(idust,1),ix,iy)*(1.0d0+dt/tcoag(idust,ix,iy))
+           ! Fragmentation
+           if (frag_step)  then
+               u_prim(idust_pscal(idust,1),ix,iy) = min(u_prim(irhod(idust),ix,iy)*sfrag(idust,ix,iy), u_prim(idust_pscal(idust,1),ix,iy))
+           endif
          end do
       end do
    end do

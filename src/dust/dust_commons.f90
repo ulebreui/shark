@@ -6,6 +6,7 @@ module dust_parameters
   logical             ::  drag                  = .true.      ! Dust growth is activated  
   logical             ::  growth                = .false.     ! Dust growth is activated
   logical             ::  growth_step           = .false.     ! Dust growth is activated with Stepinski solver
+  logical             ::  frag_step             = .false.       ! Dust frag is activated within Stepinski solver
   logical             ::  fragmentation         = .false.     ! Fragmentation is activated
   logical             ::  bouncing              = .false.     ! Bouncing is activated
   logical             ::  drift_in_growth       = .false.     ! Drift velocity included in growth
@@ -88,7 +89,7 @@ module dust_commons
   real(dp), dimension(:,:,:), allocatable    :: tstop
   real(dp), dimension(:,:,:), allocatable    :: tcoag
   real(dp), dimension(:,:,:), allocatable    :: St
-
+  real(dp), dimension(:,:,:), allocatable ::  sfrag !Analytical frag threshold for Stepinski approach
 
 
   ! Indices of the variables

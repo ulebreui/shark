@@ -21,7 +21,7 @@ module smoluchowski
 	   real(dp) :: f_frag,p_coag,sticking_efficiency,eps_threshold_frag,eps_threshold
 
 	   integer  :: niter_growth
-	   integer  :: frag_test,bouncing_test
+	   integer  :: frag_test,bouncing_test,i_stop_frag
 	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2,vfrag,v_bouncing
 	   real(dp) :: epsilon_mass,rhodust_min
 
@@ -36,6 +36,7 @@ module smoluchowski
 	   do while (time_growth < dt)
 	      drhodt = 0.0d0
 	      niter_growth = niter_growth + 1
+	      i_stop_frag = 0
 	      do idust = 1, ndust
 	         m1 = mdust(idust)
 	         s1 = sdust(idust)
@@ -64,7 +65,12 @@ module smoluchowski
 	               if (SI) then
                      !f_frag = max(min((abs(dvij(idust,jdust))-0.1d0*vfrag)/(0.9*vfrag),1.0d0),0.0d0) ! velocity threshold
                      if (dvij(idust,jdust) < vfrag) f_frag = 0.0d0
-                     if (dvij(idust,jdust) > vfrag) f_frag = 1.0d0
+                     if (dvij(idust,jdust) > vfrag) then
+                     	f_frag = 1.0d0
+                     	if (i_stop_frag==0) i_stop_frag = idust !Retrieve the bin index at which frag occurs
+                     endif
+                   	 if (idust .ge. i_stop_frag + 1 .and. i_stop_frag .ne. 0) p_coag = 0.0d0 !Prevent coag and frag for bins beyond the frag barrier
+
                    endif
 
 	            end if
@@ -120,7 +126,7 @@ module smoluchowski
 
 	      dt_growth = 1d32!(dt-time_growth)
 	      do idust = 1, ndust
-	         if (abs(drhodt(idust)) .ne. 0.0d0) then
+	         if (abs(drhodt(idust)) .ne. 0.0d0 .and. drhodt(idust) < 0d0) then
 	            dt_growth = min(dt_growth, dust_dens(idust)/abs(drhodt(idust))*CFL_growth)
 	         end if
 	      end do

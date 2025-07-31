@@ -99,8 +99,9 @@ subroutine allocate_dust
    allocate (sdust(1:ndust))
    allocate (mdust(1:ndust))
    allocate (tstop(1:ndust,1:nx_max, 1:ny_max))
-   allocate (tcoag(1:nx_max, 1:ny_max, 1:ndust))
+   allocate (tcoag(1:ndust,1:nx_max, 1:ny_max))
    allocate(St(1:ndust,1:nx_max, 1:ny_max))
+   allocate(sfrag(1:ndust,1:nx_max, 1:ny_max))
 
 
    allocate (force_dust_x(1:ndust,1:nx_max, 1:ny_max))
@@ -130,6 +131,7 @@ subroutine allocate_dust
    tstop = 0.0d0
    tcoag = 0.0d0
    St = 0.0d0
+   sfrag = 0.0d0
 
    force_dust_x = 0.0d0
    force_dust_y = 0.0d0
@@ -319,11 +321,11 @@ subroutine read_dust_params(ilun, nmlfile)
    integer :: io, ilun
    logical::nml_ok
    namelist /dust_params/ frag_thre, vfrag, v_bouncing, drag, dust_back_reaction, smin, smax, scut, scutmin, mrn, rhograin&
-   &, dust2gas, growth, fragmentation, bouncing, eps_threshold, eps_threshold_frag, growth_step &
+   &, dust2gas, growth, fragmentation, bouncing, eps_threshold, eps_threshold_frag, growth_step, frag_step &
    &, CFL_growth, rhodust_threshold, dust_ratio_min, dust_distribution, aO_themis, acut_themis, awidthcut_themis,&
    & themis_slope, sigma_themis, kernel_type, turb_in_growth, drift_in_growth, brownian_in_growth,&
    & slope_mono, ice_mantle, gamma_grains, estar_grains, sticking_efficiency, &
-   & dtcontrol_growth, alpha_turb, SI, modified_Ormel
+   & dtcontrol_growth, alpha_turb, SI, modified_Ormel 
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
    print *, "Dust namelist reading  !"

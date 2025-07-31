@@ -58,7 +58,10 @@ subroutine solve(verbose)
    if (drag) call dust_drag ! Second half kick
    if (growth) call dust_growth(verbose)
 #if NDUSTPSCAL > 0
-   if (growth_step) call dust_growth_stepinski! Dust growth with Stepinski /!\ dust size is in the first pscal
+   if (growth_step) then
+      call compute_tcoag
+      call dust_growth_stepinski! Dust growth with Stepinski /!\ dust size is in the first pscal
+   endif
 #endif
 #endif
    call system_clock(t9, clock_rate, clock_max)
