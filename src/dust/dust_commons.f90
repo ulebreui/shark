@@ -34,6 +34,9 @@ module dust_parameters
   integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq
   logical ::  dust_growth_disk = .false.
 
+  real(dp) :: delta_dust_cs = 0.0d0 !dust soundspeed defined by hand as a fraction delta_dust_cs of the gas soundspeed
+
+
   
   !Dust distribution
   real(dp)::  smin            = 1d-7    ! Minimum possible dust size 
@@ -88,6 +91,7 @@ module dust_commons
   integer,  dimension(:),  allocatable     :: ivdx
   integer,  dimension(:),  allocatable     :: ivdy
   integer,  dimension(:),  allocatable     :: ivdz ! Z - velocity component
+  integer,  dimension(:),  allocatable     :: iPd ! Dust pressure (user-defined)
   integer,  dimension(:,:),  allocatable   :: idust_pscal
   real(dp) :: dt_cfl_dust=1d140
 

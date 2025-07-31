@@ -405,10 +405,12 @@ subroutine res_electrons_ions
 #if TURB==1
 #if MHD==1
               T = T_cloud
-              B = dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
+              B_gauss = dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
            
 #endif
 #endif
+
+     nH_loc=q(i,irho)/(mu_gas*mH)
 
 
      mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
@@ -798,7 +800,7 @@ subroutine total_dust_current
 
 
 
-        Jdx_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdx(:))-q(i,ivx)),DIM=1)
+        Jdx_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdx(:))-q(i,ivx)),DIM=1) !To print
         Jdy_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdy(:))-q(i,ivy)),DIM=1)
         Jdz_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdz(:))-q(i,ivz)),DIM=1)
 
@@ -1046,7 +1048,7 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
         do i=1,ncells
                 ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
                 ne(i) = ni(i)/100
-                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust))
+                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
 
          end do 
       endif

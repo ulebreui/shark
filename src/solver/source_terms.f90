@@ -9,12 +9,8 @@ subroutine Source_terms
   real(dp) :: ts,ekin,lap_x_u,lap_y_u,lap_x_v,lap_y_v,cs_eos,barotrop
   real(dp), dimension(:,:)  , allocatable :: S_U
   real(dp), dimension(1:nvar) :: S_diff
-  real(dp), dimension(1:ncells) :: By_inter
-  real(dp), dimension(1:ncells) :: Bz_inter
 
 
-    By_inter(:) = 0.0d0
-    Bz_inter(:) = 0.0d0 
 
 
 
@@ -163,7 +159,7 @@ if (dusty_nonideal_MHD) then
         S_diff(ivar)=0.0d0
     end do
 
-    if (hyper_diffusion) then
+    if (hyper_diffusion_with_electrons) then
 
 
         !!!Ohmic dissipation!!!

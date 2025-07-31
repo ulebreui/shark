@@ -15,7 +15,7 @@ subroutine courant
   implicit none
 
   integer :: i,idust
-  real(dp) :: vmax,dxx,force_max,ca,cw,magnetosonic_fast,vv,fratio,D_max
+  real(dp) :: vmax,dxx,force_max,ca,c_fast,cw,magnetosonic_fast,vv,fratio,D_max
 
 
   if(static)then
@@ -42,7 +42,7 @@ subroutine courant
    vmax = cs(i)+vv
 
 #if MHD==1
-      magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho))))
+      magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho)))) !You may need 4pi factors
       vmax=  max(vmax,magnetosonic_fast+abs(q(i,ivx)))
 #endif
 
@@ -50,9 +50,19 @@ subroutine courant
    do idust=1,ndust
 #if MHD==1
       ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/(4*pi*q(i,irhod(idust)))) !TODO , to modify when accounting for a dust distribution
-#endif
-      vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust)))
+      vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust))) !if 1D, q(i,ivdx(idust)) suffices?
       vmax =  max(vmax,ca+vv)
+#if DUST_PRESSURE==1
+
+      c_fast = dsqrt((delta_dust_cs*cs(i))**2 + ca**2) !Safer to use this one
+
+      !magnetosonic_fast = dsqrt(half*(c_fast**2 + dsqrt(c_fast**4-4*(delta_dust_cs*cs(i))**2*ca**2))) !In 1D along B: reduces to a simple soundwave
+
+      vmax =  max(vmax,c_fast+vv)
+
+#endif
+#endif
+
    enddo
 
 #endif
@@ -84,8 +94,6 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
     if (hyper_diffusion) then
       D_max = max(abs(eta_eff_ohm(i)),abs(eta_eff_Hall_y(i)),abs(eta_eff_Hall_z(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
       !
-      !print *,'D_max', D_max
-      !print *,'eta_eff_ohm(i)', eta_eff_ohm(i)
 
       dt = min(dt,0.5d0*dxx**2/D_max)
  
@@ -104,8 +112,31 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
 
 endif
 
+if (dusty_nonideal_MHD) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
+
+    if (hyper_diffusion_with_electrons) then
+      D_max = max(abs(clight**2/(4*pi)*eta_o(i)),abs(2*clight**2/(4*pi)*eta_a(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
+      !
+
+      dt = min(dt,0.5d0*dxx**2/D_max)
+ 
+
+   endif
+
+   if (Hall_effect) then
+
+      cw = abs(clight**2/(4*pi)*eta_H(i))*pi/(2*dxx) + dsqrt(((clight**2/(4*pi)*eta_H(i))*pi/(2*dxx))**2 + ca**2)!Which ca should we use?
+
+      vmax = max(vmax,cw+vv)
+
+      dt = min(dt,CFL*dxx/abs(vmax))
+    endif
+
+
+endif
+
 #if NDUST>0
-if(dusty_nonideal_MHD_no_electron) then
+if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
    if (apply_Lorentz_force) then
       do idust=1,ndust
@@ -115,7 +146,7 @@ if(dusty_nonideal_MHD_no_electron) then
 end if
 #endif
 
-if(dusty_nonideal_MHD_no_electron) then
+if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
    if (apply_Lorentz_force) then
       dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
 

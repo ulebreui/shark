@@ -14,6 +14,7 @@
   logical             :: dusty_nonideal_MHD = .false.
   logical             :: dusty_nonideal_MHD_no_electron = .false.   
   logical             ::  hyper_diffusion             = .false.   ! 
+  logical             ::   hyper_diffusion_with_electrons = .false. 
   logical             ::  apply_Lorentz_force              = .false.   ! 
   logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
   logical             ::  call_electric_field         = .false.   !To compute and write E in outputs

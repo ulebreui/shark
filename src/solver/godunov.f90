@@ -16,14 +16,14 @@ subroutine predictor
   integer  :: ivar,idim,ix0,iy0
   real(dp) :: slope_lft,slope_rgt,slope_lim,barotrop,cs_eos,ddxp,ddxm,dx_loc
   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,dcen,dsgn,dlim,slop,radius_polar
-
+  real(dp) :: Pd,dPd
 
   real(dp) :: dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z
   real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd
   real(dp) :: total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd
   real(dp) :: vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a
   real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz,dJdx_tot,dJdy_tot,dJdz_tot
-  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal
+  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal,iPd_spe
 
 
   real(dp), dimension(:,:,:),allocatable :: dq
@@ -284,6 +284,15 @@ subroutine predictor
         dvx   = dq(i,ivy_spe,1)
         w     = q(i,ivz_spe)
         dwx   = dq(i,ivz_spe,1)
+#if DUST_PRESSURE==1
+            iPd_spe = iPd(idust)
+            Pd     = q(i,iPd_spe)
+            dPd   = dq(i,iPd_spe,1) !Implemented only in 1D and cartesian geometry (isothermal transformation)
+            if (iso_cs==1) then 
+                Pd = q(i,irho_spe)*(delta_dust_cs*cs(i))**2
+                dPd = dq(i,irho_spe,1)*(delta_dust_cs*cs(i))**2
+            endif
+#endif
 #if NY>1   
         dry   = dq(i,irho_spe,2)   
         duy   = dq(i,ivx_spe,2)  
@@ -296,7 +305,10 @@ subroutine predictor
         sr0    = sr0-r_rho*u/radii_c(i)
 #endif
 
-        su0    = -u*dux-v*duy       
+        su0    = -u*dux-v*duy    
+#if DUST_PRESSURE==1
+        su0  = -u*dux-v*duy - (dPd       )/r_rho  
+#endif 
         sv0    = -u*dvx-v*dvy 
         sw0    = -u*dwx-v*dwy
 
@@ -321,6 +333,9 @@ subroutine predictor
         sBz   = -u*dBz_x + Bx*dwx - Bz*dux
 
         su0   = -u*dux-v*duy - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
+#if DUST_PRESSURE==1
+        su0   = -u*dux-v*duy - (dPd)/r_rho - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
+#endif
         sv0   = -u*dvx-v*dvy + 1/(4*pi)*(Bx*dBy_x/r_rho)
         sw0   = -u*dwx-v*dwy + 1/(4*pi)*(Bx*dBz_x/r_rho)
 
@@ -354,7 +369,16 @@ subroutine predictor
     qp(i,ivx_spe,1)    = u         + half*dt*su0  - half*dux   *dx_loc
     qp(i,ivy_spe,1)    = v         + half*dt*sv0  - half*dvx   *dx_loc
     qp(i,ivz_spe,1)    = w         + half*dt*sw0  - half*dwx   *dx_loc
-    
+
+
+#if DUST_PRESSURE==1
+        if(iso_cs==1) then
+
+            qp(i,iPd_spe,1)   = (delta_dust_cs*cs(i))**2*qp(i,irho_spe,1)
+            qm(i,iPd_spe,1)   = (delta_dust_cs*cs(i))**2*qm(i,irho_spe,1)
+        endif
+#endif
+
     !direction y
 #if NY>1
     dx_loc=radius_polar*dx(i,2)
@@ -489,6 +513,8 @@ if(iso_cs==1) then
     do idim =1,ndim
         qp(i,iP,idim)   = cs(i)**2*qp(i,irho,idim)
         qm(i,iP,idim)   = cs(i)**2*qm(i,irho,idim)
+
+
     end do
 end if
 if(non_standard_eos==1) then
@@ -687,7 +713,7 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 #if SOLVERDUST==2
-    call solver_dust_hll(qleft,qright,flx,idim,i)
+    call solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 #endif
 
 #endif

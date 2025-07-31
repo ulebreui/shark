@@ -124,6 +124,9 @@ subroutine setup
         
 
         q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+#if DUST_PRESSURE==1
+        q(i,iPd(idust))=q(i,irhod(idust))*(delta_dust_cs*cs(i))**2
+#endif
 
 
 

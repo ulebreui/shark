@@ -1,6 +1,8 @@
 module hydro_solvers
 contains
 
+!!!MHD wave fans may or may not include 1/4pi coefficients, depending on your setup and choice of units. Be careful!!!
+
 subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
     use parameters
     use commons
@@ -137,8 +139,8 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
     flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
     flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
 
-    magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
-    magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
+    magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt))) 
+    magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft))) 
 
     lambda_llf_g = max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
 #endif
@@ -287,8 +289,8 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 
 #if MHD==1
 #if NDUST==0
-        magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
-        magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
+        magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt))) 
+        magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft))) 
 
         S_lft  = min(min(u_lft,u_rgt) -max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0)
         S_rgt  = max(max(u_lft,u_rgt) +max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0) 
@@ -807,7 +809,7 @@ end subroutine solver_dust_llf
 #if NDUST>0
 #if SOLVERDUST==2
 
-subroutine solver_dust_hll(qleft,qright,flx,idim,i)
+subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
     use parameters
     use commons
@@ -819,9 +821,9 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
     integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,il,ir,ix,iy,icell,ixx,iyy
-
+    real(dp) :: csl,csr,P_lft,P_rgt
     real(dp) :: S_lft,S_rgt,lambda_llf_d
-    real(dp) :: ca_lft,ca_rgt,cw_rgt,cw_lft
+    real(dp) :: ca_lft,ca_rgt,cw_rgt,cw_lft,magnetosonic_fast_rgt,magnetosonic_fast_lft
 
 
 
@@ -831,7 +833,7 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
     real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt
 #if MHD==1
 
-    real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt 
+    real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt,c_fast_lft,c_fast_rgt 
 
 
     real(dp) ::flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right
@@ -937,6 +939,15 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
         flx_mom_u_rgt  = rho_rgt * u_rgt**2
         flx_mom_u_lft  = rho_lft * u_lft**2
 
+#if DUST_PRESSURE==1
+
+        P_rgt       = qright(iPd(idust))
+        P_lft       = qleft(iPd(idust))
+
+        flx_mom_u_rgt  = rho_rgt * u_rgt**2 + P_rgt
+        flx_mom_u_lft  = rho_lft * u_lft**2 + P_lft
+
+#endif
         flx_mom_v_rgt = rho_rgt * u_rgt  * v_rgt
         flx_mom_v_lft = rho_lft * u_lft  * v_lft
            
@@ -948,8 +959,10 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
         flx_rho_rgt   = rho_rgt  * u_rgt
         flx_rho_lft   = rho_lft  * u_lft
 
+
         flx_mom_u_rgt  = flx_mom_u_rgt + 1/(4*pi)*(P_mag_rgt + mag_tension_x_rgt)
         flx_mom_u_lft  = flx_mom_u_lft + 1/(4*pi)*(P_mag_lft + mag_tension_x_lft)
+
 
         flx_mom_v_rgt = flx_mom_v_rgt + 1/(4*pi)*mag_tension_y_rgt
         flx_mom_v_lft = flx_mom_v_lft + 1/(4*pi)*mag_tension_y_lft
@@ -970,6 +983,12 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
 #if MHD==0
     S_rgt  = max(max(u_lft,u_rgt),0.0d0) 
     S_lft  = min(min(u_lft,u_rgt),0.0d0)
+
+#if DUST_PRESSURE==1
+        S_lft  = min(min(u_lft,u_rgt)-max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt)+max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
+#endif
+
 
     if (u_lft/=u_rgt) then
 
@@ -997,13 +1016,23 @@ subroutine solver_dust_hll(qleft,qright,flx,idim,i)
 
 !HLL    
 
-    ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
+    ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft) !!Here 4pi for the setup used in Vallucci-Goy+25
     ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
 
     S_rgt  = max(max(u_lft,u_rgt) +max(ca_lft,ca_rgt),0.0d0) 
     S_lft  = min(min(u_lft,u_rgt) -max(ca_lft,ca_rgt),0.0d0)
 
 
+#if DUST_PRESSURE==1
+        c_fast_lft = dsqrt((delta_dust_cs*csl)**2 + ca_lft**2) !Safer to use this
+        c_fast_rgt = dsqrt((delta_dust_cs*csr)**2 + ca_rgt**2)
+
+        !magnetosonic_fast_rgt = dsqrt(half*(c_fast_rgt**2 + dsqrt(c_fast_rgt**4-4*(delta_dust_cs*csr)**2*ca_rgt**2))) !In 1D along B: reduces to a simple soundwave
+        !magnetosonic_fast_lft = dsqrt(half*(c_fast_lft**2 + dsqrt(c_fast_lft**4-4*(delta_dust_cs*csl)**2*ca_lft**2))) 
+
+        S_lft  = min(min(u_lft,u_rgt) -max(c_fast_lft,c_fast_rgt),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt) +max(c_fast_lft,c_fast_rgt),0.0d0) 
+#endif
 
 
     flx(i_rho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
@@ -1447,9 +1476,9 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,lambda_llf_B
     real(dp) :: u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt,rho_rgt,rho_lft
     real(dp) :: S_lft,S_rgt
-    real(dp) :: ca_lft,ca_rgt,magnetosonic_fast_lft,magnetosonic_fast_rgt,csl,csr,cw_lft,cw_rgt,dJy,dJz,dJy_l,dJz_l,Jy_left,Jy_right,Jz_left,Jz_right
+    real(dp) :: ca_lft,ca_rgt,magnetosonic_fast_lft,magnetosonic_fast_rgt,csl,csr,cw_lft,cw_rgt,dJy,dJz,dJy_l,dJz_l,Jy_left,Jy_right,Jz_left,Jz_right,c_fast_lft,c_fast_rgt
 
-    real(dp) :: deta_o,deta_h,deta_a,deta_o_il,deta_h_il,deta_a_il,eta_o_left,eta_h_left,eta_a_left,eta_o_right,eta_h_right,eta_a_right,dzd,dzd_il,zd_left,zd_right,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right,eta_Hall_z_left,eta_Hall_z_right
+    real(dp) :: deta_o_il,deta_h_il,deta_a_il,dzd,dzd_il,zd_left,zd_right,deta_Hall,deta_Hall_l,eta_Hall_y_left,eta_Hall_y_right,eta_Hall_z_left,eta_Hall_z_right
 
     real(dp) :: nd_zd_over_ni,nd_zd_over_ni_left,nd_zd_over_ni_right,dne,dne_il,ne_left,ne_right,dni,dni_il,ni_left,ni_right,dhall_i,dhall_il,hall_i_left,hall_i_right
     real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,total_dust_current_z_lft,total_dust_current_y_lft,total_dust_current_x_lft,total_dust_current_z_rgt,total_dust_current_y_rgt,total_dust_current_x_rgt,B_norm_lft,B_norm_rgt
@@ -1681,7 +1710,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
                 eta_H_right = eta_H(i) - half*deta_H*dx(i,1)
 
                 deta_a = slope_limit(2.0d0*(eta_a(i) - eta_a(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_a(ir) - eta_a(i))/(dx(ir,1)+dx(i,1)))
-                deta_a_l = slope_limit(2.0d0*(eta_a(i-1) - eta_a(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_Hair-1) - eta_a(i-1))/(dx(ir-1,1)+dx(i-1,1)))
+                deta_a_l = slope_limit(2.0d0*(eta_a(i-1) - eta_a(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_a(ir-1) - eta_a(i-1))/(dx(ir-1,1)+dx(i-1,1)))
                 eta_a_left = eta_a(il) + half*deta_a_l*dx(il,1)
                 eta_a_right = eta_a(i) - half*deta_a*dx(i,1)
 
@@ -1805,25 +1834,36 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
     ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
 
-    ! magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
-    ! magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
-
-
     S_rgt  = max(max(u_lft,u_rgt) +max(ca_lft,ca_rgt),0.0d0) 
     S_lft  = min(min(u_lft,u_rgt) -max(ca_lft,ca_rgt),0.0d0)
 
-    ! S_rgt  = max(max(u_lft,u_rgt) +max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0) 
-    ! S_lft  = min(min(u_lft,u_rgt) -max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0)
+
 #endif
 
-#if NDUST==0
-    magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
-    magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
-    S_rgt  = max(max(u_lft,u_rgt) +max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0) 
-    S_lft  = min(min(u_lft,u_rgt) -max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0)
+#if DUST_PRESSURE==1
+
+        c_fast_lft = dsqrt((delta_dust_cs*csl)**2 + ca_lft**2)
+        c_fast_rgt = dsqrt((delta_dust_cs*csr)**2 + ca_rgt**2)
+
+        magnetosonic_fast_rgt = dsqrt(half*(c_fast_rgt**2 + dsqrt(c_fast_rgt**4-4*(delta_dust_cs*csr)**2*ca_rgt**2))) !In 1D along B: reduces to a simple soundwave
+        magnetosonic_fast_lft = dsqrt(half*(c_fast_lft**2 + dsqrt(c_fast_lft**4-4*(delta_dust_cs*csl)**2*ca_lft**2))) 
+        S_lft  = min(min(u_lft,u_rgt) -max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt) +max(magnetosonic_fast_lft,magnetosonic_fast_rgt),0.0d0) 
 #endif
 
-    if (Hall_effect) then
+
+    if (Hall_effect .and. dusty_nonideal_MHD) then
+    !Hall effect introduces new waves
+
+        cw_lft = eta_H_left*pi/(2*dx(i,1)) + dsqrt((eta_H_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave
+        cw_rgt = eta_H_right*pi/(2*dx(i+1,1)) + dsqrt((eta_H_right*pi/(2*dx(i+1,1)))**2 + ca_rgt**2) !Whistler wave 
+
+        S_rgt  = max(max(u_lft,u_rgt) +max(cw_lft,cw_rgt),0.0d0) 
+        S_lft  = min(min(u_lft,u_rgt) -max(cw_lft,cw_rgt),0.0d0)
+
+    endif
+
+    if (Hall_effect .and. dusty_nonideal_MHD_no_electron) then
     !Hall effect introduces new waves
 
         cw_lft = eta_Hall_y_left*pi/(2*dx(i,1)) + dsqrt((eta_Hall_y_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave

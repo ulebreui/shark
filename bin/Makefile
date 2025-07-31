@@ -15,6 +15,7 @@ GRIDSPACE=0 #0 = linear, 1 = log ! Only for 2D disk
 TURB=0
 MHD = 0
 NDUSTPSCAL = 0 # number of dust passive scalars
+DUST_PRESSURE = 0 #To introduce a dust pressure
 GRAVITY    = 0
 #Solver 
 SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
@@ -33,7 +34,7 @@ OPENMP=0
 DEBUG=0
 #Setup used. You can do collapse or 1 zone models. You can implement new setups in the setup folder
 SETUP = 
-DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DMHD=$(MHD) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DSOLVERB=$(SOLVERB) -DNGHOST=$(NGHOST) -DTURB=$(TURB) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL)
+DEFINES = -DNDUST=$(NDUST) -DNX=$(NX) -DNY=$(NY) -DGRIDSPACE=$(GRIDSPACE) -DGEOM=$(GEOM) -DMHD=$(MHD) -DOPENMP=$(OPENMP) -DSOLVER=$(SOLVER) -DSOLVERDUST=$(SOLVERDUST) -DSOLVERB=$(SOLVERB) -DNGHOST=$(NGHOST) -DTURB=$(TURB) -DGRAVITY=$(GRAVITY) -DNDUSTPSCAL=$(NDUSTPSCAL) -DDUST_PRESSURE=$(DUST_PRESSURE)
 
 #############################################################################
 # Fortran compiler options and directives

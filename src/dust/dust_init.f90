@@ -124,6 +124,10 @@ subroutine allocate_dust
   allocate(ivdy(1:ndust))
   allocate(ivdz(1:ndust))
 
+#if DUST_PRESSURE==1
+   allocate(iPd(1:ndust))
+#endif
+
 #if NDUSTPSCAL>0
    allocate(idust_pscal(1:ndust,1:ndustpscal))
 #endif
@@ -360,7 +364,7 @@ subroutine read_dust_params(ilun,nmlfile)
   &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb
+ & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"

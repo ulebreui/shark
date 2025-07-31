@@ -40,7 +40,9 @@ module parameters
   integer,parameter   ::  Ndust       = NDUST  !Number of dust species
   integer,parameter   ::  ndustpscal  = NDUSTPSCAL
   integer, parameter  ::  Nmhd        = MHD*3
-  integer,parameter   ::  nvar        = 5 + Ndust * (4+NDUSTPSCAL) + Nmhd !Number of variables
+  integer, parameter  ::  Ndustpressure        = DUST_PRESSURE
+
+  integer,parameter   ::  nvar        = 5 + Ndust * (4+Ndustpressure+NDUSTPSCAL) + Nmhd !Number of variables
 
   real(dp),parameter            :: half = 0.5d0
 

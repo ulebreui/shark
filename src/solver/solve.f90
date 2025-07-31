@@ -65,6 +65,7 @@ subroutine solve(verbose,outputing)
         call total_current
         call total_dust_current
 
+
         if (call_electric_field) call electric_field
         if (apply_Lorentz_force) call Lorentz_force
 
@@ -227,7 +228,7 @@ subroutine ctoprim
 #if MHD==1   
     emag                  = half*(u_prim(i,iBx)**2.0+u_prim(i,iBy)**2.0+u_prim(i,iBz)**2.0)
 #endif    
-    q(i,iP)               = max((gamma-1.0d0)*(u_prim(i,iP)-ekin-emag),smallp) !TODO : substract magnetic nrj
+    q(i,iP)               = max((gamma-1.0d0)*(u_prim(i,iP)-ekin-emag),smallp) 
 
     if(iso_cs<1)              cs(i) = sqrt(gamma*q(i,iP)/q(i,irho))
     if(non_standard_eos == 1) cs(i) = cs_eos(barotrop(q(i,irho)))
@@ -238,6 +239,9 @@ subroutine ctoprim
         q(i,ivdx(idust))  = u_prim(i,ivdx(idust))/u_prim(i,irhod(idust))
         q(i,ivdy(idust))  = u_prim(i,ivdy(idust))/u_prim(i,irhod(idust))
         q(i,ivdz(idust))  = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust))
+#if DUST_PRESSURE==1
+        q(i,iPd(idust))  =  u_prim(i,irhod(idust))*(delta_dust_cs*cs(i))**2
+#endif
 #if NDUSTPSCAL>0
     do ipscal=1,ndustpscal
         q(i,idust_pscal(idust,ipscal))  = u_prim(i,idust_pscal(idust,ipscal))/u_prim(i,irhod(idust))

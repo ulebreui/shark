@@ -257,9 +257,18 @@ subroutine allocate_init
     ivdx(idust) = iP+ndust+idust
     ivdy(idust) = iP+2*ndust+idust
     ivdz(idust) = iP+3*ndust+idust
+#if DUST_PRESSURE==1
+      print *, ' iPd = ',  iP+4*ndust+idust
+      iPd(idust) = iP + 4*ndust+idust
+#endif
+
 #if NDUSTPSCAL>0
     do ipscal=1,ndustpscal
       idust_pscal(idust,ipscal) = iP +4*ndust+icountpscal
+#if DUST_PRESSURE==1
+      idust_pscal(idust,ipscal) = iP +5*ndust+icountpscal
+#endif
+
       print *,'idustpscal   =', idust_pscal(idust,ipscal)
       icountpscal= icountpscal +1
     end do
