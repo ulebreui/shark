@@ -25,13 +25,6 @@ subroutine apply_boundaries
                u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,last_active_y)
             end do
 
-            ! u_prim(ivy,ix,iy)          = max(u_prim(ivy,ix,first_active_y),0.d0)
-            ! u_prim(ivy,ix,ny_max+1-iy) = min(u_prim(ivy,ix,last_active_y),0.0d0)
-            ! do idust=1,ndust
-            !    u_prim(ivdy(idust),ix,iy)          = max(u_prim(ivdy(idust),ix,first_active_y),0.d0)
-            !    u_prim(ivdy(idust),ix,ny_max+1-iy) = min(u_prim(ivdy(idust),ix,last_active_y),0.0d0)
-            ! end do
-
          end do
   end do
    !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix, iy, idust,inner,outer)

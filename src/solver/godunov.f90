@@ -182,7 +182,7 @@ subroutine predictor
                drx   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix-1,iy))/dx_l,(q(idust_pscal(idust,ipscal),ix+1,iy) - q(idust_pscal(idust,ipscal),ix,iy))/dx_r)
                dry   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix,iy-1))/dy_l,(q(idust_pscal(idust,ipscal),ix,iy+1) - q(idust_pscal(idust,ipscal),ix,iy))/dy_r)/radius_polar
 
-               sr0 = -u*drx - v*dry - (dux + dvy)*r_rho
+               sr0 = -u*drx - v*dry
 #if GEOM==2
                !Polar geometry source terms
                sr0 = sr0 - r_rho*u/radius_polar
@@ -209,12 +209,6 @@ subroutine predictor
                qp_y(iP, ix,iy) = cs(ix,iy)**2*qp_y(irho, ix,iy)
                qm_y(iP, ix,iy) = cs(ix,iy)**2*qm_y(irho, ix,iy)
          end if
-         if (non_standard_eos == 1) then
-               qp_x(iP, ix,iy) = cs_eos(barotrop(qp_x(irho, ix,iy)))**2*qp_x(irho, ix,iy)
-               qm_x(iP, ix,iy) = cs_eos(barotrop(qm_x(irho, ix,iy)))**2*qm_x(irho, ix,iy)
-               qp_y(iP, ix,iy) = cs_eos(barotrop(qp_y(irho, ix,iy)))**2*qp_y(irho, ix,iy)
-               qm_y(iP, ix,iy) = cs_eos(barotrop(qm_y(irho, ix,iy)))**2*qm_y(irho, ix,iy)
-         end if
       end do
    end do
 
@@ -231,13 +225,13 @@ subroutine add_delta_u
    integer :: idust, ivar, ix,iy
 
    real(dp), dimension(1:nvar) :: qleft, qright, flx
-   real(dp) :: csr, csl, barotrop, cs_eos
+   real(dp) :: csr, csl, barotrop, cs_eos,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy
 
    if (static) return
 
 
-
-   !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix,iy, qleft, qright, flx, csr, csl)
+   !$omp parallel default(shared) private(ivar, ix,iy, qleft, qright, flx, csr, csl,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy)
+   !$omp do  schedule(static) 
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
 
@@ -251,9 +245,6 @@ subroutine add_delta_u
          if (iso_cs == 1) then
             csl = cs(ix - 1, iy)
             csr = cs(ix,iy)
-         else if (non_standard_eos == 1) then
-            csl = cs_eos(barotrop(qleft(irho)))
-            csr = cs_eos(barotrop(qright(irho)))
          else
             csl = sqrt(gamma*qleft(iP)/qleft(irho))
             csr = sqrt(gamma*qright(iP)/qright(irho))
@@ -276,11 +267,6 @@ subroutine add_delta_u
          if (iso_cs == 1) then
             csl = cs(ix,iy - 1)
             csr = cs(ix,iy)
-         else if (non_standard_eos == 1) then
-
-            csl = cs_eos(barotrop(qleft(irho)))
-            csr = cs_eos(barotrop(qright(irho)))
-
          else
 
             csl = sqrt(gamma*qleft(iP)/qleft(irho))
@@ -296,35 +282,26 @@ subroutine add_delta_u
 
       end do
    end do
+   !$omp end do
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix, iy)
+   !$omp barrier
+
+   !$omp do schedule(static)
       do iy = first_active_y, last_active_y
-         if(no_flux_x_rho_in) then
-           ! if(u_prim(irho,first_active,iy)<rho_sink) then 
-             flux_x(irho,first_active,iy)   = 0.0d0
-             flux_x(ivx,first_active,iy)    = 0.0d0
-             flux_x(ivy,first_active,iy)    = 0.0d0
-           ! else
-           !    flux_x(irho,first_active,iy)  = min(0.0d0,flux_x(irho,first_active,iy))
-           !    flux_x(ivx,first_active,iy)   = min(0.0d0,flux_x(ivx,first_active,iy))
-           !    flux_x(ivy,first_active,iy)   = min(0.0d0,flux_x(ivy,first_active,iy))
-           ! endif
-
-           flux_x(irho,last_active+1,iy) = max(0.0d0,flux_x(irho,last_active+1,iy))
-           flux_x(ivx,last_active+1,iy)  = max(0.0d0,flux_x(ivx,last_active+1,iy))
-           flux_x(ivy,last_active+1,iy)  = max(0.0d0,flux_x(ivy,last_active+1,iy))
-#if NDUST>0
-         print *, 'Careful dust boundary flux not correctly implemented'
-         stop  
-#endif
-         endif 
          do ix = first_active, last_active
+            vol_loc=vol(ix,iy)
+            s_plusx=surf(ix+1,iy,1)
+            s_minusx=surf(ix,iy,1)
+            s_plusy=surf(ix,iy + 1, 2)
+            s_minusy=surf(ix,iy,2)
+
                do ivar = 1, nvar
-                  u_prim(ivar,ix,iy)=u_prim(ivar,ix,iy) + (flux_x(ivar,ix,iy)*surf(ix,iy,1)-flux_x(ivar,ix+1,iy) *surf(ix+1,iy,1))  /vol(ix,iy)*dt&
-&                             + (flux_y(ivar,ix,iy)*surf(ix,iy,2) - flux_y(ivar,ix,iy + 1)*surf(ix,iy + 1, 2))/vol(ix,iy)*dt
+                  u_prim(ivar,ix,iy)=u_prim(ivar,ix,iy) + (flux_x(ivar,ix,iy)*s_minusx-flux_x(ivar,ix+1,iy) *s_plusx)  /vol_loc*dt&
+&                             + (flux_y(ivar,ix,iy)*s_minusy - flux_y(ivar,ix,iy + 1)*s_plusy)/vol_loc*dt
          end do
       end do
    end do
+   !$omp end parallel
 end subroutine add_delta_u
 
 subroutine solve_wrapper(qleft, qright, flx, csl, csr, idim)

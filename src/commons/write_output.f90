@@ -127,9 +127,6 @@ subroutine write_x(iout)
 #if GEOM==2
          write(ilun) radii(ix,iy) !
 #endif
-#if GEOM==4
-      write(ilun) radii(ix,iy) !
-#endif
   end do
   end do
   close(ilun)

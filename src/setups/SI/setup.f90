@@ -342,6 +342,7 @@ subroutine compute_tstop
    integer :: idust,ix,iy
    !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
    do iy = first_active_y,last_active_y
+   !$omp simd
     do ix = first_active,last_active
      do idust=1,ndust
         tstop(idust,ix,iy) = rhograin*sdust(idust)/rho_init/(rad0*Omega_shear*hoverr)

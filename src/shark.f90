@@ -193,7 +193,7 @@ subroutine prompt
     write(*,*) ' You are using static scheduling'
 
     !call omp_set_schedule(omp_sched_static,8)
-    call omp_set_schedule(omp_sched_static,1)
+    call omp_set_schedule(omp_sched_dynamic,1)
 
 #endif    
 end subroutine prompt

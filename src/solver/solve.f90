@@ -112,62 +112,52 @@ subroutine ctoprim
    use OMP_LIB
 
    implicit none
-   integer :: idust, ipscal, ix,iy
-   real(dp):: ekin, cs_eos, barotrop
-
+   integer :: idust, ipscal, ix,iy,ivar
+   real(dp):: ekin, cs_eos, barotrop,onerho,onerhod
+   real(dp), allocatable :: qloc(:,:)
+   real(dp), dimension(1:nvar) :: uloc
    ! Gas related primitive quantities
-   !$omp parallel do schedule(static,2) default(shared) private(ekin,idust, ipscal, ix,iy)
+   !$omp parallel  default(shared) private(ekin,idust, ipscal, ix,iy,onerho,onerhod,qloc,uloc,ivar)
+   allocate(qloc(nvar, nx_max))
+
+   !$omp do
    do iy = 1, ny_max
       do ix = 1, nx_max
-         q(irho,ix,iy) = max(u_prim(irho,ix,iy), smallr)
-         q(ivx,ix,iy)  = u_prim(ivx,ix,iy)/u_prim(irho,ix,iy)
-         q(ivy,ix,iy)  = u_prim(ivy,ix,iy)/u_prim(irho,ix,iy)
-         q(ivz,ix,iy)  = u_prim(ivz,ix,iy)/u_prim(irho,ix,iy)
+         do ivar=1,nvar
+            uloc(ivar) =u_prim(ivar,ix,iy)
+         end do
+         onerho= 1.0d0/uloc(irho)
+         qloc(irho,ix) = max(uloc(irho), smallr)
+         qloc(ivx,ix)  = uloc(ivx)*onerho
+         qloc(ivy,ix)  = uloc(ivy)*onerho
+         qloc(ivz,ix)  = uloc(ivz)*onerho
 #if NDUST>0
          do idust = 1, ndust
-            q(irhod(idust),ix,iy) = u_prim(irhod(idust),ix,iy)
-            q(ivdx(idust),ix,iy)  = u_prim(ivdx(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
-            q(ivdy(idust),ix,iy)  = u_prim(ivdy(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
-            q(ivdz(idust),ix,iy)  = u_prim(ivdz(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
+            onerhod=1.0d0/uloc(irhod(idust))
+            qloc(irhod(idust),ix) = uloc(irhod(idust))
+            qloc(ivdx(idust),ix)  = uloc(ivdx(idust))*onerhod
+            qloc(ivdy(idust),ix)  = uloc(ivdy(idust))*onerhod
+            qloc(ivdz(idust),ix)  = uloc(ivdz(idust))*onerhod
 #if NDUSTPSCAL>0
             do ipscal = 1, ndustpscal
-               q(idust_pscal(idust,ipscal),ix,iy) = u_prim(idust_pscal(idust, ipscal),ix,iy)/u_prim(irhod(idust),ix,iy)
+               qloc(idust_pscal(idust,ipscal),ix) = uloc(idust_pscal(idust, ipscal))*onerhod
             end do
 #endif
          end do
 #endif
+         if (iso_cs == 1 ) then 
+            qloc(iP,ix) = uloc(irho)*cs(ix,iy)**2
+         else
+            ekin        = half*uloc(irho)*((uloc(ivx)*onerho)**2.0) + half*uloc(irho)*((uloc(ivy))*onerho**2.0) + half*uloc(irho)*((uloc(ivz))*onerho**2.0)
+            qloc(iP,ix) = max((gamma - 1.0d0)*(uloc(iP) - ekin), smallp) 
+         endif
+
       end do
+      q(:,1:nx_max,iy) = qloc(:,1:nx_max)
    end do
-
-
-   if (non_standard_eos == 1) then
-      !$omp parallel do schedule(static,2) default(shared) private(ix,iy)
-      do iy = 1, ny_max
-         do ix = 1, nx_max
-            cs(ix,iy)   = cs_eos(barotrop(q(irho,ix,iy)))
-            q(iP,ix,iy) = q(irho,ix,iy)*cs(ix,iy)**2
-         end do
-      end do
-
-   else if (iso_cs == 1 ) then 
-      !$omp parallel do schedule(static,2) default(shared) private(ix,iy)
-      do iy = 1, ny_max
-         do ix = 1, nx_max
-            q(iP,ix,iy) = u_prim(irho,ix,iy)*cs(ix,iy)**2
-         end do
-      end do
-
-   else
-     !$omp parallel do schedule(static,2) default(shared) private(ix,iy,ekin)
-      do iy = 1, ny_max
-         do ix = 1, nx_max
-            ekin        = half*u_prim(irho,ix,iy)*((u_prim(ivx,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivy,ix,iy)/u_prim(irho,ix,iy))**2.0) + half*u_prim(irho,ix,iy)*((u_prim(ivz,ix,iy)/u_prim(irho,ix,iy))**2.0)
-            q(iP,ix,iy) = max((gamma - 1.0d0)*(u_prim(iP,ix,iy) - ekin), smallp) 
-         end do
-      end do
-
-   endif
-
+   !$omp end do
+   deallocate(qloc)
+   !$omp end parallel
 end subroutine ctoprim
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
