@@ -108,12 +108,20 @@ subroutine setup
 
 #if NDUST>0
 
-    call distribution_dust(.true.)
+    call distribution_dust(.false.) !creates sdust and mdust arrays
 
     do i=1,ncells
       do idust=1,ndust
+#if NDUST==1
         sdust(i,idust)    = smax/unit_l !if a single grain
         mdust(i,idust)    = (4./3.*pi*smax**3*rhograin)/unit_m
+        St(i,idust)       = St_0(idust)
+
+#if NDUSTPSCAL==1
+        q(i,idust_pscal(idust,1)) = smax/unit_l
+#endif
+
+#endif
 
         q(i,ivdx(idust)) = delta_vdx/unit_v*(cos(position(i,1)*k_mag)) 
 
@@ -167,21 +175,6 @@ subroutine setup
 
 
 
-
-#if NDUST>0
-
-
-
-        do idust=1,ndust
-
-
-
-
-
-        end do
-
-
-#endif
 
 #if MHD==1
 if(beta_0>0) then
@@ -244,23 +237,9 @@ endif
 !!!Correct initial velocity to meet desired initial Mach!!!
 #if TURB>0
 
-  ! print *,'rndom_vy', random_array_vy
-  ! print *,'rndom_vz', random_array_vz
-
 
   call compute_rms_velocity  !Compute rms for initial velocity profile provided by random generation of random_vx_array
-  ! print *,'vrms=',V_rms
-  ! print *,'vy_rms=',Vy_rms
-  ! print *,'vz_rms=',Vz_rms
-  ! print *,'vtot_rms=',Vtot_rms
-
   call initial_velocity_correction  !Uses the rms_velocity recently calculated
-  !print *, 'vx corrected',random_array_vx
-  ! print *,'rndom_vy corrected', random_array_vy
-  ! print *,'rndom_vz corrected', random_array_vz
-
-
-
 
     do i = 1,ncells
 
@@ -299,13 +278,9 @@ endif
 
 
   call compute_rms_velocity  !Call it again to check if correction performed correctly (read it in output_0000)
-  ! print *,"updated vrms = ", V_rms
-  ! print *,"updated vyrms = ", Vy_rms
-  ! print *,"updated vzrms = ", Vz_rms
-  ! print *,"updated vtotrms = ", Vtot_rms
-
 
 #endif
+
 
 
 #if MHD==1
@@ -419,6 +394,11 @@ subroutine read_setup_params(ilun,nmlfile)
    use commons
    use units
    implicit none
+
+   if(nrestart>0) then 
+    call restart_setup_quantities
+  endif
+
   
 end subroutine setup_preloop
 
@@ -449,7 +429,7 @@ subroutine compute_tstop
   use OMP_LIB
 
   implicit none
-  integer :: i,idust
+  integer :: i,idust,ipscal
   real(dp):: pn,rhon
   !Re-calc distribution
 
@@ -461,7 +441,15 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        tstop(i,idust) = St_0(idust)*box_l*rho_0/cs(i)/q(i,irho)
+        tstop(i,idust) = St_0(idust)*box_l*rho_0/cs(i)/q(i,irho) !St_0 is a namelist input. Should match with the def of smax
+        St(i,idust) = tstop(i,idust) * cs(i) / box_l
+
+#if NDUSTPSCAL>0
+    ! Dust growth via monodisperse approach
+    ipscal = 1 !The first passive scalar is the grain size
+    tstop(i,idust) = dsqrt(pi/8) * rhograin * q(i,idust_pscal(idust,ipscal)) / (q(i,irho) * cs(i))
+    St(i,idust) = tstop(i,idust) * cs(i) / box_l
+#endif
      end do
      end if
   end do
@@ -471,4 +459,104 @@ subroutine compute_tstop
 
 end subroutine compute_tstop
 #endif
+
+#if NDUST>0
+! Dust coagulation time
+subroutine compute_tcoag
+  
+  use parameters
+  use commons
+  use units
+  use OMP_LIB
+
+  implicit none
+  integer :: i,idust,ipscal
+  real(dp):: mgrain_step,cs_modified,St_frag 
+  !Re-calc distribution
+
+
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
+  do i=1,ncells
+   if(active_cell(i)==1) then
+     do idust=1,ndust
+
+        ipscal = 1 !The first passive scalar is the grain size
+
+
+        mgrain_step = 4./3. * pi * q(i,idust_pscal(idust,1))**3 * rhograin
+
+        if (St(i,idust) <= 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs(i)*dsqrt(St(i,idust)) !Regime II
+        if (St(i,idust) > 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs(i)*dsqrt(2./(1.+St(i,idust))) !Regime III
+
+
+        if (modified_Ormel .eqv. .true.) then !Modify soundspeed due to dust backreaction
+
+          cs_modified = cs(i)/dsqrt(1+SUM((q(i,irhod(:))/q(i,irho))/(1+St(i,:))))
+          if (St(i,idust) <= 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs_modified*dsqrt(St(i,idust)) !Regime II
+          if (St(i,idust) > 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs_modified*dsqrt(2./(1.+St(i,idust))) !Regime III
+          
+
+        endif
+
+        !t_coag -> 3*t_coag in equa diff of grain size
+        tcoag(i,idust) =  3.0/(sqrt(8/3*pi)*pi*4*q(i,idust_pscal(idust,ipscal))**2*dv_ormel_step(i,idust)*q(i,irhod(idust))/mgrain_step)
+
+        if (frag_step) then
+
+          St_frag = vfrag**2/(alpha_turb*cs(i)**2)
+
+          if (modified_Ormel .eqv. .true.) St_frag = vfrag**2/(alpha_turb*cs_modified**2)
+
+          size_frag_Ormel(i,idust) = St_frag*q(i,irho)*cs(i)*(box_l/cs(i))/rhograin/sqrt(pi/8.) !Define the stepinski size from the Stokes provided in the namelist
+          !print*, 'sfrag=',sfrag(idust,ix,iy)
+
+        endif
+
+
+     end do
+  end if
+end do
+  !$OMP END DO
+  !$OMP END PARALLEL
+
+
+end subroutine compute_tcoag
+#endif
+
+
+subroutine restart_setup_quantities
+!!Retrieve seteup dependent quantities that are not in the uprim array!!
+
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i,idust
+  real(dp) :: xdp
+  character(LEN = 5) :: nchar
+  character(len=80)  :: path, format_out
+
+  do i=1,ncells
+    do idust=1,ndust
+
+#if NDUST==1     
+      sdust(i,idust)    = smax / unit_l !A priori not needed because no growth and this line is already called in setup.
+      mdust(i,idust)    = (4./3.*pi*smax**3*rhograin)/unit_m !sdust and mdust needed for chemical network.
+
+#if NDUSTPSCAL==1 
+! --> q(i,idust_pscal(idust,1)) has been recovered in the uprim vector of the restart output
+!mdust is updated when calling dust_growth_stepinski. However, analytical charge (which needs mdust) is called before, thus:
+      mdust(i,idust)    = (4./3.*pi*q(i,idust_pscal(idust,1))**3*rhograin)/unit_m
+#endif
+#endif
+
+  end do
+end do
+!Note: cs(i) is computed at the end of predictor step, and used in Riemann solvers and courant.
+!But courant called first --> we need to retrieve the soundspeed from restart output or recompute it. HERE: isothermal, thus using the initial value cs_0 is valid.
+end subroutine restart_setup_quantities
+
 

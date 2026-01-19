@@ -814,6 +814,39 @@ end subroutine total_dust_current
 #endif
 #endif
 
+#if MHD==1
+subroutine b_unit_vector
+  use parameters
+  use commons
+  use units
+  !use OMP_LIB 
+  use slope_limiter
+
+  implicit none
+  integer :: i
+  real(dp) :: B_norm
+
+
+
+      do i=1,ncells
+
+
+         B_norm = dsqrt(q(i,iBx)**2 + q(i,iBy)**2 + q(i,iBz)**2)
+
+         b_unit_x(i) = q(i,iBx)/B_norm
+         b_unit_y(i) = q(i,iBy)/B_norm
+         b_unit_z(i) = q(i,iBz)/B_norm
+
+
+
+      end do
+
+
+
+
+end subroutine b_unit_vector
+#endif
+
 
 
 #if MHD==1
@@ -920,7 +953,6 @@ subroutine Lorentz_force
          ! FLor_z(i) = e_el_stat*ni(i)*(E_z(i) + v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx))  !ions 
 
          !Fully developed form (equivalent to above form bu replacing vi with its expression)
-        idust = i_coupled_species
 
          !the term \propto (vn-vd) is solved implicitly in dust_drag through backreaction
 
@@ -1039,7 +1071,10 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
 
         do i=1,ncells
                 ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
-                zd(i,idust) = -ni(i)/(q(i,irhod(idust))/mdust(i,idust))
+
+                zd(i,idust) = -ni(i)/(q(i,irhod(idust))/(4./3.*pi*smax**3*rhograin))
+
+                !zd(i,idust) = -ni(i)/(q(i,irhod(idust))/mdust(i,idust))
 
          end do   
 

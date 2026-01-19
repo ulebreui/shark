@@ -169,7 +169,9 @@ subroutine allocate_init
     allocate(eta_eff_Hall_z(1:ncells))
     allocate(Jy(1:ncells))
     allocate(Jz(1:ncells))
-
+    allocate(b_unit_x(1:ncells))
+    allocate(b_unit_y(1:ncells))
+    allocate(b_unit_z(1:ncells))
 
 
 
@@ -204,6 +206,10 @@ subroutine allocate_init
     eta_eff_Hall_z = 0.0d0
     Jy = 0.0d0
     Jz = 0.0d0
+    b_unit_x = 0.0d0
+    b_unit_y = 0.0d0
+    b_unit_z = 0.0d0
+
 
 
 
@@ -257,12 +263,20 @@ subroutine allocate_init
     ivdx(idust) = iP+ndust+idust
     ivdy(idust) = iP+2*ndust+idust
     ivdz(idust) = iP+3*ndust+idust
+
+    index_vdn(idust,1) = ivdx(idust)
+    index_vdt(idust,1) = ivdy(idust)
+    index_vdn(idust,2) = ivdy(idust)
+    index_vdt(idust,2) = ivdx(idust)
+
 #if DUST_PRESSURE==1
       print *, ' iPd = ',  iP+4*ndust+idust
       iPd(idust) = iP + 4*ndust+idust
 #endif
+  end do
 
 #if NDUSTPSCAL>0
+  do idust=1,ndust
     do ipscal=1,ndustpscal
       idust_pscal(idust,ipscal) = iP +4*ndust+icountpscal
 #if DUST_PRESSURE==1
@@ -272,12 +286,9 @@ subroutine allocate_init
       print *,'idustpscal   =', idust_pscal(idust,ipscal)
       icountpscal= icountpscal +1
     end do
-#endif     
-    index_vdn(idust,1) = ivdx(idust)
-    index_vdt(idust,1) = ivdy(idust)
-    index_vdn(idust,2) = ivdy(idust)
-    index_vdt(idust,2) = ivdx(idust)
   end do
+#endif     
+
 #endif
   smallr=smallr/unit_d
   smallc=smallc/unit_v

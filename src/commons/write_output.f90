@@ -13,6 +13,8 @@ subroutine output(iout)
   path='output_'
   format_out=trim("unformatted")
   ilun=20
+  if(iout==nrestart) return
+
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)
@@ -48,6 +50,10 @@ subroutine output(iout)
 
   !call write_setup_info(ilun)
   close(ilun)
+
+
+  if (write_backup_for_restart) call write_backup(iout)
+
   
   open(ilun,file=trim(path) // trim(nchar)//trim('/x'), form=format_out,access='stream')
   do i = 1,ncells
@@ -130,25 +136,28 @@ subroutine output(iout)
    close(ilun)
 
 if (charging .and. call_electric_field) then
-  open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
-      if(active_cell(i)==1) write(ilun) E_x(i)*unit_v*unit_B !
-   end do
-   close(ilun)
-  open(ilun,file=trim(path) // trim(nchar)//trim('/Ey'), form=format_out,access='stream')
-   do i = 1,ncells
-      !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
-      if(active_cell(i)==1) write(ilun) E_y(i)*unit_v*unit_B
-   end do
-   close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Ez'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) E_z(i)*unit_v*unit_B
-      !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
 
-   end do
-   close(ilun)
+   if (write_electric_field) then
+     open(ilun,file=trim(path) // trim(nchar)//trim('/Ex'), form=format_out,access='stream')
+      do i = 1,ncells
+         !if(active_cell(i)==1) write(ilun) q(i,iBx)*unit_B
+         if(active_cell(i)==1) write(ilun) E_x(i)*unit_v*unit_B !
+      end do
+      close(ilun)
+     open(ilun,file=trim(path) // trim(nchar)//trim('/Ey'), form=format_out,access='stream')
+      do i = 1,ncells
+         !if(active_cell(i)==1) write(ilun) q(i,iBy)*unit_B
+         if(active_cell(i)==1) write(ilun) E_y(i)*unit_v*unit_B
+      end do
+      close(ilun)
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Ez'), form=format_out,access='stream')
+      do i = 1,ncells
+         if(active_cell(i)==1) write(ilun) E_z(i)*unit_v*unit_B
+         !if(active_cell(i)==1) write(ilun) q(i,iBz)*unit_B
+
+      end do
+      close(ilun)
+   endif
 endif
 #endif 
 
@@ -197,11 +206,30 @@ do i=1,ncells
  end do
 end do
  close(ilun)
+
+if (write_Ormel_velocity) then
+ open(ilun,file=trim(path) // trim(nchar)//trim('/dustpscal'), form=format_out,access='stream')
+do i=1,ncells
+ do idust=1,ndust
+   do ipscal=1,ndustpscal
+      if(active_cell(i)==1) write(ilun) dv_ormel_step(i,idust)
+   end do
+ end do
+end do
+ close(ilun)
+ endif
 #endif
   open(ilun,file=trim(path) // trim(nchar)//trim('/sd'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) sdust(i,idust)*unit_l 
+   end do
+  end do
+  close(ilun)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/St'), form=format_out,access='stream')
+  do idust=1,ndust
+   do i = 1,ncells
+      if(active_cell(i)==1) write(ilun) St(i,idust) 
    end do
   end do
   close(ilun)
@@ -230,27 +258,30 @@ end do
 #endif
 
 #if TURB>0
-   open(ilun,file=trim(path) // trim(nchar)//trim('/V_rms'), form=format_out,access='stream')
-   write(ilun) V_rms
-   close(ilun)
+
+   if (write_rms_velocities) then
+      open(ilun,file=trim(path) // trim(nchar)//trim('/V_rms'), form=format_out,access='stream')
+      write(ilun) V_rms
+      close(ilun)
 
 
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vy_rms'), form=format_out,access='stream')
-   write(ilun) Vy_rms
-   close(ilun)
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Vy_rms'), form=format_out,access='stream')
+      write(ilun) Vy_rms
+      close(ilun)
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vz_rms'), form=format_out,access='stream')
-   write(ilun) Vz_rms
-   close(ilun)
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Vz_rms'), form=format_out,access='stream')
+      write(ilun) Vz_rms
+      close(ilun)
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vyz_rms'), form=format_out,access='stream')
-   write(ilun) Vyz_rms
-   close(ilun)
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Vyz_rms'), form=format_out,access='stream')
+      write(ilun) Vyz_rms
+      close(ilun)
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Vtot_rms'), form=format_out,access='stream')
-   write(ilun) Vtot_rms
-   close(ilun)
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Vtot_rms'), form=format_out,access='stream')
+      write(ilun) Vtot_rms
+      close(ilun)
+   endif
 
 
 
@@ -259,48 +290,58 @@ end do
 
 
 if(charging) then
-  ! open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
-  !  do i = 1,ncells
-  !     if(active_cell(i)==1) write(ilun) eta_a(i)
-  !  end do
-  !  close(ilun)
-  !  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
-  !  do i = 1,ncells
-  !     if(active_cell(i)==1) write(ilun) eta_o(i)
-  !  end do
-  !  close(ilun)
-  !  open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
-  !  do i = 1,ncells
-  !     if(active_cell(i)==1) write(ilun) eta_h(i)
-  !  end do
-  ! close(ilun)eta_eff_ohm
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_y'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_eff_Hall_y(i)
-   end do
-  close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_z'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_eff_Hall_z(i)
-   end do
-  close(ilun)
-   open(ilun,file=trim(path) // trim(nchar)//trim('/eta_ohm'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) eta_eff_ohm(i)
-   end do
-  close(ilun)
+   if (write_resistivities) then
+      if (dusty_nonideal_MHD) then
+        open(ilun,file=trim(path) // trim(nchar)//trim('/eta_a'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_a(i)
+         end do
+         close(ilun)
+         open(ilun,file=trim(path) // trim(nchar)//trim('/eta_o'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_o(i)
+         end do
+         close(ilun)
+         open(ilun,file=trim(path) // trim(nchar)//trim('/eta_h'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_h(i)
+         end do
+        close(ilun)
+      end if
+
+      if (dusty_nonideal_MHD_no_electron) then
+         open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_y'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_eff_Hall_y(i)
+         end do
+        close(ilun)
+         open(ilun,file=trim(path) // trim(nchar)//trim('/eta_hall_z'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_eff_Hall_z(i)
+         end do
+        close(ilun)
+         open(ilun,file=trim(path) // trim(nchar)//trim('/eta_ohm'), form=format_out,access='stream')
+         do i = 1,ncells
+            if(active_cell(i)==1) write(ilun) eta_eff_ohm(i)
+         end do
+        close(ilun)
+      endif
+   endif
    open(ilun,file=trim(path) // trim(nchar)//trim('/ni'), form=format_out,access='stream')
    do i = 1,ncells
       if(active_cell(i)==1) write(ilun) ni(i)
    end do
   close(ilun)
 
-   open(ilun,file=trim(path) // trim(nchar)//trim('/Hall_i'), form=format_out,access='stream')
-   do i = 1,ncells
-      if(active_cell(i)==1) write(ilun) Hall_i(i)
-   end do
-   close(ilun)
+
+   if (write_Hall_factors) then
+      open(ilun,file=trim(path) // trim(nchar)//trim('/Hall_i'), form=format_out,access='stream')
+      do i = 1,ncells
+         if(active_cell(i)==1) write(ilun) Hall_i(i)
+      end do
+      close(ilun)
+   endif
 
    open(ilun,file=trim(path) // trim(nchar)//trim('/ne'), form=format_out,access='stream')
    do i = 1,ncells
@@ -354,19 +395,68 @@ subroutine title(n,nchar) ! Shamelessely stolen from RAMSES (Teyssier, 2002)
 
 end subroutine title
 
+subroutine write_backup(iout)
 
-! subroutine write_variable(name_var,xdp)
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i,ilun,iout,ivar
+  real(dp) :: rhod_tot
+  character(LEN = 5) :: nchar
+  character(len=80)  :: path, format_out
 
-!   use parameters
-!   use commons
-!   use units
-!   implicit none
-!   integer  :: i,ilun=50
-!   real(dp), dimension(1: ncells) :: xdp
-!   open(ilun,file=trim(path) // trim(nchar)//trim(name_var), form=format_out,access='stream')
-!   do i = 1,ncells
-!    if(active_cell(i)==1) write(ilun) xdp(i)
-!   end do
-!   !xdp
-!   close(ilun)
-! end subroutine write_variable
+  path='output_'
+  format_out=trim("unformatted")
+  ilun=20
+  call title(iout,nchar)
+
+  open(ilun,file=trim(path) // trim(nchar)//trim('/uprim'), form=format_out,access='stream')
+  do ivar=1,nvar
+      do i = 1,ncells
+         write(ilun) u_prim(i,ivar)
+      end do
+  end do
+  close(ilun)
+
+  open(ilun,file=trim(path) // trim(nchar)//trim('/time'), form=format_out,access='stream')
+  write(ilun) time
+  close(ilun)
+
+
+  end subroutine write_backup
+
+
+subroutine restart(iout)
+
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: i,ilun,iout,ivar
+  real(dp) :: xdp
+  character(LEN = 5) :: nchar
+  character(len=80)  :: path, format_out
+
+  path='output_'
+  format_out=trim("unformatted")
+  ilun=20
+  call title(iout,nchar)
+  open(ilun,file=trim(path) // trim(nchar)//trim('/uprim'), form=format_out,access='stream')
+  do ivar=1,nvar
+      do i = 1,ncells
+         read(ilun) xdp
+         u_prim(i,ivar) = xdp
+      end do
+  end do
+  close(ilun)
+
+  open(ilun,file=trim(path) // trim(nchar)//trim('/time'), form=format_out,access='stream')
+  read(ilun) xdp
+  close(ilun)
+  time = xdp
+
+  call ctoprim !needed to have the correct q vector
+  call apply_boundaries
+end subroutine restart
+

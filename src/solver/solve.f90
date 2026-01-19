@@ -28,18 +28,18 @@ subroutine solve(verbose,outputing)
   call system_clock ( t3, clock_rate, clock_max )
 #if NDUST>0
   ! Re-calc distribution
-  call distribution_dust(.false.)
-  call compute_tstop  !Re-calc distribution
+  call distribution_dust(.false.) !Useless a priori
+  call compute_tstop  
 #endif
 
 
-  if(charging) then
+if(charging) then
+
     if (analytical_charging .eqv. .false.) call charge 
 
 #if NDUST>0
     if(analytical_charging) call analytical_charge
 #endif
-   endif
 
 #if MHD==1
 #if NDUST>0
@@ -64,6 +64,8 @@ subroutine solve(verbose,outputing)
         call Hall_factor !For test
         call total_current
         call total_dust_current
+        call b_unit_vector
+
 
 
         if (call_electric_field) call electric_field
@@ -75,7 +77,7 @@ subroutine solve(verbose,outputing)
 #endif
 #endif
 
-
+endif
 
 
 
@@ -94,8 +96,7 @@ subroutine solve(verbose,outputing)
 
   ! Flux are computed and added to u_prim
   call add_delta_u
-  !call ctoprim
-  !call apply_boundaries
+
 
 
   call system_clock ( t7, clock_rate, clock_max )
@@ -105,15 +106,6 @@ subroutine solve(verbose,outputing)
 
   call apply_boundaries
   call source_terms
-     ! print*, 'dxBy=', dxBy
-     ! print*, 'dxBz=', dxBz
-    ! print *, 'Ex=', E_x(:)
-    ! print *, 'Ey=', E_y(:)
-  ! print *, 'Ez=', E_z(:)
-    ! print*, 'By=', q(:,iBy)
-    ! print*, 'Bz=', q(:,iBz)
-     ! print*, 'FL=', FLor_x_d(:,:)
-     ! print*, 'FL=', FLor_x_d(:,:)
 
 
   if(fargo) call fargo_scheme
@@ -129,7 +121,12 @@ subroutine solve(verbose,outputing)
   endif
 
 #if NDUSTPSCAL > 0 
-  if(growth_step) call dust_growth_stepinski(verbose) ! Dust growth with Stepinski /!\ dust size is in the first pscal
+  if(growth_step) then
+    call ctoprim
+    call compute_tstop !To update St before computing tcoag
+    call compute_tcoag
+    call dust_growth_stepinski ! Dust growth with Stepinski /!\ dust size is in the first pscal
+  endif
 #endif
 #endif
   call system_clock ( t9, clock_rate, clock_max )
@@ -138,7 +135,6 @@ subroutine solve(verbose,outputing)
   if(force_kick) call kick(0.5d0)
 
 #if TURB>0
-!Maybe to put in force_kick
 
   call compute_rms_velocity
 
@@ -245,7 +241,6 @@ subroutine ctoprim
 #if NDUSTPSCAL>0
     do ipscal=1,ndustpscal
         q(i,idust_pscal(idust,ipscal))  = u_prim(i,idust_pscal(idust,ipscal))/u_prim(i,irhod(idust))
-        if(growth_step)  sdust(i,idust) = q(i,idust_pscal(idust,ipscal))
     end do
 #endif             
      end do

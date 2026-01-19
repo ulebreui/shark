@@ -682,7 +682,7 @@ subroutine solver_dust_llf(qleft,qright,flx,idim,i)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,ipscal
 
     real(dp) :: S_lft,S_rgt,lambda_llf_d,csl,csr
 
@@ -690,10 +690,10 @@ subroutine solver_dust_llf(qleft,qright,flx,idim,i)
     real(dp) :: rho_lft,rho_rgt,u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt
     real(dp) :: mom_u_lft,mom_u_rgt,mom_v_lft,mom_v_rgt,mom_w_lft,mom_w_rgt
     real(dp) :: flx_rho_lft,flx_mom_u_lft,flx_mom_v_lft,flx_mom_w_lft,flx_P_lft
-    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt
+    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt,flx_pscal_lft,flx_pscal_rgt
 #if MHD==1
 
-    real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt 
+    real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt
 
 
     real(dp) ::flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt
@@ -761,6 +761,9 @@ subroutine solver_dust_llf(qleft,qright,flx,idim,i)
         flx_mom_w_rgt = rho_rgt * u_rgt  * w_rgt
         flx_mom_w_lft = rho_lft * u_lft  * w_lft
 
+
+
+
 #if MHD==1
 
 
@@ -794,10 +797,19 @@ subroutine solver_dust_llf(qleft,qright,flx,idim,i)
     flx(i_v)    =  0.d0
     flx(i_w)    =  0.d0
 
+
     flx(i_rho) = half*(flx_rho_lft  + flx_rho_rgt)   - half*lambda_llf_d*(rho_rgt - rho_lft)
     flx(i_u)  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
     flx(i_v)  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
     flx(i_w)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
+
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
+        flx_pscal_rgt = qright(idust_pscal(idust,ipscal)) * rho_rgt  * u_rgt
+        flx(idust_pscal(idust,ipscal))  = half*(flx_pscal_lft  + flx_pscal_rgt)   - half*lambda_llf_d*(rho_rgt*qright(idust_pscal(idust,ipscal)) - rho_lft*qleft(idust_pscal(idust,ipscal)))
+    end do
+#endif 
 
 end do
 end subroutine solver_dust_llf
@@ -820,7 +832,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
     real(dp),dimension(1:nvar),intent(in) :: qright,qleft
     real(dp),dimension(1:nvar),intent(inout) :: flx
-    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,il,ir,ix,iy,icell,ixx,iyy
+    integer  :: idim,idust,i_u,i_v,i_rho,i_w,i,il,ir,ix,iy,icell,ixx,iyy,ipscal
     real(dp) :: csl,csr,P_lft,P_rgt
     real(dp) :: S_lft,S_rgt,lambda_llf_d
     real(dp) :: ca_lft,ca_rgt,cw_rgt,cw_lft,magnetosonic_fast_rgt,magnetosonic_fast_lft
@@ -830,7 +842,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
     real(dp) :: rho_lft,rho_rgt,u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt
     real(dp) :: mom_u_lft,mom_u_rgt,mom_v_lft,mom_v_rgt,mom_w_lft,mom_w_rgt
     real(dp) :: flx_rho_lft,flx_mom_u_lft,flx_mom_v_lft,flx_mom_w_lft,flx_P_lft
-    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt
+    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt,flx_pscal_lft,flx_pscal_rgt
 #if MHD==1
 
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt,c_fast_lft,c_fast_rgt 
@@ -971,9 +983,6 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*mag_tension_z_lft
 
 
-
-
-
 #endif
 
 
@@ -996,6 +1005,20 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
     flx(i_u)  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
     flx(i_v)  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
     flx(i_w)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
+
+
+
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+
+        flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
+        flx_pscal_rgt = qright(idust_pscal(idust,ipscal)) * rho_rgt  * u_rgt
+
+        flx(idust_pscal(idust,ipscal))  = (S_rgt*flx_pscal_lft  - S_lft*flx_pscal_rgt + S_rgt*S_lft*(rho_rgt*qright(idust_pscal(idust,ipscal)) - rho_lft*qleft(idust_pscal(idust,ipscal)))) / (S_rgt-S_lft)
+    end do
+#endif 
+
+
     end if
 
     if (u_lft==u_rgt) then !Switch back to llf
@@ -1006,6 +1029,14 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
     flx(i_u)  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
     flx(i_v)  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
     flx(i_w)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
+
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
+        flx_pscal_rgt = qright(idust_pscal(idust,ipscal)) * rho_rgt  * u_rgt
+        flx(idust_pscal(idust,ipscal))  = half*(flx_pscal_lft  + flx_pscal_rgt)   - half*lambda_llf_d*(rho_rgt*qright(idust_pscal(idust,ipscal)) - rho_lft*qleft(idust_pscal(idust,ipscal)))
+    end do
+#endif 
 
 
 
@@ -1035,10 +1066,45 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 #endif
 
 
-    flx(i_rho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
-    flx(i_u)  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
-    flx(i_v)  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
-    flx(i_w)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
+    if (S_rgt/=S_lft) then
+
+        flx(i_rho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
+        flx(i_u)  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
+        flx(i_v)  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
+        flx(i_w)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
+
+
+#if NDUSTPSCAL>0
+        do ipscal=1,ndustpscal
+            flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
+            flx_pscal_rgt = qright(idust_pscal(idust,ipscal)) * rho_rgt  * u_rgt
+            flx(idust_pscal(idust,ipscal))  = (S_rgt*flx_pscal_lft  - S_lft*flx_pscal_rgt + S_rgt*S_lft*(rho_rgt*qright(idust_pscal(idust,ipscal)) - rho_lft*qleft(idust_pscal(idust,ipscal)))) / (S_rgt-S_lft)
+        end do
+#endif 
+
+    endif
+
+    if (S_rgt==S_lft) then
+
+        lambda_llf_d        = max(abs(ca_lft),abs(ca_rgt))
+#if DUST_PRESSURE==1
+         lambda_llf_d        = max(abs(c_fast_lft),abs(c_fast_rgt))
+#endif
+
+    flx(i_rho) = half*(flx_rho_lft   + flx_rho_rgt)    - half*lambda_llf_d*(rho_rgt   - rho_lft)
+    flx(i_u)  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf_d*(mom_u_rgt - mom_u_lft)
+    flx(i_v)  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf_d*(mom_v_rgt - mom_v_lft)
+    flx(i_w)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf_d*(mom_w_rgt - mom_w_lft)
+
+#if NDUSTPSCAL>0
+    do ipscal=1,ndustpscal
+        flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
+        flx_pscal_rgt = qright(idust_pscal(idust,ipscal)) * rho_rgt  * u_rgt
+        flx(idust_pscal(idust,ipscal))  = half*(flx_pscal_lft  + flx_pscal_rgt)   - half*lambda_llf_d*(rho_rgt*qright(idust_pscal(idust,ipscal)) - rho_lft*qleft(idust_pscal(idust,ipscal)))
+    end do
+#endif 
+
+    endif
 
 #endif
 
@@ -1483,7 +1549,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     real(dp) :: nd_zd_over_ni,nd_zd_over_ni_left,nd_zd_over_ni_right,dne,dne_il,ne_left,ne_right,dni,dni_il,ni_left,ni_right,dhall_i,dhall_il,hall_i_left,hall_i_right
     real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,total_dust_current_z_lft,total_dust_current_y_lft,total_dust_current_x_lft,total_dust_current_z_rgt,total_dust_current_y_rgt,total_dust_current_x_rgt,B_norm_lft,B_norm_rgt
     real(dp) :: deta_o,deta_o_l,eta_o_left,eta_o_right,dJdx_tot,dJdx_tot_l,Jdx_tot_left,Jdx_tot_right,dJdy_tot,dJdy_tot_l,Jdy_tot_left,Jdy_tot_right,dJdz_tot,dJdz_tot_l,Jdz_tot_left,Jdz_tot_right
-    real(dp) :: deta_H,deta_H_l,eta_H_left,eta_H_right,deta_a,deta_a_l,eta_a_left,eta_a_right
+    real(dp) :: deta_H,deta_H_l,eta_H_left,eta_H_right,deta_a,deta_a_l,eta_a_left,eta_a_right,db_unit_x,db_unit_x_l,db_unit_y,db_unit_y_l,db_unit_z,db_unit_z_l,b_unit_x_left,b_unit_x_right,b_unit_y_left,b_unit_y_right,b_unit_z_left,b_unit_z_right
 
     Bx_lft   = qleft(iBx)
     Bx_rgt   = qright(iBx)
@@ -1627,10 +1693,10 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
                 dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
 
                 Jy_left = Jy(il) + half*dJy_l*dx(il,1)
-                Jy_right = Jy(i) - half*dJy_l*dx(il,1)
+                Jy_right = Jy(i) - half*dJy*dx(i,1)
 
                 Jz_left = Jz(il) + half*dJz_l*dx(il,1)
-                Jz_right = Jz(i) - half*dJz_l*dx(il,1)
+                Jz_right = Jz(i) - half*dJz*dx(i,1)
 
 
 
@@ -1723,10 +1789,10 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
                 dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
 
                 Jy_left = Jy(il) + half*dJy_l*dx(il,1)
-                Jy_right = Jy(i) - half*dJy*dx(il,1)
+                Jy_right = Jy(i) - half*dJy*dx(i,1)
 
                 Jz_left = Jz(il) + half*dJz_l*dx(il,1)
-                Jz_right = Jz(i) - half*dJz*dx(il,1)
+                Jz_right = Jz(i) - half*dJz*dx(i,1)
 
 
 
@@ -1741,15 +1807,32 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 
                 Jdx_tot_left = Jdx_tot(il) + half*dJdx_tot_l*dx(il,1)
-                Jdx_tot_right = Jdx_tot(i) - half*dJdx_tot*dx(il,1)
+                Jdx_tot_right = Jdx_tot(i) - half*dJdx_tot*dx(i,1)
 
                 Jdy_tot_left = Jdy_tot(il) + half*dJdy_tot_l*dx(il,1)
-                Jdy_tot_right = Jdy_tot(i) - half*dJdy_tot*dx(il,1)
+                Jdy_tot_right = Jdy_tot(i) - half*dJdy_tot*dx(i,1)
 
                 Jdz_tot_left = Jdz_tot(il) + half*dJdz_tot_l*dx(il,1)
-                Jdz_tot_right = Jdz_tot(i) - half*dJdz_tot*dx(il,1)
+                Jdz_tot_right = Jdz_tot(i) - half*dJdz_tot*dx(i,1)
 
 
+                db_unit_x = slope_limit(2.0d0*(b_unit_x(i) - b_unit_x(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_x(ir) - b_unit_x(i))/(dx(ir,1)+dx(i,1))) 
+                db_unit_y = slope_limit(2.0d0*(b_unit_y(i) - b_unit_y(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_y(ir) - b_unit_y(i))/(dx(ir,1)+dx(i,1))) 
+                db_unit_z = slope_limit(2.0d0*(b_unit_z(i) - b_unit_z(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_z(ir) - b_unit_z(i))/(dx(ir,1)+dx(i,1))) 
+
+                db_unit_x_l = slope_limit(2.0d0*(b_unit_x(i-1) - b_unit_x(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_x(ir-1) - b_unit_x(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+                db_unit_y_l = slope_limit(2.0d0*(b_unit_y(i-1) - b_unit_y(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_y(ir-1) - b_unit_y(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+                db_unit_z_l = slope_limit(2.0d0*(b_unit_z(i-1) - b_unit_z(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_z(ir-1) - b_unit_z(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+
+                b_unit_x_left = b_unit_x(il) + half*db_unit_x_l*dx(il,1)
+                b_unit_x_right = b_unit_x(i) - half*db_unit_x*dx(i,1)
+
+
+                b_unit_y_left = b_unit_y(il) + half*db_unit_y_l*dx(il,1)
+                b_unit_y_right = b_unit_y(i) - half*db_unit_y*dx(i,1)
+
+                b_unit_z_left = b_unit_z(il) + half*db_unit_z_l*dx(il,1)
+                b_unit_z_right = b_unit_z(i) - half*db_unit_z*dx(i,1)
 
 
 
@@ -1779,21 +1862,21 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
         flx_Bz_rgt = flx_Bz_rgt - clight*eta_o_right*Jdy_tot_right
 
         !AD
-        flx_By_lft = flx_By_lft + clight*eta_a_left*(2*Jdz_tot_left - Jdx_tot_left - Jdy_tot_left) - clight**2/(4*pi) * eta_a_left*(-Jy_left)
-        flx_By_rgt = flx_By_rgt + clight*eta_a_right*(2*Jdz_tot_right - Jdx_tot_right - Jdy_tot_right) - clight**2/(4*pi) * eta_a_right*(-Jy_right)
+        flx_By_lft = flx_By_lft + clight*eta_a_left*( (b_unit_x_left**2+b_unit_y_left**2)*Jdz_tot_left - b_unit_x_left*b_unit_z_left*Jdx_tot_left - b_unit_y_left*b_unit_z_left*Jdy_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(-Jy_left)
+        flx_By_rgt = flx_By_rgt + clight*eta_a_right*( (b_unit_x_right**2+b_unit_y_right**2)*Jdz_tot_right - b_unit_x_right*b_unit_z_right*Jdx_tot_right - b_unit_y_right*b_unit_z_right*Jdy_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(-Jy_right)
 
-        flx_Bz_lft = flx_Bz_lft - clight*eta_a_left*(2*Jdy_tot_left - Jdz_tot_left - Jdx_tot_left) - clight**2/(4*pi) * eta_a_left*(Jz_left)
-        flx_Bz_rgt = flx_Bz_rgt - clight*eta_a_right*(2*Jdy_tot_right - Jdz_tot_right - Jdx_tot_right) - clight**2/(4*pi) * eta_a_right*(Jz_right)
+        flx_Bz_lft = flx_Bz_lft - clight*eta_a_left*((b_unit_x_left**2+b_unit_z_left**2)*Jdy_tot_left - b_unit_y_left*b_unit_z_left*Jdz_tot_left - b_unit_x_left*b_unit_y_left*Jdx_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(Jz_left)
+        flx_Bz_rgt = flx_Bz_rgt - clight*eta_a_right*((b_unit_x_right**2+b_unit_z_right**2)*Jdy_tot_right - b_unit_y_right*b_unit_z_right*Jdz_tot_right - b_unit_x_right*b_unit_y_right*Jdx_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(Jz_right)
 
        
 
         if (Hall_effect) then
             !Hall term
-            flx_By_lft = flx_By_lft + clight*eta_H_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * Jy_left - clight*eta_H_left*Jdy_tot_left
-            flx_By_rgt = flx_By_rgt + clight*eta_H_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * Jy_left - clight*eta_H_right*Jdy_tot_right
+            flx_By_lft = flx_By_lft + clight*eta_H_left*b_unit_y_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jy_left - clight*eta_H_left * b_unit_x_left * Jdy_tot_left
+            flx_By_rgt = flx_By_rgt + clight*eta_H_right*b_unit_y_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jy_right - clight*eta_H_right * b_unit_x_right * Jdy_tot_right
 
-            flx_Bz_lft = flx_Bz_lft + clight*eta_H_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * Jz_left - clight*eta_H_left*Jdz_tot_left
-            flx_Bz_rgt = flx_Bz_rgt + clight*eta_H_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * Jz_right - clight*eta_H_right*Jdz_tot_right
+            flx_Bz_lft = flx_Bz_lft + clight*eta_H_left*b_unit_z_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jz_left - clight*eta_H_left*b_unit_x_left*Jdz_tot_left
+            flx_Bz_rgt = flx_Bz_rgt + clight*eta_H_right*b_unit_z_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jz_right - clight*eta_H_right*b_unit_x_right*Jdz_tot_right
 
         endif
     endif

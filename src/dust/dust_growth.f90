@@ -255,7 +255,7 @@ subroutine dust_growth(verbose)
 
 
 ! This files contain the dust growth routines.
-subroutine dust_growth_stepinski(verbose)
+subroutine dust_growth_stepinski
   use parameters
   use commons
   use units
@@ -263,6 +263,7 @@ subroutine dust_growth_stepinski(verbose)
   implicit none
   logical :: verbose
   integer :: i,idust,jdust,ipscal
+  real(dp) :: new_tstop,new_St
 
 
 
@@ -276,8 +277,24 @@ subroutine dust_growth_stepinski(verbose)
   if (active_cell(i)==1) then
      ! Differential velocity loop
      do idust=1,ndust
-           u_prim(i,idust_pscal(idust,1))=max(u_prim(i,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(i,irhod(idust))*sminstep/unit_l)
-           !sdust(i,idust) = u_prim(i,idust_pscal(idust,1))/q(i,irhod(idust))
+        u_prim(i,idust_pscal(idust,1))=u_prim(i,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust))
+        ! Fragmentation
+        if (frag_step)  then
+           new_tstop = dsqrt(pi/8) * rhograin * (u_prim(i,idust_pscal(idust,1))/u_prim(i,irhod(idust))) / (q(i,irho) * cs(i))
+           new_St = new_tstop * cs(i) / box_l
+
+           if (new_St <= 1) u_prim(i,idust_pscal(idust,1)) = max(u_prim(i,irhod(idust))*smax,min(u_prim(i,irhod(idust))*size_frag_Ormel(i,idust), u_prim(i,idust_pscal(idust,1)))) !The max() part ensures that fragmentation does not produce sizes lower than the initial smax
+
+           if (new_St > 1) then !St can be very high all of a sudden in regions of low gas density. Here, we are in regine III and the collision velocities are different
+              if (dv_ormel_step(i,idust) > vfrag) u_prim(i,idust_pscal(idust,1)) = max(u_prim(i,irhod(idust))*smax,u_prim(i,irhod(idust))*size_frag_Ormel(i,idust)) !Shatters and go back to frag threshold
+              !else: !St is sufficiently high so that dv_ormel_step(i,idust) < vfrag and thus growth can proceed.
+           endif
+
+        endif
+         sdust(i,idust) = u_prim(i,idust_pscal(idust,1))/u_prim(i,irhod(idust))
+         mdust(i,idust)    = (4./3.*pi*sdust(i,idust)**3.*rhograin)/unit_m !For chemical network
+
+
       end do
    endif
    end do

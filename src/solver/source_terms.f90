@@ -176,10 +176,10 @@ if (dusty_nonideal_MHD) then
         !!!Ambipolar diffusion (appears explicitly in the eq because of inertialess electrons)
 
 
-        call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
+        call hyper_diffusion_induction_eq(S_diff(:),clight**2/(4*pi)*eta_a(:)*(b_unit_x(:)**2+b_unit_y(:)**2),q(:,iBy),dx(i,1),dx(i,1),dx(i,1),i,iBy) 
         S_U(i,iBy)=S_U(i,iBy)+S_diff(iBy)*dt
 
-        call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
+        call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:)*(b_unit_x(:)**2+b_unit_z(:)**2),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
         S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
 
         do ivar=1,nvar

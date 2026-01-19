@@ -19,11 +19,11 @@ subroutine predictor
   real(dp) :: Pd,dPd
 
   real(dp) :: dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z
-  real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd
+  real(dp) :: dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbxby,dbxbz,deta_a,deta_h,deta_o,dzd
   real(dp) :: total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd
   real(dp) :: vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a
-  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz,dJdx_tot,dJdy_tot,dJdz_tot
-  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal,iPd_spe
+  real(dp) :: dHall_i,dni,dne,dB_over_hall,dndzd_over_ni,nd_zd_over_ni,deta_Hall_y,deta_Hall_z,dJy,dJz,dJdx_tot,dJdy_tot,dJdz_tot,db_unit_x,db_unit_y,db_unit_z
+  integer  :: irho_spe,ivx_spe,ivy_spe,ivz_spe,ipscal,iPd_spe 
 
 
   real(dp), dimension(:,:,:),allocatable :: dq
@@ -40,7 +40,7 @@ subroutine predictor
   ! Computes primitive variables
   !$OMP PARALLEL &
   !$OMP DEFAULT(SHARED)&
-  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z,dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbybx,dbxbz,deta_a,deta_h,deta_o,dzd,total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd,vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a,nd_zd_over_ni,dHall_i,dni,dne,dB_over_hall,dndzd_over_ni)
+  !$OMP PRIVATE(i,il,ir,ivar,ipscal,ix,iy,idim,ix0,iy0,irho_spe,ivx_spe,ivy_spe,ivz_spe,idust,slope_lft,slope_rgt,ddxp,ddxm,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,dBx_x,dBy_x,dBz_x,Bx,By,Bz,sBx,sBy,sBz,B_norm,total_dust_current_x,total_dust_current_y,total_dust_current_z,derivative_total_dust_current_x,derivative_total_dust_current_y,derivative_total_dust_current_z,dB_norm, dBx_over_Bnorm, dBy_over_Bnorm, dBz_over_Bnorm,dbybz,dbxby,db_unit_x,db_unit_y,db_unit_z,dbxbz,deta_a,deta_h,deta_o,dzd,total_nd_zd_vx,total_nd_zd_vy,total_nd_zd_vz,vx_derivative_total_nd_zd,vy_derivative_total_nd_zd,vz_derivative_total_nd_zd,vz_derivative_total_nd_zd_eta_o,vy_derivative_total_nd_zd_eta_o,vx_derivative_total_nd_zd_eta_h,vy_derivative_total_nd_zd_eta_h,vz_derivative_total_nd_zd_eta_h,vx_derivative_total_nd_zd_eta_a,vy_derivative_total_nd_zd_eta_a,vz_derivative_total_nd_zd_eta_a,nd_zd_over_ni,dHall_i,dni,dne,dB_over_hall,dndzd_over_ni)
   drx   = 0.0d0 
   dpx   = 0.0d0  
   dry   = 0.0d0 
@@ -68,8 +68,11 @@ subroutine predictor
   dBy_over_Bnorm = 0.0d0
   dBz_over_Bnorm = 0.0d0
   dbybz = 0.0d0
-  dbybx = 0.0d0
+  dbxby = 0.0d0
   dbxbz = 0.0d0
+  db_unit_x = 0.0d0
+  db_unit_y = 0.0d0
+  db_unit_z = 0.0d0
   deta_a = 0.0d0
   deta_h = 0.0d0
   deta_o = 0.0d0
@@ -168,6 +171,14 @@ subroutine predictor
 
             dJdz_tot = slope_limit(2.0d0*(Jdz_tot(i) - Jdz_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdz_tot(ir) - Jdz_tot(i))/(dx(ir,1)+dx(i,1))) !Total dust current
 
+
+            db_unit_x = slope_limit(2.0d0*(b_unit_x(i) - b_unit_x(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_x(ir) - b_unit_x(i))/(dx(ir,1)+dx(i,1))) 
+            db_unit_y = slope_limit(2.0d0*(b_unit_y(i) - b_unit_y(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_y(ir) - b_unit_y(i))/(dx(ir,1)+dx(i,1))) 
+            db_unit_z = slope_limit(2.0d0*(b_unit_z(i) - b_unit_z(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_z(ir) - b_unit_z(i))/(dx(ir,1)+dx(i,1))) 
+
+            dbxbz = db_unit_x*b_unit_z(i) + b_unit_x(i)*db_unit_z
+            dbxby = db_unit_x*b_unit_y(i) + b_unit_x(i)*db_unit_y
+            dbybz = db_unit_y*b_unit_z(i) + b_unit_y(i)*db_unit_z
 
         endif
 
@@ -346,6 +357,7 @@ subroutine predictor
 
 
 #endif
+
 #if GRAVITY==1
 #if NY==1
         !Gravity source term in 1D
@@ -398,9 +410,12 @@ subroutine predictor
         r_rho = q(i,idust_pscal(idust,ipscal))
 
         drx   = dq(i,idust_pscal(idust,ipscal),1)
+#if NY>1
         dry   = dq(i,idust_pscal(idust,ipscal),2)
+#endif
 
-        sr0   = -u*drx-v*dry - (dux+dvy)*r_rho
+        sr0   = -u*drx-v*dry 
+
 #if GEOM==2
         !Polar geometry source terms
         sr0    = sr0 - r_rho*u/radius_polar
@@ -423,6 +438,7 @@ subroutine predictor
 #endif
     end do
 #endif
+
       end do !dust loop
 #endif
 
@@ -475,12 +491,25 @@ subroutine predictor
         sBz = sBz + clight*eta_o(i)*dJdy_tot
 
         !AD
-        sBy = sBy - clight*eta_a(i)*2*dJdz_tot + clight*eta_a(i)*dJdx_tot + clight*eta_a(i)*dJdy_tot - clight**2/(4*pi)*eta_a(i)*dJy
-        sBz = sBz + clight*eta_a(i)*2*dJdy_tot - clight*eta_a(i)*dJdx_tot - clight*eta_a(i)*dJdz_tot + clight**2/(4*pi)*eta_a(i)*dJz
+        sBy = sBy - clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_y(i)*db_unit_y)*Jdz_tot(i) + (b_unit_x(i)**2 + b_unit_y(i)**2)*dJdz_tot )
+        sBy = sBy + clight*eta_a(i)*(dbxbz*Jdx_tot(i) + b_unit_x(i)*b_unit_z(i)*dJdx_tot)       
+        sBy = sBy + clight*eta_a(i)*(dbybz*Jdy_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdy_tot) 
+        sBy = sBy - clight**2/(4*pi)*eta_a(i)*(dbybz*Jy(i) + b_unit_y(i)*b_unit_z(i)*dJy)
+
+        sBz = sBz + clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_z(i)*db_unit_z)*Jdy_tot(i) + (b_unit_x(i)**2 + b_unit_z(i)**2)*dJdy_tot )
+        sBz = sBz - clight*eta_a(i)*(dbxby*Jdx_tot(i) + b_unit_x(i)*b_unit_y(i)*dJdx_tot)       
+        sBz = sBz - clight*eta_a(i)*(dbybz*Jdz_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdz_tot) 
+        sBz = sBz + clight**2/(4*pi)*eta_a(i)*(dbybz*Jz(i) + b_unit_y(i)*b_unit_z(i)*dJz)
 
         if (Hall_effect) then
-            sBy = sBy - clight*eta_H(i)*dJdx_tot + clight*eta_H(i)*dJdy_tot - clight**2/(4*pi)*eta_H(i)*dJy
-            sBz = sBz - clight*eta_H(i)*dJdx_tot + clight*eta_H(i)*dJdz_tot - clight**2/(4*pi)*eta_H(i)*dJz
+            sBy = sBy - clight*eta_H(i)*(db_unit_y*Jdx_tot(i) + b_unit_y(i)*dJdx_tot)
+            sBy = sBy + clight*eta_H(i)*(db_unit_x*Jdy_tot(i) + b_unit_x(i)*dJdy_tot)
+            sBy = sBy  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jy(i) + b_unit_x(i)*dJy)
+
+            sBz = sBz - clight*eta_H(i)*(db_unit_z*Jdx_tot(i) + b_unit_z(i)*dJdx_tot)
+            sBz = sBz + clight*eta_H(i)*(db_unit_x*Jdz_tot(i) + b_unit_x(i)*dJdz_tot)
+            sBz = sBz  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jz(i) + b_unit_x(i)*dJz)
+
         endif
 
     endif

@@ -12,6 +12,10 @@ module commons
   use OMP_LIB
   implicit none
 
+
+  !Restart
+  logical :: write_backup_for_restart = .true.
+
   !Grid
   real(dp), dimension(:,:), allocatable :: dx
   real(dp), dimension(:,:), allocatable :: position

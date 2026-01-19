@@ -9,16 +9,22 @@
   logical             ::  analytical_charging_Wurster = .false.   ! Prescription from (Fujii et. al 2011) and see Lebreuilly 2020.
   logical             ::  analytical_charging_Shu = .false.   ! Prescription from (Shu 1987) and see Hennebelle & Lebreuilly 2023.
 
-  logical             :: electrons = .true.   ! To include electrons in the resistivitiy computation
-  logical             :: ions = .true.   
-  logical             :: dusty_nonideal_MHD = .false.
-  logical             :: dusty_nonideal_MHD_no_electron = .false.   
+  logical             ::  electrons = .true.   ! To include electrons in the resistivitiy computation
+  logical             ::  ions = .true.   
+  logical             ::  dusty_nonideal_MHD = .false.
+  logical             ::  dusty_nonideal_MHD_no_electron = .false.   
   logical             ::  hyper_diffusion             = .false.   ! 
-  logical             ::   hyper_diffusion_with_electrons = .false. 
+  logical             ::  hyper_diffusion_with_electrons = .false. 
   logical             ::  apply_Lorentz_force              = .false.   ! 
   logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
-  logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
   logical             ::  Hall_effect         = .true.   !Activate or deactivate Hall effect
+  logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
+
+  ! Logical to write our not a given quantity related to chemistry
+  logical             ::  write_electric_field         = .false.   
+  logical             ::  write_resistivities        = .false.   
+  logical             ::  write_Hall_factors       = .false.   
+
 
 
 
@@ -66,6 +72,9 @@
   real(dp), dimension(:), allocatable      :: FLor_y
   real(dp), dimension(:), allocatable      :: FLor_z
 
+  real(dp), dimension(:), allocatable      :: b_unit_x
+  real(dp), dimension(:), allocatable      :: b_unit_y
+  real(dp), dimension(:), allocatable      :: b_unit_z
 
 
   real(dp), dimension(:), allocatable      :: psi_old

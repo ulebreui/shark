@@ -25,7 +25,7 @@ subroutine distribution_dust(initi)
   if(kernel_type==1)m_min = smin**3.
   if(kernel_type==2)m_min = smin**3.
   
-  if((initi.or.restarting>0)) then
+  if((initi.or.restarting>0)) then !if restarting>0, the dust size grid is reconstructed. Make sure that smin and smax are the same in the nml before and after restart, to avoid any mismatch.
      do idust =1,ndust
         aminus(idust) = smin  * zeta ** (idust-1)/unit_l
         aplus (idust) = smin  * zeta ** (idust)/unit_l
@@ -80,7 +80,7 @@ subroutine distribution_dust(initi)
      end do
    !end do
   end if
-  if(restarting>0.and.initi) then
+  if(restarting>0.and.initi) then !If restarting>0, retrieve the dust densities from the restart output.
      do idust=1,ndust
         epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
      end do
@@ -117,6 +117,10 @@ subroutine allocate_dust
   allocate(mdust(1:ncells,1:ndust))
   allocate(tstop(1:ncells,1:ndust))
   allocate(tcoag(1:ncells,1:ndust))
+  allocate(St(1:ncells,1:ndust))
+  allocate(size_frag_Ormel(1:ncells,1:ndust))
+  allocate(dv_ormel_step(1:ncells,1:ndust))
+
 
   allocate(force_dust(1:ncells,1:3,1:ndust))
   allocate(irhod(1:ndust))
@@ -129,7 +133,7 @@ subroutine allocate_dust
 #endif
 
 #if NDUSTPSCAL>0
-   allocate(idust_pscal(1:ndust,1:ndustpscal))
+  allocate(idust_pscal(1:ndust,1:ndustpscal))
 #endif
   !Size : bin edges
   aplus  = 0.0d0
@@ -145,6 +149,9 @@ subroutine allocate_dust
 
   tstop = 0.0d0
   tcoag = 0.0d0
+  St = 0.0d0
+  size_frag_Ormel= 0.0d0
+  dv_ormel_step = 0.0d0
   force_dust=0.0d0
 
   if(charging) then
@@ -360,11 +367,11 @@ subroutine read_dust_params(ilun,nmlfile)
   integer :: io,ilun
   logical::nml_ok
   namelist/dust_params/frag_thre,vfrag,drag,dust_back_reaction,smin,smax,scut,scutmin,mrn,rhograin&
-  &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,growth_step &
+  &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,growth_step,frag_step,modified_Ormel &
   &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs
+ & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs, write_Ormel_velocity
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"
@@ -435,6 +442,8 @@ subroutine read_dust_params(ilun,nmlfile)
         charging_all_the_time= .true.
         print*,  "Growth by ambipolar diffusion activated delta_vambi=",delta_vambi
      endif
+  else if (growth_step) then
+     print *, "Growth monodisperse is activated"
   else
      print *, "Growth is deactivated"
   endif
@@ -445,6 +454,10 @@ subroutine read_dust_params(ilun,nmlfile)
         stop
      endif
      print *, "Power law index of monomers ", slope_mono
+  else if (growth_step .and. frag_step) then 
+     print *, "Fragmentation monodisperse is activated"
+     print *, "vfrag/cs = ",vfrag
+     if (modified_Ormel) print *, "Dust mass loading activated"
   else
      print *, "Fragmentation is deactivated"
   endif

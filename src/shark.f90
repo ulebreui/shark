@@ -13,7 +13,7 @@ program shark
   ! Parameter reading
   call read_params
 
-  if(nrestart>0)restarting=1
+  if(nrestart>0) restarting=1
   ! Setup initialisation
 
   call setup
@@ -49,22 +49,30 @@ subroutine time_loop
   icount = 0
   istep  = 0
   time   = 0.0d0
+
   ! We dump a first output corresponding to the ICs
   iout=1
-  if(restarting>0) iout = nrestart
-  restarting=0
+
+  if(nrestart>0)  restarting=1
+  if(restarting>0) iout = nrestart !First output to dump defined by nrestart
+
+  if(nrestart>0) then 
+    call restart(nrestart)
+  endif
+
+
   continue_sim = .true.
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
 
 
-  if(charging) then
-      if (analytical_charging .eqv. .false.) call charge
+ if(charging) then
+     if (analytical_charging .eqv. .false.) call charge
 
 #if NDUST>0
-      if (analytical_charging) call analytical_charge
+     if (analytical_charging) call analytical_charge
 #endif
-   endif
+  endif
 
 
   !Actual time loop, continues until continue_sim=.false.
@@ -77,8 +85,11 @@ subroutine time_loop
      icount = icount+1
      istep  = istep+1
 
-     call check_output(icount,iout,outputing,verbose)
-
+     if(restarting.eq.0) then
+        call check_output(icount,iout,outputing,verbose)
+     else
+        restarting=0
+     endif
      
 #if NDUST>0
      if(kernel_type>0) verbose=.true.

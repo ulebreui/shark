@@ -42,6 +42,9 @@ real(dp) :: Vz_rms = 1.0d0
 real(dp) :: Vtot_rms = 1.0d0
 real(dp) :: Vyz_rms = 1.0d0
 
+logical  ::  write_rms_velocities = .false.   
+
+
 real(dp) :: turnover_time = 1.0d0	
 
 

@@ -6,6 +6,7 @@ module dust_parameters
   logical             ::  drag                  = .true.      ! Dust growth is activated  
   logical             ::  growth                = .false.     ! Dust growth is activated
   logical             ::  growth_step           = .false.     ! Dust growth is activated with Stepinski solver
+  logical             ::  frag_step             = .false.     ! Limit Stepinski max dust size due to fragmentation
   logical             ::  fragmentation         = .false.     ! Fragmentation is activated
   logical             ::  drift_in_growth       = .false.     ! Drift velocity included in growth
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
@@ -14,6 +15,9 @@ module dust_parameters
   logical             ::  lorentz_dust          = .false.     ! Add the lorentz force on the dust
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
   logical             ::  electrostatic_barrier = .false.     ! Add the electrostatic barrier for dust growth
+  logical             ::  modified_Ormel        = .false.     ! Modify soundspeed of the mixture due to dust mass loading 
+  logical             ::  write_Ormel_velocity         = .false.   
+
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
   real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
 
@@ -85,6 +89,10 @@ module dust_commons
   real(dp), dimension(:,:,:), allocatable  :: force_dust
   real(dp), dimension(:,:), allocatable    :: tstop
   real(dp), dimension(:,:), allocatable    :: tcoag
+  real(dp), dimension(:,:), allocatable    :: St
+  real(dp), dimension(:,:), allocatable    :: size_frag_Ormel
+  real(dp), dimension(:,:), allocatable    :: dv_ormel_step
+
 
   ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod
