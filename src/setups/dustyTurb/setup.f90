@@ -487,15 +487,17 @@ subroutine compute_tcoag
 
 
         mgrain_step = 4./3. * pi * q(i,idust_pscal(idust,1))**3 * rhograin
-
-        if (St(i,idust) <= 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs(i)*dsqrt(St(i,idust)) !Regime II
+        if (St(i,idust) <= 1 .and. St(i,idust) < 0.1) dv_ormel_step(i,idust) = dsqrt(1.97*alpha_turb)*cs(i)*dsqrt(St(i,idust)) !Regime II
+        if (St(i,idust) <= 1 .and. St(i,idust) >= 0.1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs(i)*dsqrt(St(i,idust)) !Regime II
         if (St(i,idust) > 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs(i)*dsqrt(2./(1.+St(i,idust))) !Regime III
 
 
         if (modified_Ormel .eqv. .true.) then !Modify soundspeed due to dust backreaction
 
           cs_modified = cs(i)/dsqrt(1+SUM((q(i,irhod(:))/q(i,irho))/(1+St(i,:))))
-          if (St(i,idust) <= 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs_modified*dsqrt(St(i,idust)) !Regime II
+
+          if (St(i,idust) <= 1 .and. St(i,idust) < 0.1) dv_ormel_step(i,idust) = dsqrt(1.97*alpha_turb)*cs_modified*dsqrt(St(i,idust)) !Regime II         
+          if (St(i,idust) <= 1 .and. St(i,idust) >= 0.1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs_modified*dsqrt(St(i,idust)) !Regime II
           if (St(i,idust) > 1) dv_ormel_step(i,idust) = dsqrt(alpha_turb)*cs_modified*dsqrt(2./(1.+St(i,idust))) !Regime III
           
 

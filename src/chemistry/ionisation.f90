@@ -704,18 +704,18 @@ subroutine electric_field
 
 
 
-         E_x(i) = E_x(i) - eta_o(i)*delta_current_light_x(i)
-         E_y(i) = E_y(i) - eta_o(i)*delta_current_light_y(i)
-         E_z(i) = E_z(i) - eta_o(i)*delta_current_light_z(i)
+         E_x(i) = E_x(i) - eta_o(i)*deltaJ_light_x(i)
+         E_y(i) = E_y(i) - eta_o(i)*deltaJ_light_y(i)
+         E_z(i) = E_z(i) - eta_o(i)*deltaJ_light_z(i)
 
 
-         E_x(i) = E_x(i) - eta_H(i)*(delta_current_light_y(i)*bz(i)-delta_current_light_z(i)*by(i))
-         E_y(i) = E_y(i) - eta_H(i)*(delta_current_light_z(i)*bx(i)-delta_current_light_x(i)*bz(i))
-         E_z(i) = E_z(i) - eta_H(i)*(delta_current_light_x(i)*by(i)-delta_current_light_y(i)*bx(i))
+         E_x(i) = E_x(i) - eta_h(i)*(deltaJ_light_y(i)*b_unit_z(i)-deltaJ_light_z(i)*b_unit_y(i))
+         E_y(i) = E_y(i) - eta_h(i)*(deltaJ_light_z(i)*b_unit_x(i)-deltaJ_light_x(i)*b_unit_z(i))
+         E_z(i) = E_z(i) - eta_h(i)*(deltaJ_light_x(i)*b_unit_y(i)-deltaJ_light_y(i)*b_unit_x(i))
 
-         E_x(i) = E_x(i) - eta_AD(i) * (delta_current_light_x(i) * (by(i)**2 + bz(i)**2) - delta_current_light_y(i) * bx(i) * by(i) - delta_current_light_z(i) * bx(i) * bz(i))
-         E_y(i) = E_y(i) - eta_AD(i) * (delta_current_light_y(i) * (bx(i)**2 + bz(i)**2) - delta_current_light_z(i) * by(i) * bz(i) - delta_current_light_x(i) * by(i) * bx(i))
-         E_z(i) = E_z(i) - eta_AD(i) * (delta_current_light_z(i) * (bx(i)**2 + by(i)**2) - delta_current_light_x(i) * bz(i) * bx(i) - delta_current_light_y(i) * bz(i) * by(i))
+         E_x(i) = E_x(i) - eta_a(i) * (deltaJ_light_x(i) * (b_unit_y(i)**2 + b_unit_z(i)**2) - deltaJ_light_y(i) * b_unit_x(i) * b_unit_y(i) - deltaJ_light_z(i) * b_unit_x(i) * b_unit_z(i))
+         E_y(i) = E_y(i) - eta_a(i) * (deltaJ_light_y(i) * (b_unit_x(i)**2 + b_unit_z(i)**2) - deltaJ_light_z(i) * b_unit_y(i) * b_unit_z(i) - deltaJ_light_x(i) * b_unit_y(i) * b_unit_x(i))
+         E_z(i) = E_z(i) - eta_a(i) * (deltaJ_light_z(i) * (b_unit_x(i)**2 + b_unit_y(i)**2) - deltaJ_light_x(i) * b_unit_z(i) * b_unit_x(i) - deltaJ_light_y(i) * b_unit_z(i) * b_unit_y(i))
 
 
      endif
