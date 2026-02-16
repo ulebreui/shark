@@ -169,6 +169,9 @@ subroutine allocate_init
     allocate(eta_eff_Hall_z(1:ncells))
     allocate(Jy(1:ncells))
     allocate(Jz(1:ncells))
+    allocate(deltaJ_light_x(1;ncells))
+    allocate(deltaJ_light_y(1;ncells))
+    allocate(deltaJ_light_z(1;ncells))
     allocate(b_unit_x(1:ncells))
     allocate(b_unit_y(1:ncells))
     allocate(b_unit_z(1:ncells))
@@ -206,6 +209,9 @@ subroutine allocate_init
     eta_eff_Hall_z = 0.0d0
     Jy = 0.0d0
     Jz = 0.0d0
+    deltaJ_light_x = 0.0d0
+    deltaJ_light_y = 0.0d0
+    deltaJ_light_z = 0.0d0
     b_unit_x = 0.0d0
     b_unit_y = 0.0d0
     b_unit_z = 0.0d0

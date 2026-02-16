@@ -87,6 +87,10 @@
   real(dp), dimension(:), allocatable      :: Jdx_tot
   real(dp), dimension(:), allocatable      :: Jdy_tot
   real(dp), dimension(:), allocatable      :: Jdz_tot
+  real(dp), dimension(:), allocatable      :: deltaJ_light_x
+  real(dp), dimension(:), allocatable      :: deltaJ_light_y
+  real(dp), dimension(:), allocatable      :: deltaJ_light_z
+
 
 
 #endif

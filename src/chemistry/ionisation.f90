@@ -616,7 +616,7 @@ subroutine electric_field
   real(dp) :: total_dust_current_x,total_dust_current_y,total_dust_current_z
   real(dp) :: v_e1x,v_e1y,v_e1z,v_e2x,v_e2y,v_e2z,v_e3x,v_e3y,v_e3z,v_i1x,v_i1y,v_i1z,v_i2x,v_i2y,v_i2z,v_i3x,v_i3y,v_i3z
   real(dp) :: dBy,dBz
-  real(dp) :: dxBy,dxBz
+  real(dp) :: dxBy,dxBz,total_dust_charge_density 
   real(dp), dimension(1:ncells) ::  Bym,Byp,Bzm,Bzp 
   integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx
 
@@ -652,24 +652,25 @@ subroutine electric_field
 
    end do
 
+  if (dusty_nonideal_MHD) then
+      call delta_current_light 
+      call b_unit_vector
+  endif
 
 
-
-    if (dusty_nonideal_MHD_no_electron) then
-
-    do i=1,ncells
-        if (active_cell(i)==1) then
+ do i=1,ncells
+     if (active_cell(i)==1) then
 
 
-        idust = i_coupled_species
+     idust = i_coupled_species
 
-        B_norm=dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
+     B_norm=dsqrt(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)
 
-        dxBy=(Bym(i)-Byp(i))/dx(i,1)
-        dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
+     dxBy=(Bym(i)-Byp(i))/dx(i,1)
+     dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
 
-        ! print*,'dxBy',dxBy
-        ! print*,'dxBz',dxBz
+     if (dusty_nonideal_MHD_no_electron) then
+
 
 
         E_x(i) = 1.0/(e_el_stat*(ni(i))*4.0*pi)*(q(i,iBz)*dxBz+q(i,iBy)*dxBy) - 1.0/clight*(q(i,ivdy(idust))*q(i,iBz)-q(i,ivdz(idust))*q(i,iBy)) + B_norm/(clight*Hall_i(i))*(q(i,ivdx(idust)) - q(i,ivx))
@@ -690,14 +691,40 @@ subroutine electric_field
                 E_z(i) = 1.0/(e_el_stat*(ni(i))*4.0*pi)*(-q(i,iBx)*dxBz) - 1.0/clight*(q(i,ivdx(idust))*q(i,iBy)-q(i,ivdy(idust))*q(i,iBx))
 
         endif
+      endif
+
+
+     if (dusty_nonideal_MHD) then
 
 
 
-        endif
+         E_x(i) = 1/clight * (q(i,ivy)*q(i,iBz) - q(i,ivz)*q(i,iBy))
+         E_y(i) = 1/clight * (q(i,ivz)*q(i,iBx) - q(i,ivx)*q(i,iBz)) 
+         E_z(i) = 1/clight * (q(i,ivx)*q(i,iBy) - q(i,ivy)*q(i,iBx)) 
 
-    end do
 
-    endif
+
+         E_x(i) = E_x(i) - eta_o(i)*delta_current_light_x(i)
+         E_y(i) = E_y(i) - eta_o(i)*delta_current_light_y(i)
+         E_z(i) = E_z(i) - eta_o(i)*delta_current_light_z(i)
+
+
+         E_x(i) = E_x(i) - eta_H(i)*(delta_current_light_y(i)*bz(i)-delta_current_light_z(i)*by(i))
+         E_y(i) = E_y(i) - eta_H(i)*(delta_current_light_z(i)*bx(i)-delta_current_light_x(i)*bz(i))
+         E_z(i) = E_z(i) - eta_H(i)*(delta_current_light_x(i)*by(i)-delta_current_light_y(i)*bx(i))
+
+         E_x(i) = E_x(i) - eta_AD(i) * (delta_current_light_x(i) * (by(i)**2 + bz(i)**2) - delta_current_light_y(i) * bx(i) * by(i) - delta_current_light_z(i) * bx(i) * bz(i))
+         E_y(i) = E_y(i) - eta_AD(i) * (delta_current_light_y(i) * (bx(i)**2 + bz(i)**2) - delta_current_light_z(i) * by(i) * bz(i) - delta_current_light_x(i) * by(i) * bx(i))
+         E_z(i) = E_z(i) - eta_AD(i) * (delta_current_light_z(i) * (bx(i)**2 + by(i)**2) - delta_current_light_x(i) * bz(i) * bx(i) - delta_current_light_y(i) * bz(i) * by(i))
+
+
+     endif
+
+
+   endif
+
+ end do
+
 
 end subroutine electric_field
 #endif
@@ -813,6 +840,39 @@ subroutine total_dust_current
 end subroutine total_dust_current
 #endif
 #endif
+
+
+#if MHD==1
+#if NDUST>0
+subroutine delta_current_light
+  use parameters
+  use commons
+  use units
+  !use OMP_LIB 
+  use slope_limiter
+
+  implicit none
+  integer :: i
+
+     call total_current
+     call total_dust_current  
+
+
+
+     do i=1,ncells
+
+      deltaJ_light_x(i) = - Jdx_tot(i)  
+      deltaJ_light_y(i) = clight/(4*pi) * Jy(i) - Jdy_tot(i)  
+      deltaJ_light_z(i) = clight/(4*pi) * Jz(i) - Jdz_tot(i)  
+
+     end do
+
+
+
+end subroutine delta_current_light
+#endif
+#endif
+
 
 #if MHD==1
 subroutine b_unit_vector
@@ -1070,7 +1130,7 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
     if (analytical_charging_Shu) then !see Shu 1987
 
         do i=1,ncells
-                ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
+                ni(i) = ni_coeff*1.0d-7*SQRT(x/1e-17)*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
 
                 zd(i,idust) = -ni(i)/(q(i,irhod(idust))/(4./3.*pi*smax**3*rhograin))
 

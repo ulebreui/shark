@@ -65,10 +65,8 @@ if(charging) then
         call total_current
         call total_dust_current
         call b_unit_vector
-
-
-
-        if (call_electric_field) call electric_field
+        call electric_field
+        
         if (apply_Lorentz_force) call Lorentz_force
 
 

@@ -208,12 +208,10 @@ end do
  close(ilun)
 
 if (write_Ormel_velocity) then
- open(ilun,file=trim(path) // trim(nchar)//trim('/dustpscal'), form=format_out,access='stream')
+ open(ilun,file=trim(path) // trim(nchar)//trim('/dv_ormel_step'), form=format_out,access='stream')
 do i=1,ncells
  do idust=1,ndust
-   do ipscal=1,ndustpscal
       if(active_cell(i)==1) write(ilun) dv_ormel_step(i,idust)
-   end do
  end do
 end do
  close(ilun)

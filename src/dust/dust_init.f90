@@ -456,12 +456,12 @@ subroutine read_dust_params(ilun,nmlfile)
      print *, "Power law index of monomers ", slope_mono
   else if (growth_step .and. frag_step) then 
      print *, "Fragmentation monodisperse is activated"
-     print *, "vfrag/cs = ",vfrag
+     print *, "vfrag/cs = ",vfrag/cs_0
      if (modified_Ormel) print *, "Dust mass loading activated"
   else
      print *, "Fragmentation is deactivated"
   endif
-  if(charging) then
+  if(charging .or. analytical_charging) then
      print *, "charging is computed"
      if(charging_all_the_time)   print *, "charging is computed all the time"
   else
