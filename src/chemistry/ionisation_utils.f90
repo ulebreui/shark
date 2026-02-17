@@ -7,7 +7,7 @@ subroutine read_ionisation_params(ilun,nmlfile)
   logical::nml_ok
   namelist/ionisation_params/charging,charging_all_the_time,B_0_lee,B_threshold,electrons,ions,dusty_nonideal_MHD,x,analytical_charging,&
   & analytical_charging_Wurster,analytical_charging_Shu,dusty_nonideal_MHD_no_electron,hyper_diffusion,apply_Lorentz_force,only_Hall_effect,&
-  & ni_coeff,call_electric_field,Hall_effect,hyper_diffusion_with_electrons, write_electric_field, write_rms_velocities, write_Hall_factors
+  & ni_coeff,call_electric_field,Hall_effect,hyper_diffusion_with_electrons, write_electric_field, write_Hall_factors
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "ionisation_params namelist reading  !"

@@ -161,7 +161,7 @@ if (charging .and. call_electric_field) then
 endif
 #endif 
 
-#if NDUST>0
+#if NDUST>1
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod_tot'), form=format_out,access='stream')
    do i = 1,ncells
    if(active_cell(i)==1)  then
@@ -181,6 +181,9 @@ endif
    endif 
    end do
   close(ilun)
+#endif
+
+#if NDUST>0
   open(ilun,file=trim(path) // trim(nchar)//trim('/rhod'), form=format_out,access='stream')
   do idust=1,ndust
    do i = 1,ncells
