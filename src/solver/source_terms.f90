@@ -6,7 +6,7 @@ subroutine Source_terms
   implicit none
   integer :: i,idust,ix,iy
   integer :: ixx, iyy,icell,ivar
-  real(dp) :: ts,ekin,lap_x_u,lap_y_u,lap_x_v,lap_y_v,cs_eos,barotrop
+  real(dp) :: ts,ekin,lap_x_u,lap_y_u,lap_x_v,lap_y_v
   real(dp), dimension(:,:)  , allocatable :: S_U
   real(dp), dimension(1:nvar) :: S_diff
 

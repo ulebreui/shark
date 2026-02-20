@@ -13,7 +13,6 @@ subroutine dust_growth(verbose)
   real(dp) :: eta,zeta,massmin,mono1,mono2,m_add,m1,m2,s1,s2,m_mono,a_mu,barotrop
   real(dp) :: mcoag1,mcoag2,f_frag
   real(dp) :: Kernel,dv,T,Ecol,Eroll,Ebr
-  real(dp) :: cs_eos
   real(dp) :: Ebr_mono,Erol_mono
   real(dp) :: lambJ,vambi
   real(dp) :: t_L,t_eta,Reynolds,St1,St2,vclass1,vclass2,vclass3,f_Stokes,x_stokes,vdrift_turb,vdrift_brow,vdrift_hydro,vdrift_ad
@@ -71,7 +70,7 @@ subroutine dust_growth(verbose)
      niter_growth = 0
      if(.not.dust_growth_disk) then
       T            = barotrop(q(i,irho))
-      lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs_eos(T)*unit_v
+      lambJ        = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))*cs(i)*unit_v
       vambi        = delta_vambi*clight**2*eta_a(i)/lambJ/(4.0d0*pi)
       Reynolds     = 6.2d7*dsqrt(q(i,irho)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
       t_L          = sqrt(3.*pi/(32.*grav*q(i,irho)*unit_d))/unit_t
@@ -93,9 +92,9 @@ subroutine dust_growth(verbose)
            St1 = t_stop_loc(idust)/t_l
            St2 = t_stop_loc(jdust)/t_l
            
-           vclass1 = alpha_turb*cs_eos(T)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
-           vclass2 = alpha_turb*cs_eos(T)*dsqrt(f_Stokes*St1)           
-           vclass3 = alpha_turb*cs_eos(T)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
+           vclass1 = alpha_turb*cs(i)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
+           vclass2 = alpha_turb*cs(i)*dsqrt(f_Stokes*St1)           
+           vclass3 = alpha_turb*cs(i)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
            
            vdrift_turb                            = vclass2
            if(t_stop_loc(idust)<t_eta)vdrift_turb = vclass1
@@ -280,7 +279,6 @@ subroutine dust_growth_stepinski(verbose)
      ! Differential velocity loop
      do idust=1,ndust
            u_prim(i,idust_pscal(idust,1))=max(u_prim(i,idust_pscal(idust,1))*(1.0d0+dt/tcoag(i,idust)),q(i,irhod(idust))*sminstep/unit_l)
-           !sdust(i,idust) = u_prim(i,idust_pscal(idust,1))/q(i,irhod(idust))
       end do
    endif
    end do

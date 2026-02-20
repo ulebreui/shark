@@ -19,10 +19,14 @@ subroutine allocate_init
   allocate(radii(1:ncells))
   allocate(radii_c(1:ncells))
 
-  vol      = 0.d0
-  dvol     = 0.d0
-  dx       = 0.d0
-  Surf     = 0.d0
+  if(NY>1) then
+    print*, 'Dont use this version in 2D'
+    stop
+  endif
+  vol      = 0.0d0
+  dvol     = 0.0d0
+  dx       = 0.0d0
+  Surf     = 0.0d0
   position = 0.0d0
 
   do i=1,ncells
@@ -57,26 +61,6 @@ subroutine allocate_init
     dx_r_cell=0.d0
 #endif
 #endif
-#if GEOM==3
-    allocate(phi(1:ncells))
-    phi=1.0d0
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
-#endif
-#endif
-
-#if GEOM==4
-#if GRIDSPACE==1
-    allocate(dx_l_cell(1:nx_max))
-    allocate(dx_r_cell(1:nx_max))
-    dx_l_cell=0.d0
-    dx_r_cell=0.d0
-#endif
-#endif
-
 
   ! Variable related quantities
   allocate(u_prim(1:ncells,1:nvar))
@@ -106,10 +90,6 @@ subroutine allocate_init
   Mc= 0.0d0
 #endif  
 
-  if(fargo) then
-    allocate(fargo_velocity(1:ncells))
-    fargo_velocity = 0.0d0
-  endif
 
 #if TURB>0
 
@@ -171,10 +151,6 @@ subroutine allocate_init
     allocate(eta_eff_ohm(1:ncells))
     allocate(eta_eff_Hall_y(1:ncells))
     allocate(eta_eff_Hall_z(1:ncells))
-
-
-
-
 
 
     eta_a  =0.0d0

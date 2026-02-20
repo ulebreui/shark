@@ -6,7 +6,6 @@ subroutine boundary_collapse_1D
   use commons
   use units
   implicit none
-  real(dp) :: cs_eos,barotrop
   integer :: who_app,idust,ighost,nn,nn2,ix,iy,icell,ii,icount,ibound_left, ibound_right, i_active_left, i_active_right,ivar
 
    do ix=1,nghost 

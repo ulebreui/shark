@@ -13,7 +13,7 @@ subroutine charge
   real(dp) :: thetai,sigmav_ie,vi
   real(dp) :: t_sions,t_sel,vrms_i,vrms_el,sigmav_ions,sigmav_el,sigmas_ions,omegas_ions,sigmas_el,omegas_el
   real(dp) :: as_He_dust,as_He_ions,as_He_el,mu_i,mu_e
-  real(dp) :: psi_loc,psi0,B_gauss,cs_eos
+  real(dp) :: psi_loc,psi0,B_gauss
   real(dp) :: fpsi,dfdpsi,epsone
   real(dp) :: convergence_ionis,eps_psi,n_i_loc
   real(dp) :: dni_dpsi
@@ -168,7 +168,7 @@ subroutine charge
 
         sigmav_dust(:)=pi*(l_grain_loc(:))**2.*dsqrt(8.0*kB*T/(pi*2.0d0*mH))*(1.0d0+dsqrt(pi/(2.*tau_k(:))))
 
-        t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs_eos(T)*unit_v)
+        t_sdust(:)=dsqrt(pi*gamma/8.0d0)*(rhograin)*(sdust(i,:)*unit_l)/(u_prim(i,irho)*unit_d*cs(i)*unit_v)
 
         mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
         mu_e=2.0d0*mH*m_el/(m_el+2.0d0*mH)
@@ -224,7 +224,7 @@ subroutine charge
   real(dp) :: thetai,sigmav_ie,vi
   real(dp) :: t_sions,t_sel,vrms_i,vrms_el,sigmav_ions,sigmav_el,sigmas_ions,omegas_ions,sigmas_el,omegas_el
   real(dp) :: as_He_dust,as_He_ions,as_He_el,mu_i,mu_e
-  real(dp) :: psi_loc,psi0,B_gauss,cs_eos
+  real(dp) :: psi_loc,psi0,B_gauss
   real(dp) :: fpsi,dfdpsi,epsone
   real(dp) :: convergence_ionis,eps_psi,n_i_loc
   real(dp) :: dni_dpsi
@@ -272,8 +272,8 @@ subroutine charge
      sigmav_el  = 3.16d-11*vrms_el**1.3
      sigmav_ions= 2.4d-9*vrms_i**0.6
 
-     t_sel  = 1.0d0/as_He_el*((m_el+2.0d0*mH)/(2.0d0*mH))/sigmav_el/nH_loc
-     t_sions= 1.0d0/as_He_ions*((mu_ions*mH+2.0d0*mH)/(2.0d0*mH))/sigmav_ions/nH_loc
+     t_sel         = 1.0d0/as_He_el*((m_el+2.0d0*mH)/(2.0d0*mH))/sigmav_el/nH_loc
+     t_sions       = 1.0d0/as_He_ions*((mu_ions*mH+2.0d0*mH)/(2.0d0*mH))/sigmav_ions/nH_loc
 
      sigmas_el     = (ne(i))*e_el_stat**2.*t_sel/m_el
      sigmas_ions   = (ni(i))*e_el_stat**2*t_sions/(mu_ions*mH)
@@ -306,7 +306,7 @@ subroutine resistivities_with_dust_inertia
   real(dp) :: thetai,sigmav_ie,vi
   real(dp) :: t_sions,t_sel,vrms_i,vrms_el,sigmav_ions,sigmav_el,sigmas_ions,omegas_ions,sigmas_el,omegas_el
   real(dp) :: as_He_dust,as_He_ions,as_He_el,mu_i,mu_e
-  real(dp) :: psi_loc,psi0,B_gauss,cs_eos
+  real(dp) :: psi_loc,psi0,B_gauss
   real(dp) :: fpsi,dfdpsi,epsone
   real(dp) :: convergence_ionis,eps_psi,n_i_loc
   real(dp) :: dni_dpsi

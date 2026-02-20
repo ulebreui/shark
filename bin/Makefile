@@ -74,7 +74,7 @@ endif
 ifeq ($(TURB),1)
 MODOBJ+=turb_commons.o
 endif
-MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o fargo_scheme.o 
+MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o barotrop.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o 
 ifneq ($(NDUST),0)
 MODOBJ+=dust_init.o dust_drag.o dust_growth.o
 endif

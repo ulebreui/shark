@@ -4,7 +4,7 @@ subroutine setup
   use units
   implicit none
 
-  real(dp) :: barotrop, cs_eos, tff0,mcloud,rcloud,rho_cloud,r_cloud
+  real(dp) :: barotrop,tff0,mcloud,rcloud,rho_cloud,r_cloud
 
   integer :: i,idust,imax,ix,iy,icell,itimes_part
 
@@ -20,14 +20,16 @@ subroutine setup
   tend        = tend*tff0
   call gridinit_sphere1D(r_cloud)
   q=0.0d0
+  iso_cs=1
   non_standard_eos=1
-
   do iy = 1,ny_max
     do ix = 1,nx_max
       q(icell(ix,iy),irho) = rho_cloud
       q(icell(ix,iy),ivx)  = 0.0d0
-      q(icell(ix,iy),iP)   = rho_cloud*cs_eos(barotrop(rho_cloud))**2
+      cs(icell(ix,iy))     = sqrt(kB*barotrop(rho_cloud)/mu_gas/mH/unit_v**2)
+      q(icell(ix,iy),iP)   = rho_cloud*cs(icell(ix,iy))**2
     end do
+  end do
   end do
 
 #if NDUST>0
@@ -302,7 +304,7 @@ subroutine compute_tstop
 
   implicit none
   integer :: i,idust
-  real(dp):: pn,rhon,cs_eos,barotrop
+  real(dp):: pn,rhon
   !Re-calc distribution
 
 
@@ -313,7 +315,7 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
-        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs_eos(barotrop(q(i,irho))))
+        tstop(i,idust) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(i,idust)/(q(i,irho)*cs(i))
      end do
      end if
   end do

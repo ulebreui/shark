@@ -91,18 +91,6 @@ subroutine solve(verbose,outputing)
   ! Source terms are computed and added to u_prim
 
   call source_terms
-     ! print*, 'dxBy=', dxBy
-     ! print*, 'dxBz=', dxBz
-    ! print *, 'Ex=', E_x(:)
-    ! print *, 'Ey=', E_y(:)
-  ! print *, 'Ez=', E_z(:)
-    ! print*, 'By=', q(:,iBy)
-    ! print*, 'Bz=', q(:,iBz)
-     ! print*, 'FL=', FLor_x_d(:,:)
-     ! print*, 'FL=', FLor_x_d(:,:)
-
-
-  if(fargo) call fargo_scheme
 
   call system_clock ( t8, clock_rate, clock_max )
 
@@ -200,7 +188,7 @@ subroutine ctoprim
 
   implicit none
   integer :: i,idust,ipscal
-  real(dp):: ekin,cs_eos,barotrop,emag
+  real(dp):: ekin,barotrop,emag
 
   ! Gas related primitive quantities
   !$OMP PARALLEL &
@@ -221,8 +209,8 @@ subroutine ctoprim
 #endif    
     q(i,iP)               = max((gamma-1.0d0)*(u_prim(i,iP)-ekin-emag),smallp) !TODO : substract magnetic nrj
 
-    if(iso_cs<1)              cs(i) = sqrt(gamma*q(i,iP)/q(i,irho))
-    if(non_standard_eos == 1) cs(i) = cs_eos(barotrop(q(i,irho)))
+    if(iso_cs<1)              cs(i)     = sqrt(gamma*q(i,iP)/q(i,irho))
+    if(non_standard_eos == 1) cs(i)     = sqrt(kB*barotrop(rho_cloud)/mu_gas/mH/unit_v**2)
     if(iso_cs==1 .or. non_standard_eos == 1) q(i,iP)  =  u_prim(i,irho)*cs(i)**2
 #if NDUST>0
     do idust = 1,ndust
