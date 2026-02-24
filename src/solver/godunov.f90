@@ -198,10 +198,10 @@ subroutine predictor
                dry   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix,iy-1))/dy_l,(q(idust_pscal(idust,ipscal),ix,iy+1) - q(idust_pscal(idust,ipscal),ix,iy))/dy_r)/radius_polar
 
                sr0 = -u*drx - v*dry
-#if GEOM==2
-               !Polar geometry source terms
-               sr0 = sr0 - r_rho*u/radius_polar  !! UL : Is this correct ? TBC
-#endif
+! #if GEOM==2
+!                !Polar geometry source terms
+!                sr0 = sr0
+! #endif
                ! Direction x
 
                dx_loc = dx(ix,iy,1)
