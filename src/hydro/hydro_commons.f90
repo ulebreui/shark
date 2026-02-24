@@ -44,6 +44,5 @@ module hydro_commons
   integer :: iBz
 #endif
 
-  real(dp), dimension(:) , allocatable    :: fargo_velocity
 
 end module hydro_commons

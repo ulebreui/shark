@@ -105,9 +105,6 @@ endif
   call apply_boundaries
   call source_terms
 
-
-  if(fargo) call fargo_scheme
-
   call system_clock ( t8, clock_rate, clock_max )
 
 #if NDUST>0

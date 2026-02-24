@@ -106,10 +106,7 @@ subroutine allocate_init
   Mc= 0.0d0
 #endif  
 
-  if(fargo) then
-    allocate(fargo_velocity(1:ncells))
-    fargo_velocity = 0.0d0
-  endif
+
 
 #if TURB>0
 

@@ -87,13 +87,12 @@
   real(dp), dimension(:), allocatable      :: Jdx_tot
   real(dp), dimension(:), allocatable      :: Jdy_tot
   real(dp), dimension(:), allocatable      :: Jdz_tot
+
+#endif
+
   real(dp), dimension(:), allocatable      :: deltaJ_light_x
   real(dp), dimension(:), allocatable      :: deltaJ_light_y
   real(dp), dimension(:), allocatable      :: deltaJ_light_z
-
-
-
-#endif
 
   real(dp) :: B_0_lee       = 3d-5   ! Value of the B field at 10^4
   real(dp) :: B_threshold   = 0.1d0  ! Value of the B field threshold
