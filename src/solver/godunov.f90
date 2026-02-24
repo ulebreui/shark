@@ -185,7 +185,7 @@ subroutine predictor
                sr0 = -u*drx - v*dry
 #if GEOM==2
                !Polar geometry source terms
-               sr0 = sr0 - r_rho*u/radius_polar
+               ! sr0 = sr0 - r_rho*u/radius_polar
 #endif
                ! Direction x
 
