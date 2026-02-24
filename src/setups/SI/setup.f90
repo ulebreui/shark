@@ -5,7 +5,7 @@ subroutine setup
   implicit none
 
   real(dp) :: rho_cloud,r_cloud,mcloud,perturbation,cs0
-  real(dp) :: rmax,vol_tot,xx,yy,vkep,vx_nak,vy_nak
+  real(dp) :: rmax,vol_tot,xx,yy,vkep,vx_nak,vy_nak,H_disk
   real(dp) :: B_field
   real(dp), dimension(1:2*ndust+2) :: v_sol
   real (dp) :: A_nak, B_nak
@@ -22,15 +22,19 @@ subroutine setup
 
 
   eta_stream = 0.05*HoverR
-  box_l      = box_l  *eta_stream*rad0
-  box_l_y    = box_l_y*eta_stream*rad0
 
   vkep    = rad0*Omega_shear
   cs0     = (hoverR)*vkep
-
+  H_disk  = cs0/Omega_shear
   ice_mantle = 0.0d0 ! No ice for SI test
   rhograin   = rho_init/theta_dust
-
+  if(.not.Stratified) then
+    box_l      = box_l  *eta_stream*rad0
+    box_l_y    = box_l_y*eta_stream*rad0
+  else
+    box_l      = box_l  *H_disk
+    box_l_y    = box_l_y*H_disk
+  endif
   smin    = Stokes_min*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
   smax    = Stokes_max*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
   scut    = Stokes_cut*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
@@ -105,6 +109,7 @@ subroutine setup
         yy=position(ix,iy,2)-half*box_l_y
 
         q(irho,ix,iy)  = rho_init
+        if(Stratified) q(irho,ix,iy)  = rho_init*exp(-yy**2/(2.*H_disk**2))
         call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivx,ix,iy)    = vx_nak + perturbation
@@ -118,6 +123,8 @@ subroutine setup
      do idust=1,ndust
 
         q(irhod(idust),ix,iy)    = dust2gas_species(idust)*rho_init!+ perturbation
+
+        if(Stratified) q(irho,ix,iy)  =  dust2gas_species(idust)*rho_init*exp(-yy**2/(2.*H_disk**2))
 
         if(.not. stokes_distrib) sdust(idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(mag_pert*cs0,perturbation)
@@ -198,7 +205,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert,Stokes_step 
+  namelist/setup_params/box_l,box_l_y,rho_init,omega_shear,q_shear,eta_stream,HoverR,Stokes_species,dust2gas_species,theta_dust,Stokes_min,Stokes_max,Stokes_cut,stokes_distrib,mag_pert,Stokes_step,Stratified
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
    print *, "Setup namelist reading  !"
@@ -340,12 +347,12 @@ end subroutine setup_inloop
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
         force_x(ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivz,ix,iy) -  2.0d0*rad0*Omega_shear*eta_stream
-        force_y(ix,iy)  = 0.0d0
+        force_y(ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l)
         force_z(ix,iy)  = 2.0d0*Omega_shear*q(ivx,ix,iy)
 #if NDUST>0
         do idust=1,ndust
          force_dust_x(idust,ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivdz(idust),ix,iy)
-         force_dust_y(idust,ix,iy)  = 0.0d0
+         force_dust_y(idust,ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l)
          force_dust_z(idust,ix,iy)  = 2.0d0*Omega_shear*q(ivdx(idust),ix,iy)
 
          if(.not. drag) then

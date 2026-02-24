@@ -25,5 +25,5 @@ module setup_parameters
   real(dp) :: theta_dust  = 1d-11 ! Ratio between disk density and dust grain density
 
   logical  :: stokes_distrib = .false. ! Use a MRN like distribution
-
+  logical  :: Stratified = .true.
 end module setup_parameters
