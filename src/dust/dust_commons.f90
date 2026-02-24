@@ -13,7 +13,8 @@ module dust_parameters
   logical             ::  turb_in_growth        = .false.     ! Turb velocity included in growth /!\ this is similar to drift
   logical             ::  brownian_in_growth    = .false.     ! Brownian velocity included in growth
   logical             ::  dust_back_reaction    = .true.      ! Add the dust back-reaction
-  logical             ::  modified_Ormel    = .false.      
+  logical             ::  modified_Ormel        = .false.      
+  logical             ::  dust_diffusion        = .false.      ! Dust diffusion is activated  
 
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
 
@@ -67,6 +68,7 @@ module dust_parameters
   real(dp):: slope_mono  = 3.5d0   ! Index of power law monomer size distribution
   real(dp):: alpha_turb  = 1.5d0
   real(dp):: sminstep    = 1d-5
+  
 end module dust_parameters
 
 module dust_commons
@@ -87,6 +89,8 @@ module dust_commons
   real(dp), dimension(:,:,:), allocatable  :: force_dust_z
 
   real(dp), dimension(:,:,:), allocatable    :: tstop
+  real(dp), dimension(:,:,:), allocatable    :: D_diffuse_dust
+
   real(dp), dimension(:,:,:), allocatable    :: tcoag
   real(dp), dimension(:,:,:), allocatable    :: St
   real(dp), dimension(:,:,:), allocatable ::  sfrag !Analytical frag threshold for Stepinski approach

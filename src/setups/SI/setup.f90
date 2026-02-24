@@ -23,18 +23,18 @@ subroutine setup
 
   eta_stream = 0.05*HoverR
 
-  vkep    = rad0*Omega_shear
-  cs0     = (hoverR)*vkep
-  H_disk  = cs0/Omega_shear
+  vkep       = rad0*Omega_shear
+  cs0        = (hoverR)*vkep
+  H_disk     = cs0/Omega_shear
   ice_mantle = 0.0d0 ! No ice for SI test
   rhograin   = rho_init/theta_dust
-  if(.not.Stratified) then
-    box_l      = box_l  *eta_stream*rad0
-    box_l_y    = box_l_y*eta_stream*rad0
-  else
-    box_l      = box_l  *H_disk
-    box_l_y    = box_l_y*H_disk
-  endif
+  ! if(.not.Stratified) then
+  box_l      = box_l  *eta_stream*rad0
+  box_l_y    = box_l_y*eta_stream*rad0
+  ! else
+  !   box_l      = box_l  *H_disk
+  !   box_l_y    = box_l_y*H_disk
+  ! endif
   smin    = Stokes_min*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
   smax    = Stokes_max*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
   scut    = Stokes_cut*rho_init*cs0/rhograin/omega_shear/sqrt(pi/8.)
@@ -107,9 +107,10 @@ subroutine setup
         iy=iyy(i)
         xx=position(ix,iy,1)-half*box_l  ! Boxlen already in pc
         yy=position(ix,iy,2)-half*box_l_y
-
+        H_disk = cs0/Omega_shear
         q(irho,ix,iy)  = rho_init
         if(Stratified) q(irho,ix,iy)  = rho_init*exp(-yy**2/(2.*H_disk**2))
+        !print*, yy, H_disk
         call get_rhoturb(mag_pert*cs0,perturbation)
 
         q(ivx,ix,iy)    = vx_nak + perturbation
@@ -124,8 +125,10 @@ subroutine setup
 
         q(irhod(idust),ix,iy)    = dust2gas_species(idust)*rho_init!+ perturbation
 
-        if(Stratified) q(irho,ix,iy)  =  dust2gas_species(idust)*rho_init*exp(-yy**2/(2.*H_disk**2))
-
+        if(Stratified) then
+          H_disk         = cs0/Omega_shear!*sqrt(alpha_turb/(1.0d0+Stokes_species(idust)))
+          q(irho,ix,iy)  =  dust2gas_species(idust)*rho_init*exp(-yy**2/(2.*H_disk**2))
+        endif
         if(.not. stokes_distrib) sdust(idust)       = Stokes_species(idust)*rho_init*cs0/rhograin/omega_shear
         call get_rhoturb(mag_pert*cs0,perturbation)
 
@@ -298,7 +301,7 @@ subroutine setup_inloop
    implicit none
    integer :: idust,ix,iy
    real(dp) :: Ohmdt
-   real(dp) ::  u, v, AA, BB,d
+   real(dp) ::  u, v, w, AA, BB,d
    
 
 
@@ -314,18 +317,23 @@ subroutine setup_inloop
           !Crank nicholson scheme
           u = u_prim(ivz,ix,iy)/u_prim(irho,ix,iy) 
           v = u_prim(ivx,ix,iy)/u_prim(irho,ix,iy) 
+          w = u_prim(ivy,ix,iy)/u_prim(irho,ix,iy) 
+
           d = u_prim(irho,ix,iy) 
           AA    = 2.0d0*q_shear*Omega_shear*(position(ix,iy,1)-half*box_l)-2.0d0*rad0*eta_stream 
           u_prim(ivz,ix,iy)  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
           u_prim(ivx,ix,iy)  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt ) / (1.+Ohmdt**2) 
+          if(stratified)u_prim(ivy,ix,iy)  = d*(w-dt*Omega_shear**2*(position(ix,iy,2)-half*box_l_y))
 #if NDUST>0
           AA    = 2.0d0*q_shear*Omega_shear*(position(ix,iy,1)-half*box_l)
           do idust=1,ndust
             u = u_prim(ivdz(idust),ix,iy)/u_prim(irhod(idust),ix,iy) 
             v = u_prim(ivdx(idust),ix,iy)/u_prim(irhod(idust),ix,iy) 
+            w = u_prim(ivdy(idust),ix,iy)/u_prim(irhod(idust),ix,iy)
             d = u_prim(irhod(idust),ix,iy) 
             u_prim(ivdz(idust),ix,iy)  = d*( u*(1.-Ohmdt**2) + 2.*v*Ohmdt + AA*Ohmdt**2 ) / (1.+Ohmdt**2) 
             u_prim(ivdx(idust),ix,iy)  = d*( v*(1.-Ohmdt**2) - 2.*u*Ohmdt + AA*Ohmdt )    / (1.+Ohmdt**2) 
+            if(Stratified) u_prim(ivdy(idust),ix,iy)  = d*(w-dt*Omega_shear**2*(position(ix,iy,2)-half*box_l_y))
           end do
 #endif
      end do
@@ -347,12 +355,20 @@ end subroutine setup_inloop
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
         force_x(ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivz,ix,iy) -  2.0d0*rad0*Omega_shear*eta_stream
-        force_y(ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l)
+        if(.not.Stratified) then
+          force_y(ix,iy)  = 0.0d0
+        else
+          force_y(ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l_y)
+        endif
         force_z(ix,iy)  = 2.0d0*Omega_shear*q(ivx,ix,iy)
 #if NDUST>0
         do idust=1,ndust
          force_dust_x(idust,ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivdz(idust),ix,iy)
-         force_dust_y(idust,ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l)
+         if(.not.Stratified) then
+          force_dust_y(idust,ix,iy)  = 0.d0
+         else 
+         force_dust_y(idust,ix,iy)  = -Omega_shear**2*(position(ix,iy,2)-half*box_l_y)
+         endif
          force_dust_z(idust,ix,iy)  = 2.0d0*Omega_shear*q(ivdx(idust),ix,iy)
 
          if(.not. drag) then
@@ -399,7 +415,7 @@ subroutine compute_tstop
         St(idust,ix,iy) = tstop(idust,ix,iy)*Omega_shear
 
 #endif
-
+        D_diffuse_dust(idust,ix,iy)=(1.0d0+St(idust,ix,iy)+4.*St(idust,ix,iy)**2.)/(1.0d0+St(idust,ix,iy)**2)*alpha_turb*cs(ix,iy)*HoverR*rad0 ! Youdin & Lithwick 2007; Youdin 2011
       end do
      end do
   end do
@@ -421,6 +437,7 @@ subroutine compute_tcoag
   real(dp):: dv_ormel_step,mgrain_step,cs_modified,St_frag
 
 
+
    integer :: idust,ix,iy
    !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
    do iy = first_active_y,last_active_y
@@ -429,13 +446,14 @@ subroutine compute_tcoag
 
         mgrain_step = 4./3. * pi * q(idust_pscal(idust,1),ix,iy)**3 * rhograin
 
-        dv_ormel_step = dsqrt(alpha_turb)*cs(ix,iy)*dsqrt(1.97*St(idust,ix,iy))
+        if (St(idust,ix,iy) <= 1) dv_ormel_step = dsqrt(alpha_turb)*cs(ix,iy)*dsqrt(1.97*St(idust,ix,iy))  !Regime II
+        if (St(idust,ix,iy) > 1)  dv_ormel_step = dsqrt(alpha_turb)*cs(ix,iy)*dsqrt(2/(1+St(idust,ix,iy))) !Regime III
 
         if (modified_Ormel .eqv. .true.) then !Modify soundspeed due to dust backreaction
 
           cs_modified = cs(ix,iy)/dsqrt(1+SUM((q(irhod(:),ix,iy)/q(irho,ix,iy))/(1+St(:,ix,iy))))
-          dv_ormel_step = dsqrt(alpha_turb)*cs_modified*dsqrt(1.97*St(idust,ix,iy))
-
+          if (St(idust,ix,iy) <= 1) dv_ormel_step = dsqrt(alpha_turb)*cs_modified*dsqrt(1.97*St(idust,ix,iy))
+          if (St(idust,ix,iy) > 1) dv_ormel_step = dsqrt(alpha_turb)*cs_modified*dsqrt(2/(1+St(idust,ix,iy))) !Regime III
         endif
 
         !t_coag -> 3*t_coag in equa diff of grain size
@@ -443,15 +461,17 @@ subroutine compute_tcoag
 
         if (frag_step) then
 
-          St_frag = vfrag**2/(1.97*alpha_turb*cs(ix,iy)**2)
-          !print*, 'St_frag=',St_frag
+          if (St(idust,ix,iy) <= 1) St_frag = vfrag**2/(1.97*alpha_turb*cs(ix,iy)**2)
+          if (St(idust,ix,iy) > 1)  St_frag = 2.*alpha_turb*cs(ix,iy)**2/vfrag**2 - 1
 
-          if (modified_Ormel .eqv. .true.) St_frag = vfrag**2/(1.97*alpha_turb*cs_modified**2)
-          !print*, 'St_frag_MO=',St_frag
-
+          if (modified_Ormel .eqv. .true.) then
+            if (St(idust,ix,iy) <= 1) St_frag = vfrag**2/(1.97*alpha_turb*cs_modified**2)
+            if (St(idust,ix,iy) > 1)  St_frag = 2.*alpha_turb*cs_modified**2/vfrag**2 - 1
+          end if
 
           sfrag(idust,ix,iy) = St_frag*rho_init*cs(ix,iy)/rhograin/omega_shear/sqrt(pi/8.) !Define the stepinski size from the Stokes provided in the namelist
           !print*, 'sfrag=',sfrag(idust,ix,iy)
+
 
 
         endif
@@ -461,7 +481,7 @@ subroutine compute_tcoag
   end do
 
 
+
 end subroutine compute_tcoag
 #endif
-
 

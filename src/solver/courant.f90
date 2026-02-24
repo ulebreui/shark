@@ -37,6 +37,11 @@ subroutine courant
 #endif
          !print(vmax)
          dt = min(dt, CFL*dxx/abs(vmax))
+         if(dust_diffusion) then
+            dt = min(dt, 0.1*dx(ix,iy,2)**2/abs(D_diffuse_dust(idust,ix,iy))/2.)
+            ! print*, dt 
+            ! stop
+         endif
       end do
    end do
 

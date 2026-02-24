@@ -21,14 +21,25 @@ subroutine apply_boundaries
       do ix  = first_active,last_active
          do iy  = 1, nghost
             do ivar =1,nvar
-               u_prim(ivar,ix,iy)          = u_prim(ivar,ix,last_active_y-nghost+iy) ! Periodic along y
+               u_prim(ivar,ix,iy)          = u_prim(ivar,ix,last_active_y-nghost+iy) 
                u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,first_active_y+nghost-iy)
 
                if(Stratified) then
-                  u_prim(ivar,ix,iy)          = u_prim(ivar,ix,first_active_y) ! Periodic along y
+
+                  u_prim(ivar,ix,iy)          = u_prim(ivar,ix,first_active_y)
                   u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,last_active_y)
+
                endif 
+
             end do
+             if(Stratified) then
+            u_prim(ivy,ix,iy)         = min(u_prim(ivy,ix,iy) ,0.0d0)
+            u_prim(ivy,ix,ny_max+1-iy) = max(u_prim(ivy,ix,ny_max+1-iy) ,0.0d0)
+            do idust=1,ndust
+                  u_prim(ivdy(idust),ix,iy)         = min(u_prim(ivdy(idust),ix,iy) ,0.0d0)
+                  u_prim(ivdy(idust),ix,ny_max+1-iy) = max(u_prim(ivdy(idust),ix,ny_max+1-iy) ,0.0d0)
+            end do
+         end if
          end do
   end do
    !$omp parallel do default(shared) schedule(RUNTIME) private(ivar, ix, iy, idust)

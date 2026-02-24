@@ -102,7 +102,7 @@ subroutine allocate_dust
    allocate (tcoag(1:ndust,1:nx_max, 1:ny_max))
    allocate(St(1:ndust,1:nx_max, 1:ny_max))
    allocate(sfrag(1:ndust,1:nx_max, 1:ny_max))
-
+   allocate(D_diffuse_dust(1:ndust,1:nx_max, 1:ny_max))
 
    allocate (force_dust_x(1:ndust,1:nx_max, 1:ny_max))
    allocate (force_dust_y(1:ndust,1:nx_max, 1:ny_max))
@@ -133,10 +133,11 @@ subroutine allocate_dust
    St = 0.0d0
    sfrag = 0.0d0
 
-   force_dust_x = 0.0d0
-   force_dust_y = 0.0d0
-   force_dust_z = 0.0d0
-
+   force_dust_x   = 0.0d0
+   force_dust_y   = 0.0d0
+   force_dust_z   = 0.0d0
+   D_diffuse_dust = 0.0d0
+   
 end subroutine allocate_dust
 
 subroutine mrn_distri
@@ -325,7 +326,7 @@ subroutine read_dust_params(ilun, nmlfile)
    &, CFL_growth, rhodust_threshold, dust_ratio_min, dust_distribution, aO_themis, acut_themis, awidthcut_themis,&
    & themis_slope, sigma_themis, kernel_type, turb_in_growth, drift_in_growth, brownian_in_growth,&
    & slope_mono, ice_mantle, gamma_grains, estar_grains, sticking_efficiency, &
-   & dtcontrol_growth, alpha_turb, SI, modified_Ormel 
+   & dtcontrol_growth, alpha_turb, SI, modified_Ormel, dust_diffusion
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
    print *, "Dust namelist reading  !"

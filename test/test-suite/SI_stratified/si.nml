@@ -2,7 +2,7 @@
 
 &GRID_PARAMS
 freq_out=5000
-CFL=0.8
+CFL=0.3
 tend=500. 
 gamma=1.666667d0
 force_kick=.true.
@@ -10,8 +10,8 @@ slope_type=3
 /
 
 &SETUP_PARAMS
-box_l       = 2d0
-box_l_y     = 2d0
+box_l       = 5.0
+box_l_y     = 5.0
 rho_init    = 1.0d0
 omega_shear = 1.0d0
 hoverr      = 0.1
@@ -23,6 +23,8 @@ stratified = .true.
 &DUST_PARAMS
 dust_back_reaction = .true.
 drag               = .true.
+alpha_turb         = 1d-5
+dust_diffusion     = .true.
 /
 
 &GRAVITY_PARAMS

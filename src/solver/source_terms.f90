@@ -4,9 +4,9 @@ subroutine Source_terms
    use OMP_LIB
    use units
    implicit none
-   integer :: idust, ix,iy,ivar
+   integer  :: idust, ix,iy,ivar
    real(dp) :: cs_eos, barotrop
-
+   real(dp) :: Dplus,Dminus,gradrho_plus,gradrho_minus
    if (static) then
       return
    end if
@@ -49,7 +49,21 @@ subroutine Source_terms
    end do
 #endif
 
+#if NDUST>0
+   if(dust_diffusion) then
+      do iy = first_active_y, last_active_y
+         do ix = first_active, last_active
+            do idust=1,ndust
+               Dplus = 0.5d0*(D_diffuse_dust(idust,ix,iy+1)+D_diffuse_dust(idust,ix,iy))
+               Dminus= 0.5d0*(D_diffuse_dust(idust,ix,iy-1)+D_diffuse_dust(idust,ix,iy))
 
-
+               gradrho_plus  = (q(irhod(idust),ix,iy+1)-q(irhod(idust),ix,iy))
+               gradrho_minus = (q(irhod(idust),ix,iy)-q(irhod(idust),ix,iy-1))
+               u_prim(irhod(idust),ix,iy) =  u_prim(irhod(idust),ix,iy) + dt/dx(ix,iy,2)**2*(Dplus*gradrho_plus-Dminus*gradrho_minus)
+            end do
+         end do
+      end do
+   endif
+#endif
 end subroutine Source_terms
 
