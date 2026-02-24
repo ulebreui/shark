@@ -23,6 +23,11 @@ subroutine apply_boundaries
             do ivar =1,nvar
                u_prim(ivar,ix,iy)          = u_prim(ivar,ix,last_active_y-nghost+iy) ! Periodic along y
                u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,first_active_y+nghost-iy)
+
+               if(Stratified) then
+                  u_prim(ivar,ix,iy)          = u_prim(ivar,ix,first_active_y) ! Periodic along y
+                  u_prim(ivar,ix,ny_max+1-iy) = u_prim(ivar,ix,last_active_y)
+               endif 
             end do
          end do
   end do
