@@ -92,9 +92,9 @@ subroutine dust_growth(verbose)
            St1 = t_stop_loc(idust)/t_l
            St2 = t_stop_loc(jdust)/t_l
            
-           vclass1 = alpha_turb*cs(i)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
-           vclass2 = alpha_turb*cs(i)*dsqrt(f_Stokes*St1)           
-           vclass3 = alpha_turb*cs(i)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
+           vclass1 = sqrt(alpha_turb)*cs(i)*dsqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
+           vclass2 = sqrt(alpha_turb)*cs(i)*dsqrt(f_Stokes*St1)           
+           vclass3 = sqrt(alpha_turb)*cs(i)*dsqrt(1.0d0/(1.0d0+St1)+1.0d0/(1.0d0+St2))
            
            vdrift_turb                            = vclass2
            if(t_stop_loc(idust)<t_eta)vdrift_turb = vclass1
