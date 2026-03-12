@@ -127,9 +127,9 @@ module smoluchowski
        St1 = max(ts1/t_l,ts2/t_l)
        St2 = min(ts1/t_l,ts2/t_l)
 
-       vclass1 = alpha_turb*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
-       vclass2 = alpha_turb*cs*sqrt(f_Stokes*St1)
-       vclass3 = alpha_turb*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
+       vclass1 = sqrt(alpha_turb)*cs*sqrt((St1-St2)/(St1+St2))*dsqrt(St1**2/(St1+Reynolds**(-0.5))-St2**2/(St2+Reynolds**(-0.5)))
+       vclass2 = sqrt(alpha_turb)*cs*sqrt(f_Stokes*St1)
+       vclass3 = sqrt(alpha_turb)*cs*sqrt(1.0d0/(1.0d0 + St1) + 1.0d0/(1.0d0 + St2))
 
        dv_ormel = vclass2
        if (ts1 < t_eta) dv_ormel  = vclass1
