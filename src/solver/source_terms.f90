@@ -155,6 +155,11 @@ endif
 if (dusty_nonideal_MHD) then
 
 
+
+    ! ============================================================
+    ! Here are computed the source terms in the induction equation
+    ! ============================================================
+
     do ivar=1,nvar
         S_diff(ivar)=0.0d0
     end do
@@ -196,8 +201,13 @@ endif
 
 if (dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
+    ! ============================================================
+    ! Here are computed the source terms in momentum equations
+    ! ============================================================
+
         !Lorentz forces
         !call electric_field !Do not call them here: computation will be done again and again for each i. To be called once per timestep in solve.
+        !S_U is a momentum density (rho * v)
     if (apply_Lorentz_force) then
         do idust=1,ndust
             S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 

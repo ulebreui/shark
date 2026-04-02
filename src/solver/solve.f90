@@ -52,7 +52,7 @@ if(charging) then
             call total_current
         endif
         if (call_electric_field) call electric_field
-        if (apply_Lorentz_force) call Lorentz_force
+        !if (apply_Lorentz_force) call Lorentz_force_explicit
 
 
     endif
@@ -65,9 +65,14 @@ if(charging) then
         call total_current
         call total_dust_current
         call b_unit_vector
-        call electric_field
+        !call electric_field
         
-        if (apply_Lorentz_force) call Lorentz_force
+        if (apply_Lorentz_force) then
+        call gyro_drift
+        call Ohmic_drag
+
+        !call Lorentz_force_explicit
+        endif
 
 
     endif

@@ -68,7 +68,7 @@ BINDIR = .
 VPATH  = ../src:../src/commons:../src/grid:../src/turb:../src/solver:../src/setups/$(SETUP):../src/gravity:../src/hydro:../src/chemistry:../src/:../src/dust
 #############################################################################
 # All objects
-MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o newton_raphson.o 
+MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o gravity_commons.o ionisation_commons.o random.o newton_raphson.o lapack_tools.o
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
@@ -77,7 +77,7 @@ MODOBJ+=turb_commons.o
 endif
 MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o ionisation_utils.o functions_NR.o ionisation.o grid.o solvers.o eos.o setup.o courant.o godunov.o boundaries.o write_output.o read_output.o source_terms.o force_kicks.o 
 ifneq ($(NDUST),0)
-MODOBJ+=dust_init.o dust_drag.o dust_growth.o
+MODOBJ+=dust_init.o dust_drag.o dust_growth.o magnetic_drag_multidust.o
 endif
 OBJS= solve.o read_params.o
 ifeq ($(TURB),1)
@@ -85,11 +85,17 @@ MODOBJ+= turb_utils.o turb.o
 endif
 MODOBJ+= gravity_utils.o
 #############################################################################
+
+########################
+#Standard librairies
+LIBS = -llapack -lblas
+########################
+
 all:
 	for file in $(MODOBJ); do unset MAKELEVEL ; $(MAKE) $$file; done
 	$(MAKE) shark
 shark: $(MODOBJ) $(OBJS) shark.o
-	   $(F90) $(MODOBJ) $(OBJS) shark.o -o ./$(EXEC)
+	   $(F90) $(MODOBJ) $(OBJS) shark.o -o ./$(EXEC) $(LIBS)
 
 %.o:%.F
 	$(F90) $(FFLAGS) -c $^ -o $@ $(LIBS_OBJ)

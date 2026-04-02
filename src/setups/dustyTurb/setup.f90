@@ -19,67 +19,6 @@ subroutine setup
   iso_cs=1
 
 
-! #if TURB>0
-!   !!!Decaying turb!!!
-!   if (decaying_turb_compressive) then
-!     allocate(k_turb(1:nb_turb_modes))
-!     allocate(vx_turb(1:nb_turb_modes))
-!     allocate(phix_turb(1:nb_turb_modes))
-
-
-!     !Make directories for each Mach needed. Define a Mach param in setup_commons
-
-!     !print *, trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat')
-
-!     open(15,file=trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat')) !Read python-generated files
-!     open(16,file=trim(decay_turb_random_path) // trim('/vx_turb_modes.dat'))
-!     open(19,file=trim(decay_turb_random_path) // trim('/phix_turb_modes.dat'))
-
-
-!     do i_turb = 1,nb_turb_modes
-!       read(15,*) k_turb(i_turb)
-!       read(16,*) vx_turb(i_turb)
-!       read(19,*) phix_turb(i_turb)
-!     end do
-
-!     close(15)
-!     close(16)
-!     close(19)
-
-!   endif
-
-!   if (decaying_turb_solenoidal) then
-!     allocate(k_turb(1:nb_turb_modes))
-!     allocate(vy_turb(1:nb_turb_modes))
-!     allocate(vz_turb(1:nb_turb_modes))
-!     allocate(phiy_turb(1:nb_turb_modes))
-!     allocate(phiz_turb(1:nb_turb_modes))
-
-
-!     open(15,file=trim(decay_turb_random_path) // trim('/wavenumber_turb_modes.dat'))
-!     open(17,file=trim(decay_turb_random_path) // trim('/vy_turb_modes.dat'))
-!     open(18,file=trim(decay_turb_random_path) // trim('/vz_turb_modes.dat'))
-!     open(20,file=trim(decay_turb_random_path) // trim('/phiy_turb_modes.dat'))
-!     open(21,file=trim(decay_turb_random_path) // trim('/phiz_turb_modes.dat'))
-
-!     do i_turb = 1,nb_turb_modes
-
-!       read(15,*) k_turb(i_turb)
-!       read(17,*) vy_turb(i_turb)
-!       read(18,*) vz_turb(i_turb)
-!       read(20,*) phiy_turb(i_turb)
-!       read(21,*) phiz_turb(i_turb)
-!     end do
-
-!     close(15)
-!     close(17)
-!     close(18)
-!     close(20)
-!     close(21)
-
-!   endif
-! #endif
-
 
 !Generate initial conditions (velocity) for turb
 #if TURB>0
@@ -106,19 +45,38 @@ subroutine setup
   end do
 
 
-#if NDUST>0
 
-    call distribution_dust(.false.) !creates sdust and mdust arrays
 
-    do i=1,ncells
-      do idust=1,ndust
+#if NDUST>1
+
+    call distribution_dust(.true.) !creates sdust, epsilondust and mdust arrays
+
+#endif
+
+
+
+  do i=1,ncells
+    do idust=1,ndust
+
+#if NDUST>1
+
+    St(i,idust) = dsqrt(pi/8) * rhograin * sdust(i,idust) / (q(i,irho) *  box_l)
+    q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+
+#endif
+
 #if NDUST==1
         sdust(i,idust)    = smax/unit_l !if a single grain
         mdust(i,idust)    = (4./3.*pi*smax**3*rhograin)/unit_m
         St(i,idust)       = St_0(idust)
+        epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
+        q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+
 
 #if NDUSTPSCAL==1
         q(i,idust_pscal(idust,1)) = smax/unit_l
+        epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
+        q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
 #endif
 
 #endif
@@ -128,10 +86,8 @@ subroutine setup
         q(i,ivdy(idust)) = delta_vdy/unit_v*(sin(position(i,1)*k_mag)) 
         q(i,ivdz(idust)) = delta_vdz/unit_v*(cos(position(i,1)*k_mag)) !Alfven perturbation
             !OLD SETUP
-        epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
         
 
-        q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
 #if DUST_PRESSURE==1
         q(i,iPd(idust))=q(i,irhod(idust))*(delta_dust_cs*cs(i))**2
 #endif
@@ -143,10 +99,6 @@ subroutine setup
 
 
 
-
-
-
-#endif
 
   do i = 1,ncells
 

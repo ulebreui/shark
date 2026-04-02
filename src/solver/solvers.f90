@@ -1961,6 +1961,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
     flx(iBy)            = (S_rgt*flx_By_lft  -S_lft*flx_By_rgt  + S_rgt*S_lft*(By_rgt-By_lft))      / (S_rgt-S_lft)
     flx(iBz)            = (S_rgt*flx_Bz_lft  -S_lft*flx_Bz_rgt  + S_rgt*S_lft*(Bz_rgt-Bz_lft))      / (S_rgt-S_lft)
 
+
 end subroutine solver_induction_hll
 #endif
 #endif
@@ -1968,7 +1969,7 @@ end subroutine solver_induction_hll
 
 #if MHD==1
 #if NDUST==1
-#if SOLVERB==2
+#if SOLVERB==3
 
 subroutine solver_Hall_hll(qleft,qright,flx,csl,csr,idim,i)
     use parameters

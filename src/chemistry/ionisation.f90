@@ -820,14 +820,16 @@ subroutine total_dust_current
   implicit none
   integer :: i,idust
 
+    ! =====================================================================
+    ! Here is computed the dust total current with gas velocity subtracted
+    ! =====================================================================
 
 
   do i=1,ncells
-    if(active_cell_predictor(i)==1) then !Dust total current with gas velocity sustracted.
+    if(active_cell_predictor(i)==1) then 
 
 
-
-        Jdx_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdx(:))-q(i,ivx)),DIM=1) !To print
+        Jdx_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdx(:))-q(i,ivx)),DIM=1)
         Jdy_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdy(:))-q(i,ivy)),DIM=1)
         Jdz_tot(i) = SUM((q(i,irhod(:))/mdust(i,:))*zd(i,:)*e_el_stat*(q(i,ivdz(:))-q(i,ivz)),DIM=1)
 
@@ -853,6 +855,11 @@ subroutine delta_current_light
 
   implicit none
   integer :: i
+
+
+    ! ==========================================================================================================
+    ! Here is computed the dust total current of the light (inertialess) species (with gas velocity subtracted)
+    ! ==========================================================================================================
 
      call total_current
      call total_dust_current  
@@ -911,13 +918,13 @@ end subroutine b_unit_vector
 
 #if MHD==1
 #if NDUST>0
-subroutine Lorentz_force
+subroutine Lorentz_force_explicit_terms
   use parameters
   use commons
   use units
   !use OMP_LIB 
   use slope_limiter
-
+  use lapack_tools
 
   implicit none
   integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx
@@ -925,6 +932,10 @@ subroutine Lorentz_force
   real(dp) :: dBy,dBz
   real(dp) :: dxBy,dxBz
   real(dp), dimension(1:ncells) ::  Bym,Byp,Bzm,Bzp 
+
+    ! ===========================================================================================================
+    ! Here are computed the Lorentz force terms treated (explicitly only) as source terms in the momentum equations
+    ! ===========================================================================================================
 
 
   ! $OMP PARALLEL &
@@ -937,8 +948,6 @@ subroutine Lorentz_force
 
 
   if (dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
-
-
 
 
       do i=1,ncells
@@ -955,9 +964,6 @@ subroutine Lorentz_force
                 dBy = slope_limit(2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBy) - q(i,iBy))/(dx(ir,1)+dx(i,1)))
                 dBz = slope_limit(2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1)),2.0d0*(q(ir,iBz) - q(i,iBz))/(dx(ir,1)+dx(i,1)))
 
-                !dBy = 2.0d0*(q(i,iBy) - q(il,iBy))/(dx(i,1)+dx(il,1))
-                !dBz = 2.0d0*(q(i,iBz) - q(il,iBz))/(dx(i,1)+dx(il,1))
-
                 !Infer magnetic field at cell surfaces
 
 
@@ -971,8 +977,14 @@ subroutine Lorentz_force
 
        end do
 
+   endif
 
 
+  if (dusty_nonideal_MHD_no_electron) then
+
+    ! ===============================================================================================================================
+    ! Single dust fluid setup. Only one source term remains in this subroutine. The rest is either in the fluxes or in dust_drag.f90 
+    ! ===============================================================================================================================
 
 
         do i=1,ncells
@@ -988,16 +1000,7 @@ subroutine Lorentz_force
 
         !!!Dust!!!
 
-        !!Form involving E. The drag term in it seems to pose a problem --> better to solve it implicitly.
-          ! do idust=1,ndust
-          !    FLor_x_d(i,idust)=zd(i,idust)*e_el_stat*(q(i,irhod(idust))/mdust(i,idust))*E_x(i) - e_el_stat*ni(i)*(v_i_y(i)/clight*q(i,iBz) - v_i_z(i)/clight*q(i,iBy)) !The total current Jtot/c x B is treated as a conservative term in the Riemann problem
-          !    FLor_y_d(i,idust)=zd(i,idust)*e_el_stat*(q(i,irhod(idust))/mdust(i,idust))*E_y(i) - e_el_stat*ni(i)*(v_i_z(i)/clight*q(i,iBx) - v_i_x(i)/clight*q(i,iBz)) !Jd = Jtot - Ji
-          !    FLor_z_d(i,idust)=zd(i,idust)*e_el_stat*(q(i,irhod(idust))/mdust(i,idust))*E_z(i) - e_el_stat*ni(i)*(v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx))
-
-          ! end do
-
-
-          !Developed form --> Only B/(Hall_i*4pi) * J_tot remains. Jtot x B is treated in the fluxes while the term \propto (vn-vd) is solved implicitly in dust_drag
+          !Developed form --> Only B/(Hall_i*4pi) * J_tot remains. Jtot x B is treated in the fluxes while the term \propto (vn-vd) is solved implicitly in dust_drag along with the hydro drag
           do idust=1,ndust
              FLor_x_d(i,idust)=0.0d0 !The total current Jtot/c x B is treated as a conservative term in the Riemann problem
              FLor_y_d(i,idust)=B_norm/(Hall_i(i)*4.0*pi)*dxBz
@@ -1015,8 +1018,7 @@ subroutine Lorentz_force
          !Fully developed form (equivalent to above form bu replacing vi with its expression)
 
          !the term \propto (vn-vd) is solved implicitly in dust_drag through backreaction
-
-    
+  
          FLor_x(i) = 0.0d0  ! 
          FLor_y(i) = -B_norm/(Hall_i(i)*4.0*pi)*dxBz  
          FLor_z(i) = +B_norm/(Hall_i(i)*4.0*pi)*dxBy  
@@ -1031,10 +1033,65 @@ subroutine Lorentz_force
   endif
 
 
+  if (dusty_nonideal_MHD) then
+
+    ! ===============================================================================================================================
+    ! Multi dust fluid setup. Many source terms to treat. The drag terms cannot be treated with Krapp solver in dust_drag.f90 
+    ! ===============================================================================================================================
+
+  do i=1,ncells
+        if (active_cell(i)==1) then
+
+            B_norm=dsqrt(q(i,iBx)**2.0+q(i,iBy)**2.0+q(i,iBz)**2.0)
+
+
+            dxBy=(Bym(i)-Byp(i))/dx(i,1)
+            dxBz=(Bzm(i)-Bzp(i))/dx(i,1)
+
+
+
+    ! =====
+    ! Dust 
+    ! =====
+
+
+
+          !do idust=1,ndust
+             !FLor_x_d(i,idust)=0.0d0 !The total current Jtot/c x B is treated as a conservative term in the Riemann problem
+             !FLor_y_d(i,idust)=B_norm/(Hall_i(i)*4.0*pi)*dxBz
+             !FLor_z_d(i,idust)=-B_norm/(Hall_i(i)*4.0*pi)*dxBy
+
+          !end do
+
+        !!!Gas!!!
+
+          !Ion Lorentz form
+         ! FLor_x(i) = e_el_stat*ni(i)*(E_x(i) + v_i_y(i)/clight*q(i,iBz) - v_i_z(i)/clight*q(i,iBy))  !ions 
+         ! FLor_y(i) = e_el_stat*ni(i)*(E_y(i) + v_i_z(i)/clight*q(i,iBx) - v_i_x(i)/clight*q(i,iBz))  !ions
+         ! FLor_z(i) = e_el_stat*ni(i)*(E_z(i) + v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx))  !ions 
+
+         !Fully developed form (equivalent to above form bu replacing vi with its expression)
+
+         !the term \propto (vn-vd) is solved implicitly in dust_drag through backreaction
+  
+         !FLor_x(i) = 0.0d0  ! 
+         !FLor_y(i) = -B_norm/(Hall_i(i)*4.0*pi)*dxBz  
+         !FLor_z(i) = +B_norm/(Hall_i(i)*4.0*pi)*dxBy  
+
+
+        endif 
+
+      end do
+
+
+
+
+endif
+
 ! $OMP END DO
 ! $OMP END PARALLEL
 
-end subroutine Lorentz_force
+end subroutine Lorentz_force_explicit_terms
 #endif 
 #endif
 
@@ -1143,7 +1200,10 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
         do i=1,ncells
                 ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
                 ne(i) = ni(i)/100
-                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
+                !zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
+                zd(i,1) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
+                zd(i,2) = 10*zd(i,1) !Can be a problem
+
 
          end do 
       endif
