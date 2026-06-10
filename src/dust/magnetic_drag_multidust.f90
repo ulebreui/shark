@@ -5,7 +5,7 @@
 ! Note that each term (gyro, Ohm, AD and Hall) are treated separately, i.e. a splitting is done to simplify the system, which comes with a splitting error.
 ! =========================================================================================================================================================
 
-subroutine gyro_drift
+subroutine gyro_drift(i)
   
   use parameters
   use phys_const
@@ -56,7 +56,6 @@ subroutine gyro_drift
 
   if(static) return
 
-
   do m=1,2*ndust
     do l=1,2*ndust
       if (m==l) Identity_matrix(m,l) = 1.d0
@@ -87,13 +86,12 @@ subroutine gyro_drift
     ! We work with the drift velocities (vd - v) and construct a vector W that is (2*ndust) in size.
     ! =============================================================================================================================================
 
-  !!$OMP PARALLEL &
-  !!$OMP DEFAULT(SHARED)&
-  !!$OMP PRIVATE(pnx,pny,pnz,rhon,alphak,B_norm,i,idust)
-  !!$OMP DO
 
-  do i=1,ncells
-   if(active_cell(i)==1) then
+  ! $OMP PARALLEL &
+  ! $OMP DEFAULT(SHARED)&
+  ! $OMP PRIVATE(i, idust,l,m, alpha, beta, b_unit, b_unit_prime, b_unit_second,rotation_z, rotation_y_prime)
+  ! $OMP DO
+
 
     b_unit(1) = b_unit_x(i)
     b_unit(2) = b_unit_y(i)
@@ -225,11 +223,26 @@ subroutine gyro_drift
 
     end do
 
+    ! ====================================
+    ! This is the Crank-Nicholson scheme 
+    ! ====================================
+
     !Build left-hand side --> (Id - M_gyro dt / 2) and right-hand side --> (Id + M_gyro dt / 2)*W_drift
-    call DGEMV('N', 2*ndust, 2*ndust, 1.d0, Identity_matrix + M_gyro * dt / 2, 2 * ndust, W_drift, 1, 0.d0, right_vector, 1) !First: Rotation of an angle beta around z
+    !call DGEMV('N', n, n, 1.d0, Identity_matrix + M_gyro * dt / 2, n, W_drift, 1, 0.d0, right_vector, 1)
 
     !Solve linear system 
-    call LU_factorization_resolution(Identity_matrix - M_gyro * dt / 2, n, n, right_vector,n,nrhs,output_lin_system) !output_lin_system is now the updated W_drift (t = n+1) 
+    !call LU_factorization_resolution(Identity_matrix - M_gyro * dt / 2, n, n, right_vector,n,nrhs,output_lin_system) !output_lin_system is now the updated W_drift (t = n+1) 
+    !==============================================================================================================
+    
+
+    ! ====================================
+    ! This is the Euler scheme 
+    ! ====================================
+
+    call LU_factorization_resolution(Identity_matrix - M_gyro * dt, n, n, W_drift,n,nrhs,output_lin_system) 
+    !==============================================================================================================
+
+
 
 
     ! ==============================================================================================================
@@ -299,9 +312,19 @@ subroutine gyro_drift
       call DGEMV('N', 3, 3, 1.d0, rotation_y_prime_back, 3, vdust_second, 1, 0.d0, vdust_prime, 1)
       call DGEMV('N', 3, 3, 1.d0, rotation_z_back, 3, vdust_prime, 1, 0.d0, vdust, 1)
 
-      u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * vdust(1)
+      ! print*,'vdust(1)-q(i,ivdx(idust))',vdust(1)-q(i,ivdx(idust))
+      ! print*,'vdust(2)-q(i,ivdy(idust))',vdust(2)-q(i,ivdy(idust))
+      ! print*,'vdust(3)-q(i,ivdz(idust))',vdust(3)-q(i,ivdz(idust))
+
+      q(i,ivdx(idust)) = vdust(1) !Update q so that the other drag terms work with the updated value
+      q(i,ivdy(idust)) = vdust(2)
+      q(i,ivdz(idust)) = vdust(3)
+
+      u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * vdust(1) !Update u so that the CFL is computed correctly, with the updated value (needed if this drag term is called last).
       u_prim(i,ivdy(idust)) = u_prim(i,irhod(idust)) * vdust(2)
       u_prim(i,ivdz(idust)) = u_prim(i,irhod(idust)) * vdust(3)
+
+
 
 
       k = k+2
@@ -310,19 +333,26 @@ subroutine gyro_drift
 
     !Now that all dust species have been updated, we compute the updated gas velocity with the last vgas_intermediate computed
     call DGEMV('N', 3, 3, 1.d0, rotation_y_prime_back, 3, vgas_intermediate, 1, 0.d0, vgas_prime, 1)
-    call DGEMV('N', 3, 3, 1.d0, rotation_z_back, 3, vgas_prime, 1, 0.d0, vgas, 1)  
+    call DGEMV('N', 3, 3, 1.d0, rotation_z_back, 3, vgas_prime, 1, 0.d0, vgas, 1) 
+
+    q(i,ivx) = vgas(1)
+    q(i,ivy) = vgas(2)
+    q(i,ivz) = vgas(3)  
 
     u_prim(i,ivx) = u_prim(i,irho) * vgas(1)
     u_prim(i,ivy) = u_prim(i,irho) * vgas(2)
     u_prim(i,ivz) = u_prim(i,irho) * vgas(3)      
+      
+    ! print*,'vgas(1) - q(i,ivx)',vgas(1) - q(i,ivx)
+    ! print*,'vgas(2) - q(i,ivy)',vgas(2) - q(i,ivy)
+    ! print*,'vgas(3) - q(i,ivz)',vgas(3) - q(i,ivz)
 
 
 
 
 
 
-   endif
-  end do
+
 
 
 
@@ -340,7 +370,7 @@ end subroutine gyro_drift
 
 
 
-subroutine Ohmic_drag
+subroutine Ohmic_drag(i)
   
   use parameters
   use phys_const
@@ -414,8 +444,6 @@ subroutine Ohmic_drag
   !!$OMP PRIVATE(pnx,pny,pnz,rhon,alphak,B_norm,i,idust)
   !!$OMP DO
 
-  do i=1,ncells
-   if(active_cell(i)==1) then
 
     ! ==============================================================================
     ! We first build the numerical velocity vector V, one for each direction.
@@ -467,7 +495,7 @@ subroutine Ohmic_drag
 
     ! print*, 'zd',zd(i,:)
     ! print*, 'zd_tot',zd_tot
-    ! print*, 'eta_o(i)',eta_o(i)
+    !print*, 'eta_o(i)',eta_o(i)
     ! print*,'q,(i,irho)',q(i,irho)
     ! print*,'q,(i,irhod(idust))',q(i,irhod(:))
     ! print*, 'mdust',mdust(i,:)
@@ -486,7 +514,16 @@ subroutine Ohmic_drag
     ! Update conservative variable
     ! ============================
 
+    ! print*, 'output_lin_system_x - q(i,ivdx(1))=',output_lin_system_x(2) - q(i,ivdx(1))
+    ! print*, 'output_lin_system_x - q(i,ivdy(1))=',output_lin_system_y(2) - q(i,ivdy(1))
+    ! print*, 'output_lin_system_x - q(i,ivdz(1))=',output_lin_system_z(2) - q(i,ivdz(1))
+
+
     do idust=1,ndust
+
+      q(i,ivdx(idust)) = output_lin_system_x(idust+1)
+      q(i,ivdy(idust)) = output_lin_system_y(idust+1)
+      q(i,ivdz(idust)) = output_lin_system_z(idust+1)
 
       u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * output_lin_system_x(idust+1)
       u_prim(i,ivdy(idust)) = u_prim(i,irhod(idust)) * output_lin_system_y(idust+1)
@@ -496,13 +533,19 @@ subroutine Ohmic_drag
 
     !Now the gas
 
+    q(i,ivx) = output_lin_system_x(1)
+    q(i,ivy) = output_lin_system_y(1)
+    q(i,ivz) = output_lin_system_z(1) 
+
     u_prim(i,ivx) = u_prim(i,irho) * output_lin_system_x(1)
     u_prim(i,ivy) = u_prim(i,irho) * output_lin_system_y(1)
-    u_prim(i,ivz) = u_prim(i,irho) * output_lin_system_z(1)      
+    u_prim(i,ivz) = u_prim(i,irho) * output_lin_system_z(1)    
+
+    ! print*, 'output_lin_system_x - q(i,ivx)=',output_lin_system_x(1) - q(i,ivx)
+    ! print*, 'output_lin_system_x - q(i,ivy)=',output_lin_system_y(1) - q(i,ivy)
+    ! print*, 'output_lin_system_x - q(i,ivz)=',output_lin_system_z(1) - q(i,ivz)  
 
 
-   endif
-  end do
 
 
 
@@ -511,7 +554,706 @@ subroutine Ohmic_drag
   deallocate(output_lin_system_x)
   deallocate(output_lin_system_y)
   deallocate(output_lin_system_z)
+  deallocate(Vx)
+  deallocate(Vy)
+  deallocate(Vz)
 
 
 
 end subroutine Ohmic_drag
+
+subroutine Hall_gyromotion(i)
+  
+  use parameters
+  use phys_const
+  use commons
+  use units
+  use OMP_LIB
+  use lapack_tools
+
+  implicit none
+  integer :: i,idust,l,m,k,count_species_column,count_species_row,index_species_column,index_species_row
+  real(dp) :: zd_tot
+
+  real(dp), dimension(:)  , allocatable :: V
+  real(dp), dimension(:,:)  , allocatable :: M_H
+
+  !Variables for LU decomposition
+  integer, parameter :: n = 3*(ndust+1)   !Matrix_Hall size
+  integer, parameter :: nrhs = 1       !Number of right hand side vector
+  integer :: ipiv(n)                   !Pivot vector
+  real(dp), dimension(:), allocatable :: right_vector_Hall
+  real(dp), dimension(:)  , allocatable :: output_lin_system_Hall !Vector solution
+
+
+
+  real(dp), dimension(n,n) :: Identity_matrix
+
+
+
+
+  if(static) return
+
+
+  do m=1,n
+    do l=1,n
+      if (m==l) Identity_matrix(m,l) = 1.d0
+      if (m/=l) Identity_matrix(m,l) = 0.d0  
+    end do
+  end do
+
+  allocate(V(1:n))
+  V=0.0d0
+
+  allocate(M_H(1:n,1:n))
+  M_H=0.0d0
+
+  allocate(output_lin_system_Hall(1:n))
+  output_lin_system_Hall=0.0d0
+
+  allocate(right_vector_Hall(1:n))
+  right_vector_Hall=0.0d0
+
+
+    ! ======================================================================================================================================================================================================================
+    ! Here we deal with the Hall gyromotion term (for Vallucci-Goy +27 setup). This one is conservative. Similarly to the gyrodrag, we use a symplectic Crank-Nicholson scheme (should work but does not) --> Euler instead
+    ! ======================================================================================================================================================================================================================
+
+  !!$OMP PARALLEL &
+  !!$OMP DEFAULT(SHARED)&
+  !!$OMP PRIVATE(pnx,pny,pnz,rhon,alphak,B_norm,i,idust)
+  !!$OMP DO
+
+
+    ! ================================================
+    ! We first build the numerical velocity vector V
+    ! ================================================
+
+
+    V(1) = q(i,ivx)
+    V(2) = q(i,ivy)
+    V(3) = q(i,ivz)
+
+    k = 4
+    do idust=1,ndust
+
+      V(k) = q(i,ivdx(idust))
+      V(k+1) = q(i,ivdy(idust))
+      V(k+2) = q(i,ivdz(idust))
+
+      k = k + 3
+
+   end do
+
+
+    ! ====================================================================================================
+    ! Solve linear system with Crank-Nicholson scheme (simplectic implicit midpoint integrator), or Euler.
+    ! ====================================================================================================
+
+
+    !Define total dust charge density
+    zd_tot = SUM(q(i,irhod(:))/mdust(i,:) * zd(i,:) * e_el_stat)
+
+
+    ! print*, 'zd',zd(i,:)
+    ! print*, 'zd_tot',zd_tot
+    ! print*, 'eta_H(i)',eta_H(i)
+    ! print*, 'b_unit_x(i)',b_unit_x(i)
+    ! print*, 'b_unit_y(i)',b_unit_y(i)
+    ! print*, 'b_unit_z(i)',b_unit_z(i)
+
+    !  print*, 'eta_H(i)',eta_H(i)
+
+    ! print*,'q,(i,irho)',q(i,irho)
+    ! print*,'q,(i,irhod(idust))',q(i,irhod(:))
+    ! print*, 'mdust',mdust(i,:)
+
+
+
+    !Build M_H
+    count_species_row = 1
+    index_species_row = 0
+
+
+
+    do m=1,n
+
+      if (count_species_row == 4) then
+        index_species_row = index_species_row + 1 !We moved the next dust species (every 3 iterations)
+        count_species_row = 1 !Reset the counter
+      endif
+
+      ! print*, 'index_species_row',index_species_row
+
+      count_species_column = 1
+      index_species_column = 0
+
+      do l=1,n
+
+        if (count_species_column == 4) then 
+          index_species_column = index_species_column + 1 !We moved the next dust species (every 3 iterations)
+          count_species_column = 1 !Reset the counter
+        endif
+        ! print*, 'index_species_column',index_species_column
+        ! print*, 'count_species_column',count_species_column
+
+
+        if (index_species_row == 0 .and. index_species_column == 0) then !Top left-hand corner
+          if (count_species_row == count_species_column) M_H(m,l) = 0.0d0
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_H(m,l) = - zd_tot**2 * b_unit_z(i)/ q(i,irho) 
+            if (count_species_column == 3) M_H(m,l) = zd_tot**2 * b_unit_y(i)/ q(i,irho)
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_H(m,l) = zd_tot**2 * b_unit_z(i)/ q(i,irho) 
+            if (count_species_column == 3) M_H(m,l) = - zd_tot**2 * b_unit_x(i)/ q(i,irho)
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_H(m,l) = - zd_tot**2 * b_unit_y(i)/ q(i,irho) 
+            if (count_species_column == 2) M_H(m,l) = zd_tot**2 * b_unit_x(i)/ q(i,irho)
+          endif
+        endif
+
+        if (index_species_row == 0 .and. index_species_column /= 0) then
+          if (count_species_row == count_species_column) M_H(m,l) = 0.0d0
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_H(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_z(i)/ q(i,irho) 
+            if (count_species_column == 3) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_y(i)/ q(i,irho) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_z(i)/ q(i,irho)  
+            if (count_species_column == 3) M_H(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_x(i)/ q(i,irho) 
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_H(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_y(i)/ q(i,irho)  
+            if (count_species_column == 2) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_x(i)/ q(i,irho) 
+          endif
+        endif
+
+        if (index_species_row /= 0 .and. index_species_column == 0) then
+          if (count_species_row == count_species_column) M_H(m,l) = 0.0d0
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_H(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i)/ q(i,irhod(index_species_row)) 
+            if (count_species_column == 3) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i)/ q(i,irhod(index_species_row)) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i)/ q(i,irhod(index_species_row))  
+            if (count_species_column == 3) M_H(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i)/ q(i,irhod(index_species_row)) 
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_H(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i)/ q(i,irhod(index_species_row))  
+            if (count_species_column == 2) M_H(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i)/ q(i,irhod(index_species_row)) 
+          endif
+        endif
+
+        if (index_species_row /= 0 .and. index_species_column /= 0) then
+          if (count_species_row == count_species_column) M_H(m,l) = 0.0d0
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_H(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i)/ q(i,irhod(index_species_row)) 
+            if (count_species_column == 3) M_H(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i)/ q(i,irhod(index_species_row)) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_H(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i)/ q(i,irhod(index_species_row))  
+            if (count_species_column == 3) M_H(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i)/ q(i,irhod(index_species_row)) 
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_H(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i)/ q(i,irhod(index_species_row))  
+            if (count_species_column == 2) M_H(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i)/ q(i,irhod(index_species_row)) 
+          endif
+        endif
+
+        count_species_column = count_species_column + 1
+
+      end do
+
+      count_species_row = count_species_row + 1
+
+    end do
+
+    M_H(:,:) = eta_H(i) * M_H(:,:) 
+
+
+    !Left-hand side --> (Id - M_gyro dt) and right-hand side --> V
+
+
+    ! print*, 'M_H(1,:)=',M_H(1,:)
+    ! print*, 'M_H(2,:)=',M_H(2,:)
+    ! print*, 'M_H(3,:)=',M_H(3,:)
+    ! print*, 'M_H(4,:)=',M_H(4,:)
+    ! print*, 'M_H(5,:)=',M_H(5,:)
+    ! print*, 'M_H(6,:)=',M_H(6,:)
+    ! print*, 'M_H(7,:)=',M_H(7,:)
+    ! print*, 'M_H(8,:)=',M_H(8,:)
+    ! print*, 'M_H(9,:)=',M_H(9,:)
+
+
+
+    ! print*,'q(i,irho)',q(i,irho)
+    ! print*,'q(i,irhod(:))',q(i,irhod(:))
+    ! print*,'q,(i,ivx)',q(i,ivx)
+    ! print*,'q,(i,ivy)',q(i,ivy)
+    ! print*,'q,(i,ivz)',q(i,ivz)
+    ! print*,'q,(i,ivdx(1))',q(i,ivdx(1))
+    ! print*,'q,(i,ivdy(1))',q(i,ivdy(1))
+    ! print*,'q,(i,ivdz(1))',q(i,ivdz(1))
+    ! print*,'q,(i,ivdx(2))',q(i,ivdx(2))
+    ! print*,'q,(i,ivdy(2))',q(i,ivdy(2))
+    ! print*,'q,(i,ivdz(2))',q(i,ivdz(2))
+
+    ! print*, 'V(:)=',V(:)
+    ! print*,'dt=',dt
+
+
+    ! ====================================
+    ! This is the Crank-Nicholson scheme 
+    ! ====================================
+
+    ! call DGEMV('N', n, n, 1.d0, Identity_matrix + M_H * dt / 2, n, V, 1, 0.d0, right_vector_Hall, 1)
+
+    ! print*, 'right_vector_Hall(:)=',right_vector_Hall(:)
+
+
+    ! !Solve linear system 
+    ! call LU_factorization_resolution(Identity_matrix - M_H * dt / 2, n, n, right_vector_Hall,n,nrhs,output_lin_system_Hall) !output_lin_system is now the updated V (t = n+1) 
+
+
+    ! ====================================
+    ! This is the implicit Euler scheme 
+    ! ====================================
+
+    call LU_factorization_resolution(Identity_matrix - M_H * dt, n, n, V,n,nrhs,output_lin_system_Hall) 
+
+
+    !print*, 'output_lin_system_Hall(:)=',output_lin_system_Hall(:)
+
+    ! ============================
+    ! Update conservative variable
+    ! ============================
+    k = 4
+    do idust=1,ndust
+
+
+      q(i,ivdx(idust)) = output_lin_system_Hall(k)
+      q(i,ivdy(idust)) = output_lin_system_Hall(k+1)
+      q(i,ivdz(idust)) = output_lin_system_Hall(k+2)
+
+      u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * output_lin_system_Hall(k)
+      u_prim(i,ivdy(idust)) = u_prim(i,irhod(idust)) * output_lin_system_Hall(k+1)
+      u_prim(i,ivdz(idust)) = u_prim(i,irhod(idust)) * output_lin_system_Hall(k+2)
+
+      ! print*,'output_lin_system_Hall(k)-q(i,ivdx(idust))',output_lin_system_Hall(k)-q(i,ivdx(idust)) 
+      ! print*,'output_lin_system_Hall(k+1)-q(i,ivdy(idust))',output_lin_system_Hall(k+1)-q(i,ivdy(idust)) 
+      ! print*,'output_lin_system_Hall(k+2)-q(i,ivdz(idust))',output_lin_system_Hall(k+2)-q(i,ivdz(idust)) 
+
+
+      k = k + 3
+      !print*,'k',k
+    enddo
+
+    !Now the gas
+
+    q(i,ivx) = output_lin_system_Hall(1)
+    q(i,ivy) = output_lin_system_Hall(2)
+    q(i,ivz) = output_lin_system_Hall(3)
+
+    u_prim(i,ivx) = u_prim(i,irho) * output_lin_system_Hall(1)
+    u_prim(i,ivy) = u_prim(i,irho) * output_lin_system_Hall(2)
+    u_prim(i,ivz) = u_prim(i,irho) * output_lin_system_Hall(3)   
+
+    ! print*,'output_lin_system_Hall(1)-q(i,ivx)',output_lin_system_Hall(1)-q(i,ivx) 
+    ! print*,'output_lin_system_Hall(2)-q(i,ivy)',output_lin_system_Hall(2)-q(i,ivy) 
+    ! print*,'output_lin_system_Hall(3)-q(i,ivz)',output_lin_system_Hall(3)-q(i,ivz) 
+
+
+
+
+
+
+
+  deallocate(M_H)
+  deallocate(output_lin_system_Hall)
+  deallocate(right_vector_Hall)
+  deallocate(V)
+
+
+
+
+end subroutine Hall_gyromotion
+
+
+
+subroutine AD_drag(i)
+  
+  use parameters
+  use phys_const
+  use commons
+  use units
+  use OMP_LIB
+  use lapack_tools
+
+  implicit none
+  integer :: i,idust,l,m,k,count_species_column,count_species_row,index_species_column,index_species_row
+  real(dp) :: zd_tot
+
+  real(dp), dimension(:)  , allocatable :: V
+  real(dp), dimension(:,:)  , allocatable :: M_AD
+
+  !Variables for LU decomposition
+  integer, parameter :: n = 3*(ndust+1)   !Matrix_AD size
+  integer, parameter :: nrhs = 1       !Number of right hand side vector
+  integer :: ipiv(n)                   !Pivot vector
+  real(dp), dimension(:)  , allocatable :: output_lin_system_AD !Vector solution
+
+
+  real(dp), dimension(n,n) :: Identity_matrix
+
+
+
+
+  if(static) return
+
+
+  do m=1,n
+    do l=1,n
+      if (m==l) Identity_matrix(m,l) = 1.d0
+      if (m/=l) Identity_matrix(m,l) = 0.d0  
+    end do
+  end do
+
+  allocate(V(1:n))
+  V=0.0d0
+
+  allocate(M_AD(1:n,1:n))
+  M_AD=0.0d0
+
+  allocate(output_lin_system_AD(1:n))
+  output_lin_system_AD=0.0d0
+
+
+
+
+    ! ========================================================================================================================================================================
+    ! Here we deal with the AD drag term (for Vallucci-Goy +27 setup). This one is dissipative. Similarly to the Ohmic drag, we use a first-order Euler implicit scheme
+    ! ========================================================================================================================================================================
+
+  !!$OMP PARALLEL &
+  !!$OMP DEFAULT(SHARED)&
+  !!$OMP PRIVATE(pnx,pny,pnz,rhon,alphak,B_norm,i,idust)
+  !!$OMP DO
+
+
+    ! ================================================
+    ! We first build the numerical velocity vector V
+    ! ================================================
+
+
+    V(1) = q(i,ivx)
+    V(2) = q(i,ivy)
+    V(3) = q(i,ivz)
+
+    k = 4
+    do idust=1,ndust
+
+      V(k) = q(i,ivdx(idust))
+      V(k+1) = q(i,ivdy(idust))
+      V(k+2) = q(i,ivdz(idust))
+
+      k = k + 3
+
+   end do
+
+
+    ! ================================================
+    ! Solve linear system with Euler implicit scheme.
+    ! ================================================
+
+
+    !Define total dust charge density
+    zd_tot = SUM(q(i,irhod(:))/mdust(i,:) * zd(i,:) * e_el_stat)
+
+
+
+    ! print*, 'zd',zd(i,:)
+    ! print*, 'zd_tot',zd_tot
+    ! print*, 'b_unit_x(i)',b_unit_x(i)
+    ! print*, 'b_unit_y(i)',b_unit_y(i)
+    ! print*, 'b_unit_z(i)',b_unit_z(i)
+
+    !  print*, 'eta_a(i)',eta_a(i)
+
+    ! print*,'q,(i,irho)',q(i,irho)
+    ! print*,'q,(i,irhod(idust))',q(i,irhod(:))
+    ! print*, 'mdust',mdust(i,:)
+
+
+
+    !Build M_AD
+    count_species_row = 1
+    index_species_row = 0
+
+
+
+    do m=1,n
+
+      if (count_species_row == 4) then
+        index_species_row = index_species_row + 1 !We moved the next dust species (every 3 iterations)
+        count_species_row = 1 !Reset the counter
+      endif
+
+      ! print*, 'index_species_row',index_species_row
+
+      count_species_column = 1
+      index_species_column = 0
+
+      do l=1,n
+
+        if (count_species_column == 4) then 
+          index_species_column = index_species_column + 1 !We moved the next dust species (every 3 iterations)
+          count_species_column = 1 !Reset the counter
+        endif
+        ! print*, 'index_species_column',index_species_column
+        ! print*, 'count_species_column',count_species_column
+
+
+        if (index_species_row == 0 .and. index_species_column == 0) then !Top left-hand corner
+          if (count_species_row == 1 .and. count_species_column == 1) M_AD(m,l) = - zd_tot**2 * (b_unit_y(i)**2 + b_unit_z(i)**2) / q(i,irho)
+          if (count_species_row == 2 .and. count_species_column == 2) M_AD(m,l) = - zd_tot**2 * (b_unit_z(i)**2 + b_unit_x(i)**2) / q(i,irho)
+          if (count_species_row == 3 .and. count_species_column == 3) M_AD(m,l) = - zd_tot**2 * (b_unit_x(i)**2 + b_unit_y(i)**2) / q(i,irho)
+
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_AD(m,l) = zd_tot**2 * b_unit_x(i) * b_unit_y(i) / q(i,irho) 
+            if (count_species_column == 3) M_AD(m,l) = zd_tot**2 * b_unit_x(i) * b_unit_z(i) / q(i,irho)
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_AD(m,l) = zd_tot**2 * b_unit_y(i) * b_unit_x(i) / q(i,irho) 
+            if (count_species_column == 3) M_AD(m,l) = zd_tot**2 * b_unit_y(i) * b_unit_z(i) / q(i,irho)
+          endif 
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_AD(m,l) = zd_tot**2 * b_unit_z(i) * b_unit_x(i) / q(i,irho)
+            if (count_species_column == 2) M_AD(m,l) = zd_tot**2 * b_unit_z(i) * b_unit_y(i) / q(i,irho)
+          endif
+        endif
+
+        if (index_species_row == 0 .and. index_species_column /= 0) then
+          if (count_species_row == 1 .and. count_species_column == 1) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (b_unit_y(i)**2 + b_unit_z(i)**2) / q(i,irho)
+          if (count_species_row == 2 .and. count_species_column == 2) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (b_unit_z(i)**2 + b_unit_x(i)**2) / q(i,irho)
+          if (count_species_row == 3 .and. count_species_column == 3) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (b_unit_x(i)**2 + b_unit_y(i)**2) / q(i,irho)
+
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_x(i) * b_unit_y(i) / q(i,irho) 
+            if (count_species_column == 3) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_x(i) * b_unit_z(i) / q(i,irho) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_y(i) * b_unit_x(i) / q(i,irho)  
+            if (count_species_column == 3) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_y(i) * b_unit_z(i) / q(i,irho) 
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_z(i) * b_unit_x(i) / q(i,irho)  
+            if (count_species_column == 2) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * b_unit_z(i) * b_unit_y(i) / q(i,irho) 
+          endif
+        endif
+
+        if (index_species_row /= 0 .and. index_species_column == 0) then
+          if (count_species_row == 1 .and. count_species_column == 1) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_y(i)**2 + b_unit_z(i)**2) / q(i,irhod(index_species_row))
+          if (count_species_row == 2 .and. count_species_column == 2) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_z(i)**2 + b_unit_x(i)**2) / q(i,irhod(index_species_row))
+          if (count_species_row == 3 .and. count_species_column == 3) M_AD(m,l) = - zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_x(i)**2 + b_unit_y(i)**2) / q(i,irhod(index_species_row))
+
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i) * b_unit_y(i) / q(i,irhod(index_species_row)) 
+            if (count_species_column == 3) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i) * b_unit_z(i) / q(i,irhod(index_species_row)) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i) * b_unit_x(i) / q(i,irhod(index_species_row))  
+            if (count_species_column == 3) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i) * b_unit_z(i) / q(i,irhod(index_species_row)) 
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i) * b_unit_x(i) / q(i,irhod(index_species_row))  
+            if (count_species_column == 2) M_AD(m,l) = zd_tot * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i) * b_unit_y(i) / q(i,irhod(index_species_row)) 
+          endif
+        endif
+
+        if (index_species_row /= 0 .and. index_species_column /= 0) then
+          if (count_species_row == 1 .and. count_species_column == 1) M_AD(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_y(i)**2 + b_unit_z(i)**2) / q(i,irhod(index_species_row))
+          if (count_species_row == 2 .and. count_species_column == 2) M_AD(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_z(i)**2 + b_unit_x(i)**2) / q(i,irhod(index_species_row))
+          if (count_species_row == 3 .and. count_species_column == 3) M_AD(m,l) = (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * (b_unit_x(i)**2 + b_unit_y(i)**2) / q(i,irhod(index_species_row))
+
+          if (count_species_row == 1) then
+            if (count_species_column == 2) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i) * b_unit_y(i) / q(i,irhod(index_species_row)) 
+            if (count_species_column == 3) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_x(i) * b_unit_z(i) / q(i,irhod(index_species_row)) 
+          endif 
+          if (count_species_row == 2) then
+            if (count_species_column == 1) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i) * b_unit_x(i) / q(i,irhod(index_species_row))
+            if (count_species_column == 3) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_y(i) * b_unit_z(i) / q(i,irhod(index_species_row))
+          endif
+          if (count_species_row == 3) then
+            if (count_species_column == 1) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i) * b_unit_x(i) / q(i,irhod(index_species_row))  
+            if (count_species_column == 2) M_AD(m,l) = - (q(i,irhod(index_species_column))/mdust(i,index_species_column) * zd(i,index_species_column) * e_el_stat) * (q(i,irhod(index_species_row))/mdust(i,index_species_row) * zd(i,index_species_row) * e_el_stat) * b_unit_z(i) * b_unit_y(i) / q(i,irhod(index_species_row))
+          endif
+        endif
+
+        count_species_column = count_species_column + 1
+
+      end do
+
+      count_species_row = count_species_row + 1
+
+    end do
+
+    M_AD(:,:) = eta_a(i) * M_AD(:,:) 
+
+
+
+
+    ! print*, 'M_AD(1,:)=',M_AD(1,:)
+    ! print*, 'M_AD(2,:)=',M_AD(2,:)
+    ! print*, 'M_AD(3,:)=',M_AD(3,:)
+    ! print*, 'M_AD(4,:)=',M_AD(4,:)
+    ! print*, 'M_AD(5,:)=',M_AD(5,:)
+    ! print*, 'M_AD(6,:)=',M_AD(6,:)
+    ! print*, 'M_AD(7,:)=',M_AD(7,:)
+    ! print*, 'M_AD(8,:)=',M_AD(8,:)
+    ! print*, 'M_AD(9,:)=',M_AD(9,:)
+
+
+
+    ! print*,'q(i,irho)',q(i,irho)
+    ! print*,'q(i,irhod(:))',q(i,irhod(:))
+    ! print*,'q,(i,ivx)',q(i,ivx)
+    ! print*,'q,(i,ivy)',q(i,ivy)
+    ! print*,'q,(i,ivz)',q(i,ivz)
+    ! print*,'q,(i,ivdx(1))',q(i,ivdx(1))
+    ! print*,'q,(i,ivdy(1))',q(i,ivdy(1))
+    ! print*,'q,(i,ivdz(1))',q(i,ivdz(1))
+    ! print*,'q,(i,ivdx(2))',q(i,ivdx(2))
+    ! print*,'q,(i,ivdy(2))',q(i,ivdy(2))
+    ! print*,'q,(i,ivdz(2))',q(i,ivdz(2))
+
+    ! print*, 'V(:)=',V(:)
+    ! print*,'dt=',dt
+
+
+    !Solve linear system 
+    call LU_factorization_resolution(Identity_matrix - M_AD * dt, n, n, V,n,nrhs,output_lin_system_AD) 
+
+
+    !print*, 'output_lin_system_AD(:)=',output_lin_system_AD(:)
+
+    ! ============================
+    ! Update conservative variable
+    ! ============================
+    k = 4
+    do idust=1,ndust
+
+
+      q(i,ivdx(idust)) = output_lin_system_AD(k)
+      q(i,ivdy(idust)) = output_lin_system_AD(k+1)
+      q(i,ivdz(idust)) = output_lin_system_AD(k+2)
+
+      u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * output_lin_system_AD(k)
+      u_prim(i,ivdy(idust)) = u_prim(i,irhod(idust)) * output_lin_system_AD(k+1)
+      u_prim(i,ivdz(idust)) = u_prim(i,irhod(idust)) * output_lin_system_AD(k+2)
+
+      ! print*,'output_lin_system_AD(k)-q(i,ivdx(idust))',output_lin_system_AD(k)-q(i,ivdx(idust)) 
+      ! print*,'output_lin_system_AD(k+1)-q(i,ivdy(idust))',output_lin_system_AD(k+1)-q(i,ivdy(idust)) 
+      ! print*,'output_lin_system_AD(k+2)-q(i,ivdz(idust))',output_lin_system_AD(k+2)-q(i,ivdz(idust)) 
+
+
+      k = k + 3
+      !print*,'k',k
+    enddo
+
+    !Now the gas
+
+    q(i,ivx) = output_lin_system_AD(1)
+    q(i,ivy) = output_lin_system_AD(2)
+    q(i,ivz) = output_lin_system_AD(3)
+
+    u_prim(i,ivx) = u_prim(i,irho) * output_lin_system_AD(1)
+    u_prim(i,ivy) = u_prim(i,irho) * output_lin_system_AD(2)
+    u_prim(i,ivz) = u_prim(i,irho) * output_lin_system_AD(3)   
+
+    ! print*,'output_lin_system_AD(1)-q(i,ivx)',output_lin_system_AD(1)-q(i,ivx) 
+    ! print*,'output_lin_system_AD(2)-q(i,ivy)',output_lin_system_AD(2)-q(i,ivy) 
+    ! print*,'output_lin_system_AD(3)-q(i,ivz)',output_lin_system_AD(3)-q(i,ivz) 
+
+
+
+
+
+  deallocate(M_AD)
+  deallocate(output_lin_system_AD)
+  deallocate(V)
+
+
+
+
+end subroutine AD_drag
+
+
+subroutine magnetic_drag
+
+!!!For each term, both q & u_prim have to be updated. The former so that the next term called can work with the updated velocity. The latter so that the CFL works with the updated velocity!!!
+!!N.B.: Updating q(:,ivd) is not a problem since those are local source terms. There is no communication with neighboring cells and thus no need for buffer values!!
+
+  use commons
+  use parameters
+
+
+  implicit none 
+  integer :: i
+
+
+
+
+            do i=1,ncells
+              !if(active_cell(i)==1) then
+
+
+                call gyro_drift(i) !First to be called, because is very stiff for small grains.
+
+
+                !!!Then, get a crude estimate of the stiffness of each term by looking at the corresponding resistivity!!!
+                !!!Solve for stiffest term first!!!
+
+
+                if (eta_o(i) .ge. abs(eta_H(i)) .and. abs(eta_H(i)) .ge. eta_a(i)) then 
+                  call Ohmic_drag(i) 
+                  call Hall_gyromotion(i) 
+                  call AD_drag(i) 
+                endif
+
+                if (eta_o(i) .ge. eta_a(i) .and. eta_a(i) .ge. abs(eta_H(i))) then 
+                  call Ohmic_drag(i)  
+                  call AD_drag(i)
+                  call Hall_gyromotion(i)
+                endif
+
+                if (eta_a(i) .ge. eta_o(i) .and. eta_o(i) .ge. abs(eta_H(i))) then 
+                  call AD_drag(i)
+                  call Ohmic_drag(i)  
+                  call Hall_gyromotion(i)
+                endif
+
+                if (eta_a(i) .ge. abs(eta_H(i)) .and. abs(eta_H(i)) .ge. eta_o(i)) then   
+                  call AD_drag(i)
+                  call Hall_gyromotion(i)
+                  call Ohmic_drag(i)
+                endif
+
+                if (abs(eta_H(i)) .ge. eta_o(i) .and. eta_o(i) .ge. eta_a(i)) then 
+                  call Hall_gyromotion(i)
+                  call Ohmic_drag(i)  
+                  call AD_drag(i)
+                endif
+
+
+                if (abs(eta_H(i)) .ge. eta_a(i) .and. eta_a(i) .ge. eta_o(i)) then    
+                  call Hall_gyromotion(i)
+                  call AD_drag(i)
+                  call Ohmic_drag(i)
+                endif
+
+              !endif
+            end do
+
+end subroutine magnetic_drag

@@ -57,7 +57,10 @@ subroutine time_loop
   if(restarting>0) iout = nrestart !First output to dump defined by nrestart
 
   if(nrestart>0) then 
+
     call restart(nrestart)
+
+
   endif
 
 
@@ -65,14 +68,6 @@ subroutine time_loop
   outputing    = .false.
   call setup_preloop ! Anything that must be done before the time loop and that is setup dependent
 
-
- if(charging) then
-     if (analytical_charging .eqv. .false.) call charge
-
-#if NDUST>0
-     if (analytical_charging) call analytical_charge
-#endif
-  endif
 
 
   !Actual time loop, continues until continue_sim=.false.
@@ -88,7 +83,7 @@ subroutine time_loop
      if(restarting.eq.0) then
         call check_output(icount,iout,outputing,verbose)
      else
-        restarting=0
+
      endif
      
 #if NDUST>0
@@ -113,9 +108,20 @@ subroutine time_loop
      
      !Actual solving of equations
   
+   ! print*,q(1,irhod(:))
+   ! print*,q(1,irho)
+   ! print*,q(1,ivdx(:))
+   ! print*,q(1,ivx)
+   ! print*,q(1,ivdy(:))
+   ! print*,q(1,ivy)
+   ! print*,q(1,ivdz(:))
+   ! print*,q(1,ivz)
 
-     call solve(verbose,outputing)
 
+
+     call solve(verbose,outputing,iout)
+
+    restarting=0
 
      !New time
      !print*, 'dt=', dt

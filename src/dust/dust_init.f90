@@ -25,7 +25,7 @@ subroutine distribution_dust(initi)
   if(kernel_type==1)m_min = smin**3.
   if(kernel_type==2)m_min = smin**3.
   
-  if((initi.or.restarting>0)) then !if restarting>0, the dust size grid is reconstructed. Make sure that smin and smax are the same in the nml before and after restart, to avoid any mismatch.
+  if((initi.or.nrestart>0)) then !if restarting>0, the dust size grid is reconstructed. Make sure that smin and smax are the same in the nml before and after restart, to avoid any mismatch.
      do idust =1,ndust
         aminus(idust) = smin  * zeta ** (idust-1)/unit_l
         aplus (idust) = smin  * zeta ** (idust)/unit_l
@@ -74,29 +74,47 @@ subroutine distribution_dust(initi)
      endif
 
   else !Else we use the updated dust distribution
+
+
   !do i=1,ncells
      do idust=1,ndust
         epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
+        mdust(:,idust)    = (4./3.*pi*sdust(:,idust)**3.*rhograin)/unit_m !To recompute here when restarting !
      end do
+
    !end do
   end if
-  if(restarting>0.and.initi) then !If restarting>0, retrieve the dust densities from the restart output.
-     do idust=1,ndust
-        epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
-     end do
-  endif
+
+  ! if(restarting>0.and.initi) then !If restarting>0, retrieve the dust densities from the restart output.
+  !    do idust=1,ndust
+  !       epsilondust(:,idust)=q(:,irhod(idust))/q(:,irho)
+  !       mdust(:,idust)    = (4./3.*pi*sdust(:,idust)**3.*rhograin)/unit_m !To recompute here when restarting !
+
+  !    end do
+  ! endif
+
   !Add ice mantle
   if((initi.or.restarting>0).and.kernel_type==0) then
      sdust=sdust+ice_mantle/unit_l
      aplus=aplus!+ice_mantle/unit_l
      aminus=aminus!+ice_mantle/unit_l
   endif
-  if((initi.or.restarting>0)) then
+
+  if((initi)) then
      print *, 'Initial dust distribution, size :'
      print *,  sdust(1,:)*unit_l
      print *, 'Initial dust distribution, epsilon :'
      print *,  epsilondust(1,:)
      print *, 'Initial dust distribution, mass :'
+     print *,  mdust(1,:)*unit_m
+  end if
+
+  if((nrestart>0)) then
+     print *, 'Restarted dust distribution, size :'
+     print *,  sdust(1,:)*unit_l
+     print *, 'Restarted dust distribution, epsilon :'
+     print *,  epsilondust(1,:)
+     print *, 'Restarted dust distribution, mass :'
      print *,  mdust(1,:)*unit_m
   end if
 

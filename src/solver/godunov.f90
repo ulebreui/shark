@@ -233,6 +233,17 @@ subroutine predictor
     sv0   = sv0 + Bx*dBy_x/r_rho
     sw0   = sw0 + Bx*dBz_x/r_rho
 #endif
+#if NDUST>0
+    if (ideal_MHD .or. dusty_nonideal_MHD) then !Recouple too gas even in presence of dust
+    !if (ideal_MHD) then !Recouple too gas even in presence of dust
+
+        sBy   = -u*dBy_x + Bx*dvx - By*dux
+        sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+        su0   = su0 - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x/r_rho)
+        sv0   = sv0 + 1/(4*pi)*(Bx*dBy_x/r_rho)
+        sw0   = sw0 + 1/(4*pi)*(Bx*dBz_x/r_rho)
+    endif
+#endif
 #endif
 
 #if GRAVITY==1
@@ -338,25 +349,36 @@ subroutine predictor
 #endif
 #if MHD==1
 !Valid only for GEOM==0 since the s are overwritten
-    if (idust==i_coupled_species) then
 
-        sBy   = -u*dBy_x + Bx*dvx - By*dux
-        sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+    if (ideal_MHD .eqv. .false.) then 
+    !By default, if MHD==1 and ideal_MHD .eqv. .false., then B coupled to the dust fluid. Addition terms and the multifluid case are treated a bit further in the code.
+        if (idust==i_coupled_species) then
 
-        su0   = -u*dux-v*duy - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
+            sBy   = -u*dBy_x + Bx*dvx - By*dux
+            sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+
+        endif
+
+
+        !Within the dusty_nonideal_MHD_no_electron setup, the dust fluid has conservative magnetic forces in its momentum equation.
+        if (dusty_nonideal_MHD_no_electron) then 
+
+            if (idust==i_coupled_species) then
+
+
+                su0   = -u*dux-v*duy - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
 #if DUST_PRESSURE==1
-        su0   = -u*dux-v*duy - (dPd)/r_rho - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
+                su0   = -u*dux-v*duy - (dPd)/r_rho - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
 #endif
-        sv0   = -u*dvx-v*dvy + 1/(4*pi)*(Bx*dBy_x/r_rho)
-        sw0   = -u*dwx-v*dwy + 1/(4*pi)*(Bx*dBz_x/r_rho)
-
-
+                sv0   = -u*dvx-v*dvy + 1/(4*pi)*(Bx*dBy_x/r_rho)
+                sw0   = -u*dwx-v*dwy + 1/(4*pi)*(Bx*dBz_x/r_rho)
+       
+            endif    
+        endif
     endif
 
-
-
-
 #endif
+
 
 #if GRAVITY==1
 #if NY==1
@@ -443,11 +465,17 @@ subroutine predictor
 #endif
 
 
+!------------------------------------------
+!------------------------------------------
+!Now we deal with the induction equation
+!------------------------------------------
+!------------------------------------------
+
 #if MHD==1
 #if NDUST>0
 
 
-    if (dusty_nonideal_MHD_no_electron) then !A single grain only
+    if (dusty_nonideal_MHD_no_electron .eqv. .true. .and. ideal_MHD .eqv. .false.) then !A single grain only
 
 
 
@@ -479,7 +507,7 @@ subroutine predictor
     endif
 
 
-    if (dusty_nonideal_MHD) then !With electrons and NDUST grains
+    if (dusty_nonideal_MHD .eqv. .true. .and. ideal_MHD .eqv. .false.) then !With electrons and NDUST grains
 
 
         sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
@@ -745,6 +773,11 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
     call solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 #endif
 
+#if SOLVERDUST==3
+    call solver_common_dust_multifluid_hll(qleft,qright,csl,csr,flx,idim,i)
+#endif
+
+
 #endif
 
 ! Then te magnetic field
@@ -761,11 +794,10 @@ subroutine solve_wrapper(qleft,qright,flx,csl,csr,idim,i)
 
 #if SOLVERB==2
     call solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
-#if NDUST==1
-    if (hyper_diffusion) then
-        !call solver_Hall_hll(qleft,qright,flx,csl,csr,idim,i)
-    endif
 #endif
+
+#if SOLVERB==3
+    call solver_common_induction_multifluid_hll(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 #endif

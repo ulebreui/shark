@@ -7,13 +7,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine solve(verbose,outputing)
+subroutine solve(verbose,outputing,iout)
   use parameters
   use commons
   use units
   implicit none
   logical :: verbose,outputing
-  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i
+  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i,iout
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
 
@@ -26,14 +26,21 @@ subroutine solve(verbose,outputing)
   if(force_kick) call update_force_setup
 
   call system_clock ( t3, clock_rate, clock_max )
-#if NDUST>0
+#if NDUST>1
   ! Re-calc distribution
-  call distribution_dust(.false.) !Useless a priori
-  call compute_tstop  
+  if (restarting==0 .and. iout==2) then
+    call distribution_dust(.true.) !Construct dust distribution (useful if not done in setup.f90)
+endif
+  if (restarting>0) call distribution_dust(.false.) !Recompute size grid and retrieve epsilondust from restarting output if restart
+#endif
+
+#if NDUST>0  
+  call compute_tstop !Compute tstop for drag and St array.
 #endif
 
 
-if(charging) then
+
+if(charging) then !All the quantities needed to compute MHD effects and charging
 
     if (analytical_charging .eqv. .false.) call charge 
 
@@ -52,7 +59,7 @@ if(charging) then
             call total_current
         endif
         if (call_electric_field) call electric_field
-        !if (apply_Lorentz_force) call Lorentz_force_explicit
+        if (apply_Lorentz_force_explicit) call Lorentz_force_explicit_terms
 
 
     endif
@@ -65,14 +72,8 @@ if(charging) then
         call total_current
         call total_dust_current
         call b_unit_vector
-        !call electric_field
-        
-        if (apply_Lorentz_force) then
-        call gyro_drift
-        call Ohmic_drag
-
-        !call Lorentz_force_explicit
-        endif
+        call magnetocompressive_speed !Needed for the commom HLL solver to work
+        if (call_electric_field) call electric_field
 
 
     endif
@@ -90,16 +91,15 @@ endif
   ! We compute the stability timestep
   call courant
 
-
   call system_clock ( t5, clock_rate, clock_max )
   
   ! Predictor step. Variables are estimated at cell interfaces and half dt
   call predictor
+
   call system_clock ( t6, clock_rate, clock_max )
 
   ! Flux are computed and added to u_prim
   call add_delta_u
-
 
 
   call system_clock ( t7, clock_rate, clock_max )
@@ -108,22 +108,38 @@ endif
   ! Source terms are computed and added to u_prim
 
   call apply_boundaries
-  call source_terms
+  call source_terms !!!WARNING: working with q(:,:) and thus not with the updated values from the Riemann problem. But: not overwriting u_prim, so probably not a big issue!!!
 
   call system_clock ( t8, clock_rate, clock_max )
 
 #if NDUST>0
-  ! Dust step (dynamics, growth, charging)
-  if(drag)   call dust_drag(1.0d0) ! Second half kick
+  !!!Dust step (dynamics, growth, charging)!!!
+
+if (charging) then
+
+#if MHD==1
+    if(dusty_nonideal_MHD) then 
+
+       if (apply_Lorentz_force_implicit) call magnetic_drag !Calculations made with q(:,:) (primitive var). The various terms are split.
+
+       if (apply_Lorentz_force_explicit) call Lorentz_force_explicit_terms
+
+
+
+    endif
+#endif
+endif
+
+  if(drag)   call dust_drag(1.0d0) ! Second half kick. Working with u_prim and updating u_prim. Note that t_stop has not been updated, i.e. we are working with the old gas density.
   if(growth) then
-     call ctoprim
+     call ctoprim !To update q() from u_prim
      call dust_growth(verbose)
   endif
 
 #if NDUSTPSCAL > 0 
   if(growth_step) then
     call ctoprim
-    call compute_tstop !To update St before computing tcoag
+    call compute_tstop !To update St (rho has been modified) before computing tcoag
     call compute_tcoag
     call dust_growth_stepinski ! Dust growth with Stepinski /!\ dust size is in the first pscal
   endif

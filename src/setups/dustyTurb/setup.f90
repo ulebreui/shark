@@ -49,7 +49,7 @@ subroutine setup
 
 #if NDUST>1
 
-    call distribution_dust(.true.) !creates sdust, epsilondust and mdust arrays
+    if (nrestart==0) call distribution_dust(.true.) !creates sdust, epsilondust and mdust arrays
 
 #endif
 
@@ -63,6 +63,7 @@ subroutine setup
     St(i,idust) = dsqrt(pi/8) * rhograin * sdust(i,idust) / (q(i,irho) *  box_l)
     q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
 
+
 #endif
 
 #if NDUST==1
@@ -71,6 +72,7 @@ subroutine setup
         St(i,idust)       = St_0(idust)
         epsilondust(i,idust) = dust2gas_ratio(idust) !To remove
         q(i,irhod(idust))= epsilondust(i,idust)*q(i,irho)
+
 
 
 #if NDUSTPSCAL==1
@@ -393,8 +395,18 @@ subroutine compute_tstop
   do i=1,ncells
    if(active_cell(i)==1) then
      do idust=1,ndust
+
+#if NDUST==1
         tstop(i,idust) = St_0(idust)*box_l*rho_0/cs(i)/q(i,irho) !St_0 is a namelist input. Should match with the def of smax
         St(i,idust) = tstop(i,idust) * cs(i) / box_l
+#endif
+
+#if NDUST>1
+        tstop(i,idust) = dsqrt(pi/8) * rhograin * sdust(i,idust) / (q(i,irho) * cs(i))
+        St(i,idust) = tstop(i,idust) * cs(i) / box_l
+#endif
+
+
 
 #if NDUSTPSCAL>0
     ! Dust growth via monodisperse approach

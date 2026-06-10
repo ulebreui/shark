@@ -1,4 +1,6 @@
-! Dust drag is computed (implicitely)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Dust drag is computed (implicitely)!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine dust_drag(coeffdt)
   
   use parameters
@@ -41,8 +43,9 @@ subroutine dust_drag(coeffdt)
 
         if (dusty_nonideal_MHD_no_electron .and. idust==i_coupled_species) then !Works for a single grain only
 
-               !!!Effective alpha due to extra dust/gas coupling caused by ions.
-
+               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               !!!Effective alpha due to extra dust/gas coupling caused by ions!!!
+               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                alphak(idust) = coeffdt * dt * (1.0 / tstop(i,idust) - e_el_stat*zd(i,idust)*B_norm/(clight*Hall_i(i)*mdust(i,idust)))  ! Half for half dt
 
          endif

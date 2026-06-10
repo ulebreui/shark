@@ -67,6 +67,7 @@ subroutine charge
 #endif
 
      ! Grain size in cm
+
      l_grain_loc=sdust(i,:)*unit_l
      ! Ion electron collisional cross-section
      sigmav_ie=(2d-7)/dsqrt(T/300.0d0)
@@ -79,7 +80,10 @@ subroutine charge
      ! Dust number density
      do idust=1,ndust
         n_k(idust)=u_prim(i,irhod(idust))*unit_d/(mdust(i,idust)*unit_m)
+
+
      end do
+
      ! Gas number density
      nH_loc=u_prim(i,irho)*unit_nh
 
@@ -136,6 +140,8 @@ subroutine charge
      end do
 
      niter_ionis_max=max(niter_ionis_max,niter_ionis)
+
+
      eps_psi=(1.0d0-psi_loc)/thetai*exp(-psi_loc)
      if(lowT>0)eps_psi=epsone
      ni(i)=0.0d0
@@ -930,7 +936,7 @@ subroutine Lorentz_force_explicit_terms
   integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx
   real(dp) :: B_norm
   real(dp) :: dBy,dBz
-  real(dp) :: dxBy,dxBz
+  real(dp) :: dxBy,dxBz,zd_tot
   real(dp), dimension(1:ncells) ::  Bym,Byp,Bzm,Bzp 
 
     ! ===========================================================================================================
@@ -1035,9 +1041,9 @@ subroutine Lorentz_force_explicit_terms
 
   if (dusty_nonideal_MHD) then
 
-    ! ===============================================================================================================================
-    ! Multi dust fluid setup. Many source terms to treat. The drag terms cannot be treated with Krapp solver in dust_drag.f90 
-    ! ===============================================================================================================================
+    ! =========================================================================================================================================
+    ! Multi dust fluid setup. We treat here explicitly the terms that are not drag-like. We use a first-order centered finite difference method 
+    ! =========================================================================================================================================
 
   do i=1,ncells
         if (active_cell(i)==1) then
@@ -1054,29 +1060,23 @@ subroutine Lorentz_force_explicit_terms
     ! Dust 
     ! =====
 
+          do idust=1,ndust
 
+             FLor_x_d(i,idust)= (q(i,irhod(idust))/mdust(i,idust) * zd(i,idust) * e_el_stat) * clight / (4 * pi) * (eta_H(i) * (-b_unit_z(i)*dxBz - b_unit_y(i)*dxBy) + eta_a(i) * (b_unit_x(i)*b_unit_y(i)*dxBz - b_unit_x(i)*b_unit_z(i)*dxBy))
+             FLor_y_d(i,idust)= (q(i,irhod(idust))/mdust(i,idust) * zd(i,idust) * e_el_stat) * clight / (4 * pi) * (eta_o(i) * (-dxBz) + eta_H(i) * (b_unit_x(i)*dxBy) + eta_a(i) * (-b_unit_z(i)**2 * dxBz - b_unit_y(i)*b_unit_z(i)*dxBy - b_unit_x(i)**2 * dxBz))
+             FLor_z_d(i,idust)= (q(i,irhod(idust))/mdust(i,idust) * zd(i,idust) * e_el_stat) * clight / (4 * pi) * (eta_o(i) * (dxBy) + eta_H(i) * (b_unit_x(i)*dxBz) + eta_a(i) * (b_unit_y(i)**2 * dxBy + b_unit_y(i)*b_unit_z(i)*dxBz + b_unit_x(i)**2 * dxBy))
 
-          !do idust=1,ndust
-             !FLor_x_d(i,idust)=0.0d0 !The total current Jtot/c x B is treated as a conservative term in the Riemann problem
-             !FLor_y_d(i,idust)=B_norm/(Hall_i(i)*4.0*pi)*dxBz
-             !FLor_z_d(i,idust)=-B_norm/(Hall_i(i)*4.0*pi)*dxBy
+          end do
 
-          !end do
+    ! =====
+    ! Gas 
+    ! =====
 
-        !!!Gas!!!
-
-          !Ion Lorentz form
-         ! FLor_x(i) = e_el_stat*ni(i)*(E_x(i) + v_i_y(i)/clight*q(i,iBz) - v_i_z(i)/clight*q(i,iBy))  !ions 
-         ! FLor_y(i) = e_el_stat*ni(i)*(E_y(i) + v_i_z(i)/clight*q(i,iBx) - v_i_x(i)/clight*q(i,iBz))  !ions
-         ! FLor_z(i) = e_el_stat*ni(i)*(E_z(i) + v_i_x(i)/clight*q(i,iBy) - v_i_y(i)/clight*q(i,iBx))  !ions 
-
-         !Fully developed form (equivalent to above form bu replacing vi with its expression)
-
-         !the term \propto (vn-vd) is solved implicitly in dust_drag through backreaction
+         zd_tot = SUM(q(i,irhod(:))/mdust(i,:) * zd(i,:) * e_el_stat)
   
-         !FLor_x(i) = 0.0d0  ! 
-         !FLor_y(i) = -B_norm/(Hall_i(i)*4.0*pi)*dxBz  
-         !FLor_z(i) = +B_norm/(Hall_i(i)*4.0*pi)*dxBy  
+         FLor_x(i) = - zd_tot * clight / (4 * pi) * (eta_H(i) * (-b_unit_z(i)*dxBz - b_unit_y(i)*dxBy) + eta_a(i) * (b_unit_x(i)*b_unit_y(i)*dxBz - b_unit_x(i)*b_unit_z(i)*dxBy))
+         FLor_y(i) = - zd_tot * clight / (4 * pi) * (eta_o(i) * (-dxBz) + eta_H(i) * (b_unit_x(i)*dxBy) + eta_a(i) * (-b_unit_z(i)**2 * dxBz - b_unit_y(i)*b_unit_z(i)*dxBy - b_unit_x(i)**2 * dxBz))
+         FLor_z(i) = - zd_tot * clight / (4 * pi) * (eta_o(i) * (dxBy) + eta_H(i) * (b_unit_x(i)*dxBz) + eta_a(i) * (b_unit_y(i)**2 * dxBy + b_unit_y(i)*b_unit_z(i)*dxBz + b_unit_x(i)**2 * dxBy))
 
 
         endif 
@@ -1100,7 +1100,6 @@ end subroutine Lorentz_force_explicit_terms
 
 
 #if NDUST>0
-
 subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020. 
 
 
@@ -1200,9 +1199,21 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
         do i=1,ncells
                 ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
                 ne(i) = ni(i)/100
-                !zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
-                zd(i,1) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
-                zd(i,2) = 10*zd(i,1) !Can be a problem
+                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
+                !zd(i,1) = (0.5)*(ne(i)-ni(i))/(q(i,irhod(1))/mdust(i,1)) !Can be a problem
+                !zd(i,2) = (0.5)*(ne(i)-ni(i))/(q(i,irhod(2))/mdust(i,2))
+                !zd(i,3) = (0.333)*(ne(i)-ni(i))/(q(i,irhod(3))/mdust(i,3)) !Can be a problem
+                ! print*,(q(i,irhod(1))/mdust(i,1))*zd(i,1)
+                ! print*,(q(i,irhod(2))/mdust(i,2))*zd(i,2)
+                ! print*,(q(i,irhod(3))/mdust(i,3))*zd(i,3)
+
+                ! zd(i,4) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(4))/mdust(i,4))                
+                ! zd(i,5) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(5))/mdust(i,5)) !Can be a problem
+                ! zd(i,6) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(6))/mdust(i,6))                
+                ! zd(i,7) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(7))/mdust(i,7)) !Can be a problem
+                ! zd(i,8) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(8))/mdust(i,8))
+                ! zd(i,9) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(9))/mdust(i,9)) !Can be a problem
+                ! zd(i,10) = (0.1)*(ne(i)-ni(i))/(q(i,irhod(10))/mdust(i,10))
 
 
          end do 
@@ -1213,5 +1224,36 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
 ! $OMP END PARALLEL
          
 end subroutine analytical_charge
+#endif
 
+
+#if MHD==1
+#if NDUST>0
+subroutine magnetocompressive_speed
+!!!This subroutine computes the magnetocompressive speed in each cell needed in the common solver for the Riemann problem (dusty multifluid setup)!!!
+
+    use parameters
+    use commons
+    use units
+    use precision
+
+
+    implicit none
+
+    integer :: i
+    real(dp) :: zd_tot
+
+   do i=1,ncells
+
+
+       zd_tot = SUM(zd(i,:) * q(i,irhod(:)) / mdust(i,:))
+
+       c_ms_d(i) = dsqrt(q(i,iBx)**2 + q(i,iBy)**2 + q(i,iBz)**2) / dsqrt(4 * pi * q(i,irho)) * dsqrt(SUM( ((zd(i,:) * q(i,irhod(:)) / mdust(i,:))/zd_tot)**2 / (q(i,irhod(:))/q(i,irho)) ))
+
+   enddo
+
+
+
+end subroutine magnetocompressive_speed
+#endif
 #endif

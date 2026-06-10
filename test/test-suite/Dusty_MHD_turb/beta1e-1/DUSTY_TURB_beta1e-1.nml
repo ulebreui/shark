@@ -53,7 +53,7 @@ dusty_nonideal_MHD = .false.
 analytical_charging = .true.
 dusty_nonideal_MHD_no_electron = .true.
 hyper_diffusion = .true.
-apply_Lorentz_force = .true.
+apply_Lorentz_force_explicit = .true.
 analytical_charging_Shu = .true.
 Hall_effect = .true.
 / 

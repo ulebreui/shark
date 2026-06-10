@@ -106,8 +106,13 @@ subroutine Source_terms
        endif !viscosity if
 
 
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Source terms (treated explicitly) appearing in the induction equation and momentum equations!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #if NDUST>0
-!Non-ideal MHD hyper diffusion source term in induction equation
 #if MHD==1
 #if GEOM==0
 
@@ -201,14 +206,14 @@ endif
 
 if (dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
-    ! ============================================================
-    ! Here are computed the source terms in momentum equations
-    ! ============================================================
+    ! ============================================================================
+    ! Here are added the source terms of the momentum equations treated explicitly
+    ! ============================================================================
 
         !Lorentz forces
         !call electric_field !Do not call them here: computation will be done again and again for each i. To be called once per timestep in solve.
         !S_U is a momentum density (rho * v)
-    if (apply_Lorentz_force) then
+    if (apply_Lorentz_force_explicit) then
         do idust=1,ndust
             S_U(i,ivdx(idust)) = S_U(i,ivdx(idust)) + FLor_x_d(i,idust)*dt 
             S_U(i,ivdy(idust)) = S_U(i,ivdy(idust)) + FLor_y_d(i,idust)*dt
@@ -258,6 +263,10 @@ end subroutine Source_terms
 
 
 subroutine hyper_diffusion_induction_eq(S_diff,A,B,Delta_x,Delta_xm,Delta_xp,i,i_variable) !In the form: dt(V)=dx(Adx(B))=dx(F)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Simple algorithm solving a diffusion-like equation with first-order finite difference method!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    use parameters
    use commons

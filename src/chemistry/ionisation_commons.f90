@@ -11,11 +11,13 @@
 
   logical             ::  electrons = .true.   ! To include electrons in the resistivitiy computation
   logical             ::  ions = .true.   
+  logical             ::  ideal_MHD = .false. !Allows to couple B to the gas and consider neutral grains in t he Riemann solver with NDUST>0. If true, make sure that dusty_nonideal_MHD_no_electron = false.
   logical             ::  dusty_nonideal_MHD = .false.
   logical             ::  dusty_nonideal_MHD_no_electron = .false.   
   logical             ::  hyper_diffusion             = .false.   ! 
   logical             ::  hyper_diffusion_with_electrons = .false. 
-  logical             ::  apply_Lorentz_force              = .false.   ! 
+  logical             ::  apply_Lorentz_force_explicit              = .false. !Compute Lorentz-force-related source terms treated explicitly
+  logical             ::  apply_Lorentz_force_implicit             = .false. !Compute Lorentz-force-related source terms treated implicitly
   logical             ::  only_Hall_effect              = .false.   ! !Set ion Hall factor to a very high value --> Diffusion/dissipative terms vanish
   logical             ::  Hall_effect         = .true.   !Activate or deactivate Hall effect
   logical             ::  call_electric_field         = .false.   !To compute and write E in outputs
@@ -87,6 +89,9 @@
   real(dp), dimension(:), allocatable      :: Jdx_tot
   real(dp), dimension(:), allocatable      :: Jdy_tot
   real(dp), dimension(:), allocatable      :: Jdz_tot
+
+  real(dp), dimension(:), allocatable      :: c_ms_d !Magnetocompressive speed (see Verrier+26)
+
 
 #endif
 
