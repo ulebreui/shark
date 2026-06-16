@@ -386,7 +386,7 @@ subroutine read_dust_params(ilun,nmlfile)
   logical::nml_ok
   namelist/dust_params/frag_thre,vfrag,drag,dust_back_reaction,smin,smax,scut,scutmin,mrn,rhograin&
   &,dust2gas,growth,fragmentation,eps_threshold,eps_threshold_frag,growth_step,frag_step,modified_Ormel &
-  &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
+  &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,call_dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
  & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs, write_Ormel_velocity

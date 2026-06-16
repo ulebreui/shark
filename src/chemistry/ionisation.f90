@@ -216,6 +216,7 @@ subroutine charge
         eta_o(i)=1.0d0/sigma_o(i)
         eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
         eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
+
         !Hall factors
         do idust=1,ndust
            gamma_d(i,idust)=t_sdust(idust)*omegas_dust(idust)
@@ -226,7 +227,7 @@ subroutine charge
 
      if (dusty_nonideal_MHD .eqv. .true.) then !Because dust inertia is accounted for, should not appear in the analytical resistivities
         !B_gauss = min(B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4),B_threshold)! Magnetic field
-        B_gauss = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field
+        B = B_0_lee*sqrt(u_prim(i,irho)*unit_nh/1d4)! Magnetic field
 
 #if TURB==1
 #if MHD==1
@@ -235,6 +236,11 @@ subroutine charge
            
 #endif
 #endif
+
+      ! if(i==817) print*,'B',B
+      ! if(i==817) print*,'T',T
+      ! if(i==817) print*,'ni(i)',ni(i)
+      ! if(i==817) print*,'ne(i)',ne(i)
 
 
         mu_i=2.0d0*mH*mu_ions*mH/(2.0d0*mH+mu_ions*mH)
@@ -252,8 +258,8 @@ subroutine charge
         sigmas_el     = (ne(i))*e_el_stat**2.*t_sel/m_el
         sigmas_ions   = (ni(i))*e_el_stat**2*t_sions/(mu_ions*mH)
 
-        omegas_el     = -e_el_stat*B_gauss/clight/m_el
-        omegas_ions   = e_el_stat *B_gauss/clight/(mu_ions*mH)
+        omegas_el     = -e_el_stat*B/clight/m_el
+        omegas_ions   = e_el_stat *B/clight/(mu_ions*mH)
 
          if (electrons .eqv. .false.) then
                sigmas_el     = 0.0
@@ -278,7 +284,6 @@ subroutine charge
         eta_o(i)=1.0d0/sigma_o(i)
         eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
         eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
-
 
 
 
@@ -445,6 +450,8 @@ subroutine res_electrons_ions
      eta_o(i)=1.0d0/sigma_o(i)
      eta_H(i)=sigma_H(i)/(sigma_p(i)*2.+sigma_h(i)**2.)
      eta_a(i)=sigma_p(i)/(sigma_p(i)**2.+sigma_H(i)**2.)-1.0d0/sigma_o(i)
+
+      if (eta_a(i) > eta_AD_cap) eta_a(i) = eta_AD_cap
 
 end do
 
@@ -1086,6 +1093,7 @@ subroutine Lorentz_force_explicit_terms
 
 
 
+
 endif
 
 ! $OMP END DO
@@ -1197,11 +1205,19 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
       if (dusty_nonideal_MHD) then !Tune electron density
 
         do i=1,ncells
-                ni(i) = ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
-                ne(i) = ni(i)/100
-                zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
-                !zd(i,1) = (0.5)*(ne(i)-ni(i))/(q(i,irhod(1))/mdust(i,1)) !Can be a problem
-                !zd(i,2) = (0.5)*(ne(i)-ni(i))/(q(i,irhod(2))/mdust(i,2))
+                ni(i) = 50*ni_coeff*1.0d-7*SQRT(q(i,irho)/(mu_gas*mH)/1.0d-3)
+
+                !zd(i,idust) = (ne(i)-ni(i))/(q(i,irhod(idust))/mdust(i,idust)) !Can be a problem
+
+                zd(i,1) = -12.515 !Can be a problem
+                zd(i,2) = -17.282
+
+                ne(i) = ni(i) + (q(i,irhod(1))/mdust(i,1))*zd(i,1) + (q(i,irhod(2))/mdust(i,1))*zd(i,2)
+
+               ! if(i==817) print*,'ni(i)',ni(i)
+               ! if(i==817) print*,'ne(i)',ne(i)
+
+
                 !zd(i,3) = (0.333)*(ne(i)-ni(i))/(q(i,irhod(3))/mdust(i,3)) !Can be a problem
                 ! print*,(q(i,irhod(1))/mdust(i,1))*zd(i,1)
                 ! print*,(q(i,irhod(2))/mdust(i,2))*zd(i,2)

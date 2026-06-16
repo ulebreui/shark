@@ -118,8 +118,7 @@ subroutine time_loop
    ! print*,q(1,ivz)
 
 
-
-     call solve(verbose,outputing,iout)
+     call solve(verbose,outputing)
 
     restarting=0
 

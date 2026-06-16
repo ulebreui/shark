@@ -17,19 +17,38 @@ subroutine courant
   integer :: i,idust
   real(dp) :: vmax,dxx,force_max,ca,c_fast,cw,magnetosonic_fast,vv,fratio,D_max
 
+  ! real(dp), dimension(:)  , allocatable :: dt_cw
+  ! real(dp), dimension(:)  , allocatable :: dt_diffusion
+
+
+
+
+
 
   if(static)then
      return 
   endif
 
 
+  
+
+  ! allocate(dt_cw(1:ncells))
+  ! dt_cw=0.0d0
+  ! allocate(dt_diffusion(1:ncells))
+  ! dt_diffusion=0.0d0
+
+  
 
 
   dt=2d44
+
+
   ca=0.0d0
 
   do i = 1,ncells
-   if(active_cell(i)==1) then   
+   if(active_cell(i)==1) then 
+
+  
    !Cas 1D   
 #if NY==1
    dxx = dx(i,1)
@@ -46,6 +65,7 @@ subroutine courant
 #if MHD==1
       magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho)))) !You may need 4pi factors
       vmax=  max(vmax,magnetosonic_fast+abs(q(i,ivx)))
+
 #endif
 
 #if NDUST==1     
@@ -69,9 +89,8 @@ endif
 
 
 #endif
-   !print(vmax)
    dt = min(dt,CFL*dxx/abs(vmax))
-   !if (i==3) print*, 'dt',dt
+
 
 #if GRAVITY==1   
       dt = min(dt,CFL*dxx/sqrt(Mc(i)/sqrt(radii_c(i)**2.+(l_soft/unit_l)**2.)))
@@ -102,7 +121,6 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
       D_max = max(abs(eta_eff_ohm(i)),abs(eta_eff_Hall_y(i)),abs(eta_eff_Hall_z(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
 
       dt = min(dt,0.5d0*dxx**2/D_max)
-      !if (i==3) print*, 'dt diffusion',dt
 
  
 
@@ -115,7 +133,6 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
       vmax = max(vmax,cw+vv)
 
       dt = min(dt,CFL*dxx/abs(vmax))
-      !f (i==3) print*, 'dt Hall',dt
 
     endif
 
@@ -131,24 +148,42 @@ if (dusty_nonideal_MHD) then !!Adapt timestep to to magnetocompressive modes, hy
       vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust))) 
       vmax =  max(vmax,c_ms_d(i)+vv)
 
+      ! dt_cms(i) = CFL*(dxx/abs(c_ms_d(i)+vv))
+
+
       if (Hall_effect) then
 
          cw = abs(clight**2/(4*pi)*eta_H(i))*pi/(2*dxx) + dsqrt(((clight**2/(4*pi)*eta_H(i))*pi/(2*dxx))**2 + c_ms_d(i)**2)!Which ca should we use?
          vmax = max(vmax,cw+vv)
+
+         ! dt_cw(i) = CFL*(dxx/abs(cw+vv))
 
       endif
 
    enddo
 
    dt = min(dt,CFL*dxx/abs(vmax))
+
 #endif
    
 
     if (hyper_diffusion_with_electrons) then
       D_max = max(abs(clight**2/(4*pi)*eta_o(i)),abs(2*clight**2/(4*pi)*eta_a(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
-      !
+
+      ! print *,'eta_a(i)',eta_a(i)
+      !!!D_max can be very high because of eta_AD being high too. This is due to the absence of the dust contribution in the computation of the resistivities!!!
+      !!!We have to apply a cap to work with reasonable timestep!!!
 
       dt = min(dt,0.4d0*dxx**2/D_max)
+
+      ! dt_diffusion(i) = 0.4d0*dxx**2/D_max
+
+
+
+
+
+
+
  
 
    endif
@@ -163,7 +198,6 @@ if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
       do idust=1,ndust
          if (FLor_x_d(i,idust) /= 0.0d0 .or. FLor_y_d(i,idust) /= 0.0d0 .or. FLor_z_d(i,idust) /= 0.0d0) then
             dt = min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x_d(i,idust)**2+FLor_y_d(i,idust)**2+FLor_z_d(i,idust)**2)/q(i,irhod(idust))))
-            !if (i==3) print*, 'dt Lforce dust',dt
 
          endif
       end do
@@ -175,7 +209,6 @@ if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
    if (apply_Lorentz_force_explicit) then
       if (FLor_x(i) /= 0.0d0 .or. FLor_y(i) /= 0.0d0 .or. FLor_z(i) /= 0.0d0) then
          dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
-         !if (i==3) print*, 'dt Lforce',dt
 
       endif
    endif
@@ -186,13 +219,25 @@ endif
    if(vv.ne.0.0d0) then
       fratio = max(force_max*dxx/vv**2,1d-3)
       dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)
-      !if (i==3) print*, 'dt dfratio',dt
+      !print*, 'dt dfratio',dt
 
    endif
 
    endif
   end do
- !print*, 'dt final',dt
+
+
+ ! print*, 'dt final',dt
+
+ ! CFL_deactivate_diffusion = .false.
+
+ ! if (dt > minval(dt_diffusion)) CFL_deactivate_diffusion = .true.
+
+
+
+! deallocate(dt_cw)
+! deallocate(dt_diffusion)
+
 
 #if NY>1
   !print *, 'time = ', time, 'dt = ', dt

@@ -7,13 +7,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine solve(verbose,outputing,iout)
+subroutine solve(verbose,outputing)
   use parameters
   use commons
   use units
   implicit none
   logical :: verbose,outputing
-  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i,iout
+  integer::clock_rate, clock_max,t1,t2,t3,t4,t5,t6,t7,t8,t9, t10,i
   real(dp):: tall
   call system_clock ( t1, clock_rate, clock_max )
 
@@ -28,10 +28,12 @@ subroutine solve(verbose,outputing,iout)
   call system_clock ( t3, clock_rate, clock_max )
 #if NDUST>1
   ! Re-calc distribution
-  if (restarting==0 .and. iout==2) then
+  if (restarting==0 .and. call_dust_distribution .eqv. .true.) then
     call distribution_dust(.true.) !Construct dust distribution (useful if not done in setup.f90)
+    call_dust_distribution = .false. !To make sure we call it just once
 endif
-  if (restarting>0) call distribution_dust(.false.) !Recompute size grid and retrieve epsilondust from restarting output if restart
+  if (restarting>0 .and. call_dust_distribution .eqv. .true.) call distribution_dust(.false.) !Recompute size grid and retrieve epsilondust from restarting output if restart
+    call_dust_distribution = .false. !To make sure we call it just once
 #endif
 
 #if NDUST>0  
@@ -73,6 +75,7 @@ if(charging) then !All the quantities needed to compute MHD effects and charging
         call total_dust_current
         call b_unit_vector
         call magnetocompressive_speed !Needed for the commom HLL solver to work
+     
         if (call_electric_field) call electric_field
 
 

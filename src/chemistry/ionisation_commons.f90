@@ -27,7 +27,7 @@
   logical             ::  write_resistivities        = .false.   
   logical             ::  write_Hall_factors       = .false.   
 
-
+  logical             :: CFL_deactivate_diffusion = .false.
 
 
 
@@ -107,6 +107,7 @@
   integer :: nitermax_ionis = 1000   ! Maximum number of iterations
   real(dp):: x              = 5d-17  ! CR Ionisation rate
   real(dp):: ni_coeff              = 1.0  ! ion abundance
+  real(dp):: eta_AD_cap              = 1.0  ! Forcing eta_a (value in seconds)to not exceed a given threshold in order to avoid to small timesteps. This is needed when accounting for grain inertia, because the dust contribution no longer apepars in the computation of the resistivities.
 
 
   real(dp) :: f_dust_charge = 0.0d0 !Derivative of function to solve in analytical charge scheme

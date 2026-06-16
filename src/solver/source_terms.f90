@@ -192,6 +192,7 @@ if (dusty_nonideal_MHD) then
         call hyper_diffusion_induction_eq(S_diff(:),2*clight**2/(4*pi)*eta_a(:)*(b_unit_x(:)**2+b_unit_z(:)**2),q(:,iBz),dx(i,1),dx(i,1),dx(i,1),i,iBz) 
         S_U(i,iBz)=S_U(i,iBz)+S_diff(iBz)*dt
 
+
         do ivar=1,nvar
             S_diff(ivar)=0.0d0
         end do

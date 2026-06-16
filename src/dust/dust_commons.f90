@@ -23,6 +23,7 @@ module dust_parameters
 
   real(dp)            ::  dtcontrol_growth  = -1.0d0
   real(dp)            ::  delta_vambi       = 1.0
+  logical             ::  call_dust_distribution = .true.
   character (len=60)  ::  dust_distribution = 'mrn'
   
   real(dp):: CFL_growth         = 0.1d0 ! CFL for smoluchowski
