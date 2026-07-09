@@ -1012,7 +1012,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
 #if MHD==1
 
-    if (ideal_MHD .eqv. .false. .and. dusty_nonideal_MHD_no_electron) then
+    if (dusty_nonideal_MHD_no_electron) then
+        if (ideal_MHD .eqv. .false.) then
         if (idust==i_coupled_species) then
 
             flx_rho_rgt   = rho_rgt  * u_rgt
@@ -1029,6 +1030,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
             flx_mom_w_rgt = flx_mom_w_rgt + 1/(4*pi)*mag_tension_z_rgt
             flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*mag_tension_z_lft
 
+        endif
         endif
     endif
 #endif
@@ -1748,8 +1750,8 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 #if NDUST>0
 
 
-      if (dusty_nonideal_MHD_no_electron .eqv. .true. .and. ideal_MHD .eqv. .false.) then !Additional terms in the fluxes for the induction equation
-
+      if (dusty_nonideal_MHD_no_electron .eqv. .true.) then !Additional terms in the fluxes for the induction equation
+        if (ideal_MHD .eqv. .false.) then
             idust = i_coupled_species
         
             i_rho= irhod(idust)
@@ -1857,12 +1859,14 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
             flx_Bz_rgt = flx_Bz_rgt - eta_Hall_z_right*Jz_right
 
         endif
+
+        endif
     endif
 
 
 
-      if (dusty_nonideal_MHD .eqv. .true. .and. ideal_MHD .eqv. .false.) then !Additional terms in the fluxes for the induction equation
-
+      if (dusty_nonideal_MHD .eqv. .true.) then !Additional terms in the fluxes for the induction equation
+        if (ideal_MHD .eqv. .false.) then
 
         rho_rgt   = qright(irho)
         rho_lft   = qleft(irho)
@@ -1996,6 +2000,8 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
             flx_Bz_rgt = flx_Bz_rgt + clight*eta_H_right*b_unit_z_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jz_right - clight*eta_H_right*b_unit_x_right*Jdz_tot_right
 
         endif
+
+        endif
     endif
 
 #endif
@@ -2127,7 +2133,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 
 
-            if (Hall_effect .and. dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) lambda_llf_B = max(abs(u_lft) + abs(cw_lft),abs(u_rgt) + abs(cw_rgt)) !In this particular case, only variable B includes whistler speed in the wafe fan. The B solver no longer coincides with the dust solver. No need to add the dust velocity in lambda_llf_B.
+            if ((Hall_effect .eqv. .true.) .and. (dusty_nonideal_MHD_no_electron .eqv. .true.) .or. (dusty_nonideal_MHD .eqv. .true.)) lambda_llf_B = max(abs(u_lft) + abs(cw_lft),abs(u_rgt) + abs(cw_rgt)) !In this particular case, only variable B includes whistler speed in the wafe fan. The B solver no longer coincides with the dust solver. No need to add the dust velocity in lambda_llf_B.
 
 
             flx(iBy) = half*(flx_By_lft   + flx_By_rgt)    - half*lambda_llf_B*(By_rgt   - By_lft)
