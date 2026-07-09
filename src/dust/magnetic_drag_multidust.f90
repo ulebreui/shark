@@ -5,6 +5,9 @@
 ! Note that each term (gyro, Ohm, AD and Hall) are treated separately, i.e. a splitting is done to simplify the system, which comes with a splitting error.
 ! =========================================================================================================================================================
 
+
+#if MHD==1
+#if NDUST>0
 subroutine gyro_drift(i)
   
   use parameters
@@ -1257,3 +1260,5 @@ subroutine magnetic_drag
             end do
 
 end subroutine magnetic_drag
+#endif
+#endif

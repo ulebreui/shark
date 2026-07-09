@@ -83,6 +83,8 @@ subroutine setup
 
 #endif
 
+
+#if NDUST>0
         q(i,ivdx(idust)) = delta_vdx/unit_v*(cos(position(i,1)*k_mag)) 
 
         q(i,ivdy(idust)) = delta_vdy/unit_v*(sin(position(i,1)*k_mag)) 
@@ -94,7 +96,7 @@ subroutine setup
         q(i,iPd(idust))=q(i,irhod(idust))*(delta_dust_cs*cs(i))**2
 #endif
 
-
+#endif
 
       end do
     end do  
@@ -411,7 +413,7 @@ subroutine compute_tstop
 #if NDUSTPSCAL>0
     ! Dust growth via monodisperse approach
     ipscal = 1 !The first passive scalar is the grain size
-    tstop(i,idust) = dsqrt(pi/8) * rhograin * q(i,idust_pscal(idust,ipscal)) / (q(i,irho) * cs(i))
+    tstop(i,idust) = dsqrt(pi/8.) * rhograin * q(i,idust_pscal(idust,ipscal)) / (q(i,irho) * cs(i))
     St(i,idust) = tstop(i,idust) * cs(i) / box_l
 #endif
      end do
@@ -468,7 +470,7 @@ subroutine compute_tcoag
         endif
 
         !t_coag -> 3*t_coag in equa diff of grain size
-        tcoag(i,idust) =  3.0/(sqrt(8/3*pi)*pi*4*q(i,idust_pscal(idust,ipscal))**2*dv_ormel_step(i,idust)*q(i,irhod(idust))/mgrain_step)
+        tcoag(i,idust) =  3.0/(sqrt(8./3.*pi)*pi*4*q(i,idust_pscal(idust,ipscal))**2*dv_ormel_step(i,idust)*q(i,irhod(idust))/mgrain_step)
 
         if (frag_step) then
 

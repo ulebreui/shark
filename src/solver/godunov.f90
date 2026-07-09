@@ -143,6 +143,8 @@ subroutine predictor
       B_norm = dsqrt(Bx**2+By**2+Bz**2)
       dB_norm = (2*Bx*dBx_x+2*By*dBy_x+2*Bz*dBz_x)/(2*SQRT(Bx**2+By**2+Bz**2))
 
+#if NDUST>0
+
        if (dusty_nonideal_MHD_no_electron) then
           dHall_i = slope_limit(2.0d0*(Hall_i(i) - Hall_i(il))/(dx(i,1)+dx(il,1)),2.0d0*(Hall_i(ir) - Hall_i(i))/(dx(ir,1)+dx(i,1))) !ion Hall factor
 
@@ -182,7 +184,7 @@ subroutine predictor
 
         endif
 
-           
+#endif        
 
 
 #endif
@@ -475,7 +477,8 @@ subroutine predictor
 #if NDUST>0
 
 
-    if (dusty_nonideal_MHD_no_electron .eqv. .true. .and. ideal_MHD .eqv. .false.) then !A single grain only
+    if (dusty_nonideal_MHD_no_electron .eqv. .true.) then !A single grain only
+        if (ideal_MHD .eqv. .false.) then
 
 
 
@@ -502,13 +505,14 @@ subroutine predictor
         endif
 
 
-
+        endif
 
     endif
 
 
-    if (dusty_nonideal_MHD .eqv. .true. .and. ideal_MHD .eqv. .false.) then !With electrons and NDUST grains
-
+    if (dusty_nonideal_MHD .eqv. .true.) then !With electrons and NDUST grains
+        if (ideal_MHD .eqv. .false.) then
+        print*,'insiiiiiide'
 
         sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
         sBz =  -(q(i,ivx)*dBz_x + Bz*dq(i,ivx,1)) + Bx*dq(i,ivz,1) !"ideal term" 
@@ -537,6 +541,8 @@ subroutine predictor
             sBz = sBz - clight*eta_H(i)*(db_unit_z*Jdx_tot(i) + b_unit_z(i)*dJdx_tot)
             sBz = sBz + clight*eta_H(i)*(db_unit_x*Jdz_tot(i) + b_unit_x(i)*dJdz_tot)
             sBz = sBz  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jz(i) + b_unit_x(i)*dJz)
+
+        endif
 
         endif
 

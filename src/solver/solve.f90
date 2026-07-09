@@ -92,17 +92,17 @@ endif
   call system_clock ( t4, clock_rate, clock_max )
 
   ! We compute the stability timestep
-  call courant
+   call courant
 
   call system_clock ( t5, clock_rate, clock_max )
   
   ! Predictor step. Variables are estimated at cell interfaces and half dt
-  call predictor
+   call predictor
 
   call system_clock ( t6, clock_rate, clock_max )
 
   ! Flux are computed and added to u_prim
-  call add_delta_u
+   call add_delta_u
 
 
   call system_clock ( t7, clock_rate, clock_max )

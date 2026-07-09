@@ -937,7 +937,6 @@ subroutine Lorentz_force_explicit_terms
   use units
   !use OMP_LIB 
   use slope_limiter
-  use lapack_tools
 
   implicit none
   integer :: i,idust,ix,iy,il,ir,icell,iyy,ixx

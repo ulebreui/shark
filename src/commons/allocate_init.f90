@@ -173,8 +173,11 @@ subroutine allocate_init
     allocate(b_unit_y(1:ncells))
     allocate(b_unit_z(1:ncells))
 
-    allocate(c_ms_d(1:ncells))
 
+#if NDUST>0
+    allocate(c_ms_d(1:ncells))
+    c_ms_d = 0.0d0
+#endif
 
 
 
@@ -213,7 +216,6 @@ subroutine allocate_init
     b_unit_x = 0.0d0
     b_unit_y = 0.0d0
     b_unit_z = 0.0d0
-    c_ms_d = 0.0d0
 
 
 

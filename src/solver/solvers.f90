@@ -2153,6 +2153,19 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
         w_rgt   = qright(ivz)! w
         w_lft   = qleft(ivz)
 
+        flx_Bx_lft = 0.0d0
+        flx_Bx_rgt = 0.0d0
+       
+        flx_By_lft = By_lft*u_lft - Bx_lft*v_lft
+        flx_By_rgt = By_rgt*u_rgt - Bx_rgt*v_rgt
+
+        flx_Bz_lft = Bz_lft*u_lft - Bx_lft*w_lft
+        flx_Bz_rgt = Bz_rgt*u_rgt - Bx_rgt*w_rgt    
+
+
+
+
+        flx(iBx)    = 0.d0
 
         ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
         ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
