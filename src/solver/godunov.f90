@@ -239,6 +239,7 @@ subroutine predictor
     if (ideal_MHD .or. dusty_nonideal_MHD) then !Recouple too gas even in presence of dust
     !if (ideal_MHD) then !Recouple too gas even in presence of dust
 
+
         sBy   = -u*dBy_x + Bx*dvx - By*dux
         sBz   = -u*dBz_x + Bx*dwx - Bz*dux
         su0   = su0 - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x/r_rho)
@@ -353,8 +354,11 @@ subroutine predictor
 !Valid only for GEOM==0 since the s are overwritten
 
     if (ideal_MHD .eqv. .false.) then 
+
     !By default, if MHD==1 and ideal_MHD .eqv. .false., then B coupled to the dust fluid. Addition terms and the multifluid case are treated a bit further in the code.
         if (idust==i_coupled_species) then
+
+
 
             sBy   = -u*dBy_x + Bx*dvx - By*dux
             sBz   = -u*dBz_x + Bx*dwx - Bz*dux
@@ -512,7 +516,6 @@ subroutine predictor
 
     if (dusty_nonideal_MHD .eqv. .true.) then !With electrons and NDUST grains
         if (ideal_MHD .eqv. .false.) then
-        print*,'insiiiiiide'
 
         sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
         sBz =  -(q(i,ivx)*dBz_x + Bz*dq(i,ivx,1)) + Bx*dq(i,ivz,1) !"ideal term" 

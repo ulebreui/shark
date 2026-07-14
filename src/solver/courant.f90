@@ -63,8 +63,14 @@ subroutine courant
    vmax = cs(i)+vv
 
 #if MHD==1
-      magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho)))) !You may need 4pi factors
-      vmax=  max(vmax,magnetosonic_fast+abs(q(i,ivx)))
+
+
+      ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/(4*pi*q(i,irho))) !Alfven speed of the dust fluid
+      c_fast = dsqrt((cs(i))**2 + ca**2) !Safer to use this one, is the maxmimum speed (get it with theta = pi/2)
+      vv   =  abs(q(i,ivx)) + abs(q(i,ivy)) + abs(q(i,ivz)) 
+
+      !magnetosonic_fast = dsqrt(half*(cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho) + dsqrt((cs(i)**2+(q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/q(i,irho))**2-4*cs(i)**2*q(i,iBx)**2/q(i,irho)))) !You may need 4pi factors
+      vmax=  max(vmax,c_fast+vv)
 
 #endif
 
@@ -72,6 +78,7 @@ subroutine courant
    idust=1
 #if MHD==1
 if (ideal_MHD .eqv. .false.) then
+
       ca   = dsqrt((q(i,iBx)**2+q(i,iBy)**2+q(i,iBz)**2)/(4*pi*q(i,irhod(idust)))) !Alfven speed of the dust fluid
       vv   =  abs(q(i,ivdx(idust))) + abs(q(i,ivdy(idust))) + abs(q(i,ivdz(idust))) 
       vmax =  max(vmax,ca+vv)
@@ -115,7 +122,6 @@ endif
 if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
 
 
-   
 
     if (hyper_diffusion) then
       D_max = max(abs(eta_eff_ohm(i)),abs(eta_eff_Hall_y(i)),abs(eta_eff_Hall_z(i))) !Is necessarily in cgs because resistivities cannot be rendered dimensionless
@@ -194,6 +200,7 @@ endif
 #if NDUST>0
 if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
+
    if (apply_Lorentz_force_explicit) then
       do idust=1,ndust
          if (FLor_x_d(i,idust) /= 0.0d0 .or. FLor_y_d(i,idust) /= 0.0d0 .or. FLor_z_d(i,idust) /= 0.0d0) then
@@ -206,6 +213,7 @@ end if
 #endif
 
 if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
+
    if (apply_Lorentz_force_explicit) then
       if (FLor_x(i) /= 0.0d0 .or. FLor_y(i) /= 0.0d0 .or. FLor_z(i) /= 0.0d0) then
          dt=min(dt,CFL*dsqrt(dxx/dsqrt(FLor_x(i)**2+FLor_y(i)**2+FLor_z(i)**2)/q(i,irho)))
@@ -218,8 +226,7 @@ endif
 
    if(vv.ne.0.0d0) then
       fratio = max(force_max*dxx/vv**2,1d-3)
-      dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)
-      !print*, 'dt dfratio',dt
+      dt = min(dt,CFL*dxx/vv*(sqrt(1.0d0+2.0d0*CFL*fratio)-1.0d0)/fratio)      !print*, 'dt dfratio',dt
 
    endif
 

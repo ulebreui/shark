@@ -136,8 +136,8 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
     flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
     flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
 
-    magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt))) 
-    magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft))) 
+    magnetosonic_fast_rgt = dsqrt(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/(4*pi*rho_rgt)) 
+    magnetosonic_fast_lft = dsqrt(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/(4*pi*rho_lft)) 
 
     lambda_llf_g = max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
 #endif
@@ -145,6 +145,8 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 #if NDUST>0
     if (ideal_MHD .or. dusty_nonideal_MHD) then
     !if (ideal_MHD) then !Recouple too gas even in presence of dust
+                print*,"godunov ideal MHD"
+
 
     !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
         flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
