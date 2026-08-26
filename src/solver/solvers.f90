@@ -116,7 +116,6 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 
     lambda_llf_g         = max(abs(u_lft)+csl,abs(u_rgt)+csr)
 
-
 #if MHD==1 
 #if NDUST==0
 !If no dust, field lines frozen to the gas --> magnetic conservative terms to account for
@@ -145,7 +144,6 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 #if NDUST>0
     if (ideal_MHD .or. dusty_nonideal_MHD) then
     !if (ideal_MHD) then !Recouple too gas even in presence of dust
-                print*,"godunov ideal MHD"
 
 
     !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
@@ -214,7 +212,7 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt 
     real(dp) :: magnetosonic_fast_rgt,magnetosonic_fast_lft
-    real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,ca_rgt,ca_lft,c_fast_lft,c_fast_rgt
+    real(dp) :: flx_Bx_lft,flx_Bx_rgt,flx_By_lft,flx_By_rgt,flx_Bz_lft,flx_Bz_rgt,ca_rgt,ca_lft,c_fast_lft,c_fast_rgt,lambda_llf
 
 #if MHD==1 
     !Without dust, B is coupled to the gas
@@ -295,6 +293,11 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
     flx_P_rgt = (E_rgt +P_rgt)   * u_rgt! (E+P) v
     flx_P_lft = (E_lft +P_lft)   * u_lft
 
+
+
+    S_lft  = min(min(u_lft,u_rgt) -max(csl,csr),0.0d0)
+    S_rgt  = max(max(u_lft,u_rgt) +max(csl,csr),0.0d0) 
+
 #if MHD==1 
 #if NDUST==0
         flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
@@ -312,11 +315,23 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
         flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
         flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
 
+
+
+        !!!This is the fast mode, obtained for theta_B = pi / 2. This is safe (although maybe diffusive) because it is the maximum speed possible!!
+        ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
+        ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
+        c_fast_lft = dsqrt(csl**2 + ca_lft**2) 
+        c_fast_rgt = dsqrt(csr**2 + ca_rgt**2)
+
+
+        S_lft  = min(min(u_lft,u_rgt) -max(c_fast_lft,c_fast_rgt),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt) +max(c_fast_lft,c_fast_rgt),0.0d0) 
+
 #endif
 
 #if NDUST>0
     if (ideal_MHD .or. dusty_nonideal_MHD) then
-    !if (ideal_MHD) then !Recouple too gas even in presence of dust    !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
+    !if (ideal_MHD .or. dusty_nonideal_MHD) then, recouple to gas even in presence of dust. !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
         flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
         flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
 
@@ -332,40 +347,6 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
         flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
         flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
 
-    endif
-#endif
-
-#endif
-
-
-    S_lft  = min(min(u_lft,u_rgt) -max(csl,csr),0.0d0)
-    S_rgt  = max(max(u_lft,u_rgt) +max(csl,csr),0.0d0) 
-
-#if MHD==1
-#if NDUST==0
-
-        !!!This is the magnetosonic mode for theta_B = 0 --> reduces to a soundwave!!!
-        !magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt))) 
-        !magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft))) 
-
-        !!!This is the fast mode, obtained for theta_B = pi / 2. This is safe (although maybe diffusive) because it is the maximum speed possible!!
-        ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
-        ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
-        c_fast_lft = dsqrt(csl**2 + ca_lft**2) 
-        c_fast_rgt = dsqrt(csr**2 + ca_rgt**2)
-
-
-        S_lft  = min(min(u_lft,u_rgt) -max(c_fast_lft,c_fast_rgt),0.0d0)
-        S_rgt  = max(max(u_lft,u_rgt) +max(c_fast_lft,c_fast_rgt),0.0d0) 
-#endif
-
-#if NDUST>0
-    if (ideal_MHD .or. dusty_nonideal_MHD) then
-    !if (ideal_MHD) then !Recouple too gas even in presence of dust
-
-        !!!This is the magnetosonic mode for theta_B = 0 --> reduces to a soundwave!!!
-        !magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt))) 
-        !magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft))) 
 
         !!!This is the fast mode, obtained for theta_B = pi / 2. This is safe (although maybe diffusive) because it is the maximum speed possible!!
         ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
@@ -382,13 +363,59 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 
+
+
+if (S_rgt /= S_lft) then
     flx(irho)            = (S_rgt*flx_rho_lft  -S_lft*flx_rho_rgt  + S_rgt*S_lft*(rho_rgt-rho_lft))      / (S_rgt-S_lft)
     flx(index_vn(idim))  = (S_rgt*flx_mom_u_lft-S_lft*flx_mom_u_rgt+ S_rgt*S_lft*(mom_u_rgt-mom_u_lft))  / (S_rgt-S_lft)
     flx(index_vt(idim))  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
     flx(ivz)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
 
     flx(iP)  = (S_rgt*flx_P_lft-S_lft*flx_P_rgt+S_rgt*S_lft*(E_rgt-E_lft))/(S_rgt-S_lft)           
+endif
 
+if (S_rgt == S_lft) then
+
+#if MHD==0
+
+    lambda_llf        = max(abs(u_lft)+csl,abs(u_rgt)+csr)
+
+#endif
+
+#if MHD==1
+#if NDUST==0
+
+    magnetosonic_fast_rgt = dsqrt(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/(4*pi*rho_rgt)) 
+    magnetosonic_fast_lft = dsqrt(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/(4*pi*rho_lft)) 
+
+    lambda_llf= max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
+
+#endif
+
+#if NDUST>0
+
+    lambda_llf        = max(abs(u_lft)+csl,abs(u_rgt)+csr)
+
+    if (ideal_MHD .or. dusty_nonideal_MHD) then
+
+        magnetosonic_fast_rgt = dsqrt(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/(4*pi*rho_rgt)) 
+        magnetosonic_fast_lft = dsqrt(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/(4*pi*rho_lft)) 
+
+        lambda_llf= max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
+
+
+    endif
+
+
+#endif
+#endif
+
+    flx(irho) = half*(flx_rho_lft   + flx_rho_rgt)    - half*lambda_llf*(rho_rgt   - rho_lft)
+    flx(index_vn(idim))  = half*(flx_mom_u_lft + flx_mom_u_rgt)  - half*lambda_llf*(mom_u_rgt - mom_u_lft)
+    flx(index_vt(idim))  = half*(flx_mom_v_lft + flx_mom_v_rgt)  - half*lambda_llf*(mom_v_rgt - mom_v_lft)
+    flx(ivz)  = half*(flx_mom_w_lft + flx_mom_w_rgt)  - half*lambda_llf*(mom_w_rgt - mom_w_lft)
+
+endif
 
 end subroutine solver_hll
 
@@ -997,6 +1024,9 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx_mom_u_rgt  = rho_rgt * u_rgt**2
         flx_mom_u_lft  = rho_lft * u_lft**2
 
+        S_rgt  = max(max(u_lft,u_rgt),0.0d0) 
+        S_lft  = min(min(u_lft,u_rgt),0.0d0)
+
 #if DUST_PRESSURE==1
 
         P_rgt       = qright(iPd(idust))
@@ -1005,6 +1035,9 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx_mom_u_rgt  = rho_rgt * u_rgt**2 + P_rgt
         flx_mom_u_lft  = rho_lft * u_lft**2 + P_lft
 
+        S_lft  = min(min(u_lft,u_rgt)-max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt)+max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
+
 #endif
         flx_mom_v_rgt = rho_rgt * u_rgt  * v_rgt
         flx_mom_v_lft = rho_lft * u_lft  * v_lft
@@ -1012,10 +1045,11 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx_mom_w_rgt = rho_rgt * u_rgt  * w_rgt
         flx_mom_w_lft = rho_lft * u_lft  * w_lft
 
+
 #if MHD==1
 
     if (dusty_nonideal_MHD_no_electron) then
-        if (ideal_MHD .eqv. .false.) then
+        if ((ideal_MHD .eqv. .false.) .and. (dusty_nonideal_MHD .eqv. .false.)) then
         if (idust==i_coupled_species) then
 
             flx_rho_rgt   = rho_rgt  * u_rgt
@@ -1042,14 +1076,6 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
 
 #if MHD==0
-    S_rgt  = max(max(u_lft,u_rgt),0.0d0) 
-    S_lft  = min(min(u_lft,u_rgt),0.0d0)
-
-#if DUST_PRESSURE==1
-        S_lft  = min(min(u_lft,u_rgt)-max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
-        S_rgt  = max(max(u_lft,u_rgt)+max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
-#endif
-
 
     if (u_lft/=u_rgt) then
 
@@ -1094,6 +1120,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
     end if
 #endif
+
+
 
 #if MHD==1
 
@@ -1159,7 +1187,6 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx(i_v)  = (S_rgt*flx_mom_v_lft-S_lft*flx_mom_v_rgt+ S_rgt*S_lft*(mom_v_rgt-mom_v_lft))  / (S_rgt-S_lft)
         flx(i_w)             = (S_rgt*flx_mom_w_lft-S_lft*flx_mom_w_rgt+ S_rgt*S_lft*(mom_w_rgt-mom_w_lft))  / (S_rgt-S_lft)
 
-
 #if NDUSTPSCAL>0
         do ipscal=1,ndustpscal
             flx_pscal_lft = qleft(idust_pscal(idust,ipscal)) * rho_lft  * u_lft
@@ -1174,9 +1201,9 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
         if (ideal_MHD .eqv. .false.) then
 
-        lambda_llf_d        = max(abs(ca_lft),abs(ca_rgt))
+        lambda_llf_d        = max(abs(u_lft) + ca_lft,abs(u_rgt) + ca_rgt)
 #if DUST_PRESSURE==1
-         lambda_llf_d        = max(abs(c_fast_lft),abs(c_fast_rgt))
+         lambda_llf_d        = max(abs(u_lft) + c_fast_lft,abs(u_rgt) + c_fast_rgt)
 #endif
 
         endif
@@ -1187,7 +1214,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
             lambda_llf_d        = max(abs(u_lft),abs(u_rgt))
 #if DUST_PRESSURE==1
-         lambda_llf_d        = max(abs(c_lft),abs(c_rgt))
+         lambda_llf_d        = max(abs(u_lft) + abs(c_lft),abs(u_rgt) + abs(c_rgt))
 #endif
 
         endif
@@ -1754,28 +1781,9 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
       if (dusty_nonideal_MHD_no_electron .eqv. .true.) then !Additional terms in the fluxes for the induction equation
         if (ideal_MHD .eqv. .false.) then
+
             idust = i_coupled_species
         
-            i_rho= irhod(idust)
-
-            i_u  = index_vdn(idust,idim)
-            i_v  = index_vdt(idust,idim)
-            i_w  = ivdz(idust)
-            !print *, idust, i_rho,i_n,i_t,i_z
-
-            !Dust momentum
-            u_rgt     = qright(i_u)
-            u_lft     = qleft(i_u)
-              !Dust transverse momentum
-            v_rgt     = qright(i_v)
-            v_lft     = qleft(i_v)
-              !Dust second transverse momentum
-            w_rgt     = qright(i_w)
-            w_lft     = qleft(i_w)
-
-            rho_rgt   = qright(i_rho)
-            rho_lft   = qleft(i_rho)
-
 
             ix=ixx(i)
             iy=iyy(i)
@@ -1867,144 +1875,144 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 
 
-      if (dusty_nonideal_MHD .eqv. .true.) then !Additional terms in the fluxes for the induction equation
-        if (ideal_MHD .eqv. .false.) then
+      ! if (dusty_nonideal_MHD .eqv. .true.) then !Additional terms in the fluxes for the induction equation
+      !   if (ideal_MHD .eqv. .false.) then
 
-        rho_rgt   = qright(irho)
-        rho_lft   = qleft(irho)
-        !Velocity
-        u_rgt   = qright(index_vn(idim)) ! u
-        u_lft   = qleft(index_vn(idim))
-        !Transverse velocity
-        v_rgt   = qright(index_vt(idim)) ! v
-        v_lft   = qleft(index_vt(idim))
-        w_rgt   = qright(ivz)! w
-        w_lft   = qleft(ivz)
+      !   rho_rgt   = qright(irho)
+      !   rho_lft   = qleft(irho)
+      !   !Velocity
+      !   u_rgt   = qright(index_vn(idim)) ! u
+      !   u_lft   = qleft(index_vn(idim))
+      !   !Transverse velocity
+      !   v_rgt   = qright(index_vt(idim)) ! v
+      !   v_lft   = qleft(index_vt(idim))
+      !   w_rgt   = qright(ivz)! w
+      !   w_lft   = qleft(ivz)
 
-        ix=ixx(i)
-        iy=iyy(i)
+      !   ix=ixx(i)
+      !   iy=iyy(i)
 
-            if(slope_type>0) then
-                il = icell(ix-1,iy)
-                ir = icell(ix+1,iy)
+      !       if(slope_type>0) then
+      !           il = icell(ix-1,iy)
+      !           ir = icell(ix+1,iy)
 
-                deta_o = slope_limit(2.0d0*(eta_o(i) - eta_o(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_o(ir) - eta_o(i))/(dx(ir,1)+dx(i,1)))
-                deta_o_l = slope_limit(2.0d0*(eta_o(i-1) - eta_o(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_o(ir-1) - eta_o(i-1))/(dx(ir-1,1)+dx(i-1,1)))
-                eta_o_left = eta_o(il) + half*deta_o_l*dx(il,1)
-                eta_o_right = eta_o(i) - half*deta_o*dx(i,1)
+      !           deta_o = slope_limit(2.0d0*(eta_o(i) - eta_o(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_o(ir) - eta_o(i))/(dx(ir,1)+dx(i,1)))
+      !           deta_o_l = slope_limit(2.0d0*(eta_o(i-1) - eta_o(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_o(ir-1) - eta_o(i-1))/(dx(ir-1,1)+dx(i-1,1)))
+      !           eta_o_left = eta_o(il) + half*deta_o_l*dx(il,1)
+      !           eta_o_right = eta_o(i) - half*deta_o*dx(i,1)
 
-                deta_H = slope_limit(2.0d0*(eta_H(i) - eta_H(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_H(ir) - eta_H(i))/(dx(ir,1)+dx(i,1)))
-                deta_H_l = slope_limit(2.0d0*(eta_H(i-1) - eta_H(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_H(ir-1) - eta_H(i-1))/(dx(ir-1,1)+dx(i-1,1)))
-                eta_H_left = eta_H(il) + half*deta_H_l*dx(il,1)
-                eta_H_right = eta_H(i) - half*deta_H*dx(i,1)
+      !           deta_H = slope_limit(2.0d0*(eta_H(i) - eta_H(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_H(ir) - eta_H(i))/(dx(ir,1)+dx(i,1)))
+      !           deta_H_l = slope_limit(2.0d0*(eta_H(i-1) - eta_H(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_H(ir-1) - eta_H(i-1))/(dx(ir-1,1)+dx(i-1,1)))
+      !           eta_H_left = eta_H(il) + half*deta_H_l*dx(il,1)
+      !           eta_H_right = eta_H(i) - half*deta_H*dx(i,1)
 
-                deta_a = slope_limit(2.0d0*(eta_a(i) - eta_a(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_a(ir) - eta_a(i))/(dx(ir,1)+dx(i,1)))
-                deta_a_l = slope_limit(2.0d0*(eta_a(i-1) - eta_a(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_a(ir-1) - eta_a(i-1))/(dx(ir-1,1)+dx(i-1,1)))
-                eta_a_left = eta_a(il) + half*deta_a_l*dx(il,1)
-                eta_a_right = eta_a(i) - half*deta_a*dx(i,1)
-
-
-
-                dJy = slope_limit(2.0d0*(Jy(i) - Jy(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jy(ir) - Jy(i))/(dx(ir,1)+dx(i,1))) !Total current
-                dJy_l = slope_limit(2.0d0*(Jy(i-1) - Jy(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jy(ir-1) - Jy(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
-
-                dJz = slope_limit(2.0d0*(Jz(i) - Jz(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jz(ir) - Jz(i))/(dx(ir,1)+dx(i,1))) !Total current
-                dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
-
-                Jy_left = Jy(il) + half*dJy_l*dx(il,1)
-                Jy_right = Jy(i) - half*dJy*dx(i,1)
-
-                Jz_left = Jz(il) + half*dJz_l*dx(il,1)
-                Jz_right = Jz(i) - half*dJz*dx(i,1)
+      !           deta_a = slope_limit(2.0d0*(eta_a(i) - eta_a(il))/(dx(i,1)+dx(il,1)),2.0d0*(eta_a(ir) - eta_a(i))/(dx(ir,1)+dx(i,1)))
+      !           deta_a_l = slope_limit(2.0d0*(eta_a(i-1) - eta_a(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(eta_a(ir-1) - eta_a(i-1))/(dx(ir-1,1)+dx(i-1,1)))
+      !           eta_a_left = eta_a(il) + half*deta_a_l*dx(il,1)
+      !           eta_a_right = eta_a(i) - half*deta_a*dx(i,1)
 
 
 
-                dJdx_tot = slope_limit(2.0d0*(Jdx_tot(i) - Jdx_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdx_tot(ir) - Jdx_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
-                dJdx_tot_l = slope_limit(2.0d0*(Jdx_tot(i-1) - Jdx_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdx_tot(ir-1) - Jdx_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
+      !           dJy = slope_limit(2.0d0*(Jy(i) - Jy(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jy(ir) - Jy(i))/(dx(ir,1)+dx(i,1))) !Total current
+      !           dJy_l = slope_limit(2.0d0*(Jy(i-1) - Jy(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jy(ir-1) - Jy(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
 
-                dJdy_tot = slope_limit(2.0d0*(Jdy_tot(i) - Jdy_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdy_tot(ir) - Jdy_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
-                dJdy_tot_l = slope_limit(2.0d0*(Jdy_tot(i-1) - Jdy_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdy_tot(ir-1) - Jdy_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
+      !           dJz = slope_limit(2.0d0*(Jz(i) - Jz(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jz(ir) - Jz(i))/(dx(ir,1)+dx(i,1))) !Total current
+      !           dJz_l = slope_limit(2.0d0*(Jz(i-1) - Jz(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jz(ir-1) - Jz(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total current
 
-                dJdz_tot = slope_limit(2.0d0*(Jdz_tot(i) - Jdz_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdz_tot(ir) - Jdz_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
-                dJdz_tot_l = slope_limit(2.0d0*(Jdz_tot(i-1) - Jdz_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdz_tot(ir-1) - Jdz_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
+      !           Jy_left = Jy(il) + half*dJy_l*dx(il,1)
+      !           Jy_right = Jy(i) - half*dJy*dx(i,1)
 
-
-                Jdx_tot_left = Jdx_tot(il) + half*dJdx_tot_l*dx(il,1)
-                Jdx_tot_right = Jdx_tot(i) - half*dJdx_tot*dx(i,1)
-
-                Jdy_tot_left = Jdy_tot(il) + half*dJdy_tot_l*dx(il,1)
-                Jdy_tot_right = Jdy_tot(i) - half*dJdy_tot*dx(i,1)
-
-                Jdz_tot_left = Jdz_tot(il) + half*dJdz_tot_l*dx(il,1)
-                Jdz_tot_right = Jdz_tot(i) - half*dJdz_tot*dx(i,1)
-
-
-                db_unit_x = slope_limit(2.0d0*(b_unit_x(i) - b_unit_x(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_x(ir) - b_unit_x(i))/(dx(ir,1)+dx(i,1))) 
-                db_unit_y = slope_limit(2.0d0*(b_unit_y(i) - b_unit_y(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_y(ir) - b_unit_y(i))/(dx(ir,1)+dx(i,1))) 
-                db_unit_z = slope_limit(2.0d0*(b_unit_z(i) - b_unit_z(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_z(ir) - b_unit_z(i))/(dx(ir,1)+dx(i,1))) 
-
-                db_unit_x_l = slope_limit(2.0d0*(b_unit_x(i-1) - b_unit_x(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_x(ir-1) - b_unit_x(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
-                db_unit_y_l = slope_limit(2.0d0*(b_unit_y(i-1) - b_unit_y(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_y(ir-1) - b_unit_y(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
-                db_unit_z_l = slope_limit(2.0d0*(b_unit_z(i-1) - b_unit_z(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_z(ir-1) - b_unit_z(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
-
-                b_unit_x_left = b_unit_x(il) + half*db_unit_x_l*dx(il,1)
-                b_unit_x_right = b_unit_x(i) - half*db_unit_x*dx(i,1)
-
-
-                b_unit_y_left = b_unit_y(il) + half*db_unit_y_l*dx(il,1)
-                b_unit_y_right = b_unit_y(i) - half*db_unit_y*dx(i,1)
-
-                b_unit_z_left = b_unit_z(il) + half*db_unit_z_l*dx(il,1)
-                b_unit_z_right = b_unit_z(i) - half*db_unit_z*dx(i,1)
+      !           Jz_left = Jz(il) + half*dJz_l*dx(il,1)
+      !           Jz_right = Jz(i) - half*dJz*dx(i,1)
 
 
 
-            endif
+      !           dJdx_tot = slope_limit(2.0d0*(Jdx_tot(i) - Jdx_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdx_tot(ir) - Jdx_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
+      !           dJdx_tot_l = slope_limit(2.0d0*(Jdx_tot(i-1) - Jdx_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdx_tot(ir-1) - Jdx_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
+
+      !           dJdy_tot = slope_limit(2.0d0*(Jdy_tot(i) - Jdy_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdy_tot(ir) - Jdy_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
+      !           dJdy_tot_l = slope_limit(2.0d0*(Jdy_tot(i-1) - Jdy_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdy_tot(ir-1) - Jdy_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
+
+      !           dJdz_tot = slope_limit(2.0d0*(Jdz_tot(i) - Jdz_tot(il))/(dx(i,1)+dx(il,1)),2.0d0*(Jdz_tot(ir) - Jdz_tot(i))/(dx(ir,1)+dx(i,1))) !Total current
+      !           dJdz_tot_l = slope_limit(2.0d0*(Jdz_tot(i-1) - Jdz_tot(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(Jdz_tot(ir-1) - Jdz_tot(i-1))/(dx(ir-1,1)+dx(i-1,1))) !Total dust current
 
 
-        B_norm_lft = dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)
-        B_norm_rgt = dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2) 
+      !           Jdx_tot_left = Jdx_tot(il) + half*dJdx_tot_l*dx(il,1)
+      !           Jdx_tot_right = Jdx_tot(i) - half*dJdx_tot*dx(i,1)
+
+      !           Jdy_tot_left = Jdy_tot(il) + half*dJdy_tot_l*dx(il,1)
+      !           Jdy_tot_right = Jdy_tot(i) - half*dJdy_tot*dx(i,1)
+
+      !           Jdz_tot_left = Jdz_tot(il) + half*dJdz_tot_l*dx(il,1)
+      !           Jdz_tot_right = Jdz_tot(i) - half*dJdz_tot*dx(i,1)
 
 
-        !Beware: here signs are reversed with respect to predictor step (fluxes are defined in the left-hand side of the equation) 
+      !           db_unit_x = slope_limit(2.0d0*(b_unit_x(i) - b_unit_x(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_x(ir) - b_unit_x(i))/(dx(ir,1)+dx(i,1))) 
+      !           db_unit_y = slope_limit(2.0d0*(b_unit_y(i) - b_unit_y(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_y(ir) - b_unit_y(i))/(dx(ir,1)+dx(i,1))) 
+      !           db_unit_z = slope_limit(2.0d0*(b_unit_z(i) - b_unit_z(il))/(dx(i,1)+dx(il,1)),2.0d0*(b_unit_z(ir) - b_unit_z(i))/(dx(ir,1)+dx(i,1))) 
+
+      !           db_unit_x_l = slope_limit(2.0d0*(b_unit_x(i-1) - b_unit_x(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_x(ir-1) - b_unit_x(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+      !           db_unit_y_l = slope_limit(2.0d0*(b_unit_y(i-1) - b_unit_y(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_y(ir-1) - b_unit_y(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+      !           db_unit_z_l = slope_limit(2.0d0*(b_unit_z(i-1) - b_unit_z(il-1))/(dx(i-1,1)+dx(il-1,1)),2.0d0*(b_unit_z(ir-1) - b_unit_z(i-1))/(dx(ir-1,1)+dx(i-1,1))) 
+
+      !           b_unit_x_left = b_unit_x(il) + half*db_unit_x_l*dx(il,1)
+      !           b_unit_x_right = b_unit_x(i) - half*db_unit_x*dx(i,1)
 
 
-        flx_By_lft = -Bx_lft*v_lft + By_lft*u_lft !In this model, this term involves the gas velocity
-        flx_By_rgt = -Bx_rgt*v_rgt + By_rgt*u_rgt
+      !           b_unit_y_left = b_unit_y(il) + half*db_unit_y_l*dx(il,1)
+      !           b_unit_y_right = b_unit_y(i) - half*db_unit_y*dx(i,1)
 
-        flx_Bz_lft = -Bx_lft*w_lft + Bz_lft*u_lft
-        flx_Bz_rgt = -Bx_rgt*w_rgt + Bz_rgt*u_rgt
+      !           b_unit_z_left = b_unit_z(il) + half*db_unit_z_l*dx(il,1)
+      !           b_unit_z_right = b_unit_z(i) - half*db_unit_z*dx(i,1)
 
 
-        !Additional term
-        !Ohm
-        flx_By_lft = flx_By_lft + clight*eta_o_left*Jdz_tot_left
-        flx_By_rgt = flx_By_rgt + clight*eta_o_right*Jdz_tot_right
 
-        flx_Bz_lft = flx_Bz_lft - clight*eta_o_left*Jdy_tot_left
-        flx_Bz_rgt = flx_Bz_rgt - clight*eta_o_right*Jdy_tot_right
+      !       endif
 
-        !AD
-        flx_By_lft = flx_By_lft + clight*eta_a_left*( (b_unit_x_left**2+b_unit_y_left**2)*Jdz_tot_left - b_unit_x_left*b_unit_z_left*Jdx_tot_left - b_unit_y_left*b_unit_z_left*Jdy_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(-Jy_left)
-        flx_By_rgt = flx_By_rgt + clight*eta_a_right*( (b_unit_x_right**2+b_unit_y_right**2)*Jdz_tot_right - b_unit_x_right*b_unit_z_right*Jdx_tot_right - b_unit_y_right*b_unit_z_right*Jdy_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(-Jy_right)
 
-        flx_Bz_lft = flx_Bz_lft - clight*eta_a_left*((b_unit_x_left**2+b_unit_z_left**2)*Jdy_tot_left - b_unit_y_left*b_unit_z_left*Jdz_tot_left - b_unit_x_left*b_unit_y_left*Jdx_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(Jz_left)
-        flx_Bz_rgt = flx_Bz_rgt - clight*eta_a_right*((b_unit_x_right**2+b_unit_z_right**2)*Jdy_tot_right - b_unit_y_right*b_unit_z_right*Jdz_tot_right - b_unit_x_right*b_unit_y_right*Jdx_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(Jz_right)
+    !     B_norm_lft = dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)
+    !     B_norm_rgt = dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2) 
+
+
+    !     !Beware: here signs are reversed with respect to predictor step (fluxes are defined in the left-hand side of the equation) 
+
+
+    !     flx_By_lft = -Bx_lft*v_lft + By_lft*u_lft !In this model, this term involves the gas velocity
+    !     flx_By_rgt = -Bx_rgt*v_rgt + By_rgt*u_rgt
+
+    !     flx_Bz_lft = -Bx_lft*w_lft + Bz_lft*u_lft
+    !     flx_Bz_rgt = -Bx_rgt*w_rgt + Bz_rgt*u_rgt
+
+
+    !     !Additional term
+    !     !Ohm
+    !     flx_By_lft = flx_By_lft + clight*eta_o_left*Jdz_tot_left
+    !     flx_By_rgt = flx_By_rgt + clight*eta_o_right*Jdz_tot_right
+
+    !     flx_Bz_lft = flx_Bz_lft - clight*eta_o_left*Jdy_tot_left
+    !     flx_Bz_rgt = flx_Bz_rgt - clight*eta_o_right*Jdy_tot_right
+
+    !     !AD
+    !     flx_By_lft = flx_By_lft + clight*eta_a_left*( (b_unit_x_left**2+b_unit_y_left**2)*Jdz_tot_left - b_unit_x_left*b_unit_z_left*Jdx_tot_left - b_unit_y_left*b_unit_z_left*Jdy_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(-Jy_left)
+    !     flx_By_rgt = flx_By_rgt + clight*eta_a_right*( (b_unit_x_right**2+b_unit_y_right**2)*Jdz_tot_right - b_unit_x_right*b_unit_z_right*Jdx_tot_right - b_unit_y_right*b_unit_z_right*Jdy_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(-Jy_right)
+
+    !     flx_Bz_lft = flx_Bz_lft - clight*eta_a_left*((b_unit_x_left**2+b_unit_z_left**2)*Jdy_tot_left - b_unit_y_left*b_unit_z_left*Jdz_tot_left - b_unit_x_left*b_unit_y_left*Jdx_tot_left) - clight**2/(4*pi) * eta_a_left*b_unit_y_left*b_unit_z_left*(Jz_left)
+    !     flx_Bz_rgt = flx_Bz_rgt - clight*eta_a_right*((b_unit_x_right**2+b_unit_z_right**2)*Jdy_tot_right - b_unit_y_right*b_unit_z_right*Jdz_tot_right - b_unit_x_right*b_unit_y_right*Jdx_tot_right) - clight**2/(4*pi) * eta_a_right*b_unit_y_right*b_unit_z_right*(Jz_right)
 
        
 
-        if (Hall_effect) then
-            !Hall term
-            flx_By_lft = flx_By_lft + clight*eta_H_left*b_unit_y_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jy_left - clight*eta_H_left * b_unit_x_left * Jdy_tot_left
-            flx_By_rgt = flx_By_rgt + clight*eta_H_right*b_unit_y_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jy_right - clight*eta_H_right * b_unit_x_right * Jdy_tot_right
+    !     if (Hall_effect) then
+    !         !Hall term
+    !         flx_By_lft = flx_By_lft + clight*eta_H_left*b_unit_y_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jy_left - clight*eta_H_left * b_unit_x_left * Jdy_tot_left
+    !         flx_By_rgt = flx_By_rgt + clight*eta_H_right*b_unit_y_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jy_right - clight*eta_H_right * b_unit_x_right * Jdy_tot_right
 
-            flx_Bz_lft = flx_Bz_lft + clight*eta_H_left*b_unit_z_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jz_left - clight*eta_H_left*b_unit_x_left*Jdz_tot_left
-            flx_Bz_rgt = flx_Bz_rgt + clight*eta_H_right*b_unit_z_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jz_right - clight*eta_H_right*b_unit_x_right*Jdz_tot_right
+    !         flx_Bz_lft = flx_Bz_lft + clight*eta_H_left*b_unit_z_left*Jdx_tot_left + clight**2/(4*pi) * eta_H_left * b_unit_x_left * Jz_left - clight*eta_H_left*b_unit_x_left*Jdz_tot_left
+    !         flx_Bz_rgt = flx_Bz_rgt + clight*eta_H_right*b_unit_z_right*Jdx_tot_right + clight**2/(4*pi) * eta_H_right * b_unit_x_right * Jz_right - clight*eta_H_right*b_unit_x_right*Jdz_tot_right
 
-        endif
+    !     endif
 
-        endif
-    endif
+    !     endif
+    ! endif
 
 #endif
 
@@ -2092,16 +2100,16 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 #endif
 
 
-        if (Hall_effect .and. dusty_nonideal_MHD) then
-        !Hall effect introduces new waves
+        ! if (Hall_effect .and. dusty_nonideal_MHD) then
+        ! !Hall effect introduces new waves
 
-            cw_lft = eta_H_left*pi/(2*dx(i,1)) + dsqrt((eta_H_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave
-            cw_rgt = eta_H_right*pi/(2*dx(i+1,1)) + dsqrt((eta_H_right*pi/(2*dx(i+1,1)))**2 + ca_rgt**2) !Whistler wave 
+        !     cw_lft = eta_H_left*pi/(2*dx(i,1)) + dsqrt((eta_H_left*pi/(2*dx(i,1)))**2 + ca_lft**2) !Whistler wave
+        !     cw_rgt = eta_H_right*pi/(2*dx(i+1,1)) + dsqrt((eta_H_right*pi/(2*dx(i+1,1)))**2 + ca_rgt**2) !Whistler wave 
 
-            S_rgt  = max(max(u_lft,u_rgt) +max(cw_lft,cw_rgt),0.0d0) 
-            S_lft  = min(min(u_lft,u_rgt) -max(cw_lft,cw_rgt),0.0d0)
+        !     S_rgt  = max(max(u_lft,u_rgt) +max(cw_lft,cw_rgt),0.0d0) 
+        !     S_lft  = min(min(u_lft,u_rgt) -max(cw_lft,cw_rgt),0.0d0)
 
-        endif
+        ! endif
 
         if (Hall_effect .and. dusty_nonideal_MHD_no_electron) then
         !Hall effect introduces new waves
@@ -2135,7 +2143,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 
 
-            if ((Hall_effect .eqv. .true.) .and. (dusty_nonideal_MHD_no_electron .eqv. .true.) .or. (dusty_nonideal_MHD .eqv. .true.)) lambda_llf_B = max(abs(u_lft) + abs(cw_lft),abs(u_rgt) + abs(cw_rgt)) !In this particular case, only variable B includes whistler speed in the wafe fan. The B solver no longer coincides with the dust solver. No need to add the dust velocity in lambda_llf_B.
+            if ((Hall_effect .eqv. .true.) .and. (dusty_nonideal_MHD_no_electron .eqv. .true.)) lambda_llf_B = max(abs(u_lft) + abs(cw_lft),abs(u_rgt) + abs(cw_rgt)) !In this particular case, only variable B includes whistler speed in the wafe fan. The B solver no longer coincides with the dust solver. No need to add the dust velocity in lambda_llf_B.
 
 
             flx(iBy) = half*(flx_By_lft   + flx_By_rgt)    - half*lambda_llf_B*(By_rgt   - By_lft)
@@ -2178,7 +2186,7 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
         ca_lft =dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft)
         ca_rgt =dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt)
 
-        c_fast_lft = dsqrt((csl)**2 + ca_lft**2)
+        c_fast_lft = dsqrt((csl)**2 + ca_lft**2) !Intenta con Alfven wave solamente ?
         c_fast_rgt = dsqrt((csr)**2 + ca_rgt**2)
 
         ! magnetosonic_fast_rgt = dsqrt(half*(c_fast_rgt**2 + dsqrt(c_fast_rgt**4-4*(csr)**2*ca_rgt**2))) !In 1D along B: reduces to a simple soundwave

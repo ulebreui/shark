@@ -350,18 +350,27 @@ subroutine predictor
         su0    = su0 + w**2.  /radii_c(i)
         sw0    = sw0 - u*w    /radii_c(i)
 #endif
+
 #if MHD==1
 !Valid only for GEOM==0 since the s are overwritten
+
+!!!If ideal_MHD or dusty_nonideal_MHD, there is nothing more to do. No magnetic terms in the flux!!!
+
+
 
     if (ideal_MHD .eqv. .false.) then 
 
     !By default, if MHD==1 and ideal_MHD .eqv. .false., then B coupled to the dust fluid. Addition terms and the multifluid case are treated a bit further in the code.
         if (idust==i_coupled_species) then
 
+            su0   = -u*dux-v*duy - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
 
-
-            sBy   = -u*dBy_x + Bx*dvx - By*dux
-            sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+#if DUST_PRESSURE==1
+                su0   = -u*dux-v*duy - (dPd)/r_rho - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x)
+#endif
+       
+            sv0   = -u*dvx-v*dvy + 1/(4*pi)*(Bx*dBy_x/r_rho)
+            sw0   = -u*dwx-v*dwy + 1/(4*pi)*(Bx*dBz_x/r_rho)
 
         endif
 
@@ -478,78 +487,126 @@ subroutine predictor
 !------------------------------------------
 
 #if MHD==1
+
+#if NDUST==0
+
+      r_rho = q(i,irho)
+      u     = q(i,ivx)
+      dux   = dq(i,ivx,1)
+      drx   = dq(i,irho,1)
+      w     = q(i,ivz)
+      dwx   = dq(i,ivz,1)
+      v     = q(i,ivy)
+      dvx   = dq(i,ivy,1)
+
+    sBy   = -u*dBy_x + Bx*dvx - By*dux
+    sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+
+#endif
+
+
 #if NDUST>0
 
+    if (ideal_MHD .eqv. .true.) then
 
-    if (dusty_nonideal_MHD_no_electron .eqv. .true.) then !A single grain only
-        if (ideal_MHD .eqv. .false.) then
+      r_rho = q(i,irho)
+      u     = q(i,ivx)
+      dux   = dq(i,ivx,1)
+      drx   = dq(i,irho,1)
+      w     = q(i,ivz)
+      dwx   = dq(i,ivz,1)
+      v     = q(i,ivy)
+      dvx   = dq(i,ivy,1)
+
+    sBy   = -u*dBy_x + Bx*dvx - By*dux
+    sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+
+    endif
 
 
+    if (ideal_MHD .eqv. .false.) then
 
         idust = i_coupled_species
 
 
+        irho_spe = irhod(idust)
+        ivx_spe  = ivdx(idust)
+        ivy_spe  = ivdy(idust) 
+        ivz_spe  = ivdz(idust)
+
+        r_rho = q(i,irho_spe)
+        u     = q(i,ivx_spe)
+        dux   = dq(i,ivx_spe,1)
+        drx   = dq(i,irho_spe,1)
+        v     = q(i,ivy_spe)
+        dvx   = dq(i,ivy_spe,1)
+        w     = q(i,ivz_spe)
+        dwx   = dq(i,ivz_spe,1)
+
+        sBy   = -u*dBy_x + Bx*dvx - By*dux
+        sBz   = -u*dBz_x + Bx*dwx - Bz*dux
+
+        if (dusty_nonideal_MHD_no_electron .eqv. .true.) then !A single grain only
 
 
-        sBy = -(u*dBy_x + By*dux) + Bx*dvx !"ideal term" 
-        !sBy = sBy + B_norm/Hall_i(i)*(-dwx + dq(i,ivz,1)) 
-        sBy = sBy + dB_over_hall*(w - q(i,ivz)) + B_norm/Hall_i(i)*(dwx - dq(i,ivz,1)) 
+
+            sBy = -(u*dBy_x + By*dux) + Bx*dvx !"ideal term" with dust velocities.
+            !sBy = sBy + B_norm/Hall_i(i)*(-dwx + dq(i,ivz,1)) 
+            sBy = sBy + dB_over_hall*(w - q(i,ivz)) + B_norm/Hall_i(i)*(dwx - dq(i,ivz,1)) 
 
 
-        !!change signs for extra non-ideal term
-        sBz =  -(u*dBz_x + Bz*dux) + Bx*dwx !"ideal term" 
-        sBz = sBz - dB_over_hall*(v - q(i,ivy)) - B_norm/Hall_i(i)*(dvx - dq(i,ivy,1))
-        !sBz = sBz - B_norm/Hall_i(i)*(-dvx + dq(i,ivy,1)) 
+            !!change signs for extra non-ideal term
+            sBz =  -(u*dBz_x + Bz*dux) + Bx*dwx !"ideal term" 
+            sBz = sBz - dB_over_hall*(v - q(i,ivy)) - B_norm/Hall_i(i)*(dvx - dq(i,ivy,1))
+            !sBz = sBz - B_norm/Hall_i(i)*(-dvx + dq(i,ivy,1)) 
 
-        !Hall effect as conservative term
+            !Hall effect as conservative term
 
-        if (Hall_effect) then
-            sBy = sBy - (deta_Hall_y*Jy(i) + dJy*eta_eff_Hall_y(i))
-            sBz = sBz + (deta_Hall_z*Jz(i) + dJz*eta_eff_Hall_z(i))
+            if (Hall_effect) then
+                sBy = sBy - (deta_Hall_y*Jy(i) + dJy*eta_eff_Hall_y(i))
+                sBz = sBz + (deta_Hall_z*Jz(i) + dJz*eta_eff_Hall_z(i))
+            endif
+
+
         endif
 
 
-        endif
 
-    endif
+        if (dusty_nonideal_MHD .eqv. .true.) then !With electrons and NDUST grains
 
-
-    if (dusty_nonideal_MHD .eqv. .true.) then !With electrons and NDUST grains
-        if (ideal_MHD .eqv. .false.) then
-
-        sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
-        sBz =  -(q(i,ivx)*dBz_x + Bz*dq(i,ivx,1)) + Bx*dq(i,ivz,1) !"ideal term" 
+            sBy = -(q(i,ivx)*dBy_x + By*dq(i,ivx,1)) + Bx*dq(i,ivy,1) !"ideal term" with the GAS velocities!
+            sBz =  -(q(i,ivx)*dBz_x + Bz*dq(i,ivx,1)) + Bx*dq(i,ivz,1) !"ideal term" 
 
 
-        !Ohm
-        sBy = sBy - clight*eta_o(i)*dJdz_tot
-        sBz = sBz + clight*eta_o(i)*dJdy_tot
+            !Ohm
+            sBy = sBy - clight*eta_o(i)*dJdz_tot
+            sBz = sBz + clight*eta_o(i)*dJdy_tot
 
-        !AD
-        sBy = sBy - clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_y(i)*db_unit_y)*Jdz_tot(i) + (b_unit_x(i)**2 + b_unit_y(i)**2)*dJdz_tot )
-        sBy = sBy + clight*eta_a(i)*(dbxbz*Jdx_tot(i) + b_unit_x(i)*b_unit_z(i)*dJdx_tot)       
-        sBy = sBy + clight*eta_a(i)*(dbybz*Jdy_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdy_tot) 
-        sBy = sBy - clight**2/(4*pi)*eta_a(i)*(dbybz*Jy(i) + b_unit_y(i)*b_unit_z(i)*dJy)
+            !AD
+            sBy = sBy - clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_y(i)*db_unit_y)*Jdz_tot(i) + (b_unit_x(i)**2 + b_unit_y(i)**2)*dJdz_tot )
+            sBy = sBy + clight*eta_a(i)*(dbxbz*Jdx_tot(i) + b_unit_x(i)*b_unit_z(i)*dJdx_tot)       
+            sBy = sBy + clight*eta_a(i)*(dbybz*Jdy_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdy_tot) 
+            sBy = sBy - clight**2/(4*pi)*eta_a(i)*(dbybz*Jy(i) + b_unit_y(i)*b_unit_z(i)*dJy)
 
-        sBz = sBz + clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_z(i)*db_unit_z)*Jdy_tot(i) + (b_unit_x(i)**2 + b_unit_z(i)**2)*dJdy_tot )
-        sBz = sBz - clight*eta_a(i)*(dbxby*Jdx_tot(i) + b_unit_x(i)*b_unit_y(i)*dJdx_tot)       
-        sBz = sBz - clight*eta_a(i)*(dbybz*Jdz_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdz_tot) 
-        sBz = sBz + clight**2/(4*pi)*eta_a(i)*(dbybz*Jz(i) + b_unit_y(i)*b_unit_z(i)*dJz)
+            sBz = sBz + clight*eta_a(i)*( (2*b_unit_x(i)*db_unit_x + 2*b_unit_z(i)*db_unit_z)*Jdy_tot(i) + (b_unit_x(i)**2 + b_unit_z(i)**2)*dJdy_tot )
+            sBz = sBz - clight*eta_a(i)*(dbxby*Jdx_tot(i) + b_unit_x(i)*b_unit_y(i)*dJdx_tot)       
+            sBz = sBz - clight*eta_a(i)*(dbybz*Jdz_tot(i) + b_unit_y(i)*b_unit_z(i)*dJdz_tot) 
+            sBz = sBz + clight**2/(4*pi)*eta_a(i)*(dbybz*Jz(i) + b_unit_y(i)*b_unit_z(i)*dJz)
 
-        if (Hall_effect) then
-            sBy = sBy - clight*eta_H(i)*(db_unit_y*Jdx_tot(i) + b_unit_y(i)*dJdx_tot)
-            sBy = sBy + clight*eta_H(i)*(db_unit_x*Jdy_tot(i) + b_unit_x(i)*dJdy_tot)
-            sBy = sBy  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jy(i) + b_unit_x(i)*dJy)
+            if (Hall_effect) then
+                sBy = sBy - clight*eta_H(i)*(db_unit_y*Jdx_tot(i) + b_unit_y(i)*dJdx_tot)
+                sBy = sBy + clight*eta_H(i)*(db_unit_x*Jdy_tot(i) + b_unit_x(i)*dJdy_tot)
+                sBy = sBy  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jy(i) + b_unit_x(i)*dJy)
 
-            sBz = sBz - clight*eta_H(i)*(db_unit_z*Jdx_tot(i) + b_unit_z(i)*dJdx_tot)
-            sBz = sBz + clight*eta_H(i)*(db_unit_x*Jdz_tot(i) + b_unit_x(i)*dJdz_tot)
-            sBz = sBz  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jz(i) + b_unit_x(i)*dJz)
+                sBz = sBz - clight*eta_H(i)*(db_unit_z*Jdx_tot(i) + b_unit_z(i)*dJdx_tot)
+                sBz = sBz + clight*eta_H(i)*(db_unit_x*Jdz_tot(i) + b_unit_x(i)*dJdz_tot)
+                sBz = sBz  - clight**2/(4*pi)*eta_H(i)*(db_unit_x*Jz(i) + b_unit_x(i)*dJz)
+
+            endif
+
 
         endif
-
-        endif
-
-    endif
+   endif 
 #endif
 
 

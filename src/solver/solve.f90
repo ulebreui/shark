@@ -53,7 +53,7 @@ if(charging) then !All the quantities needed to compute MHD effects and charging
 #if MHD==1
 #if NDUST>0
 
-    if(dusty_nonideal_MHD_no_electron) then
+    if(dusty_nonideal_MHD_no_electron) then !Works for ndust=1 only
     
         call Hall_factor
         if (hyper_diffusion) then
@@ -66,7 +66,7 @@ if(charging) then !All the quantities needed to compute MHD effects and charging
 
     endif
 
-    if(dusty_nonideal_MHD) then
+    if(dusty_nonideal_MHD) then !Works for a distribution of dust sizes
 
 
         call res_electrons_ions !For test
@@ -80,6 +80,8 @@ if(charging) then !All the quantities needed to compute MHD effects and charging
 
 
     endif
+
+
 
 #endif
 #endif
@@ -130,6 +132,17 @@ if (charging) then
 
 
     endif
+
+
+    if(ideal_MHD) then !Ideal MHD on the gas. The Lorentz force on the charged grains leads to gyromotion of the drift vector. If apply_Lorentz_force_implicit=False, grains are neutral.
+
+        !call b_unit_vector
+
+        !if (apply_Lorentz_force_implicit) call magnetic_drag !Charged dust grains (but not backreacting on the magnetic field)
+
+    endif
+
+
 #endif
 endif
 
