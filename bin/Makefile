@@ -20,9 +20,9 @@ GRAVITY    = 0
 #Solver 
 SOLVER=2 # 0 =lff, 1 = hll, 2 = hllc
 #Solver dust
-SOLVERDUST=0 #0=Huang & Bai, 1=LLF, 2=HLL
+SOLVERDUST=0 #0=Huang & Bai, 1=LLF, 2=HLL 3=common HLL for multidust MHD
 #Solver induction equation
-SOLVERB=1 #0=LLF, 1=H&B, 2=HLL
+SOLVERB=1 #0=LLF, 1=H&B, 2=HLL 3=common HLL for multidust MHD
 #Number of zones
 NX=128 # In X direction
 NY=1   # In Y direction

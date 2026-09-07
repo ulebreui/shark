@@ -148,11 +148,22 @@ subroutine gyro_drift(i)
 
     k = 1 !Incremental index to build W
 
+   ! print*, 'q(i,ivx)_n=',q(i,ivx)
+   ! print*, 'q(i,ivy)_n=',q(i,ivy)
+   ! print*, 'q(i,ivz)_n=',q(i,ivz)
+
+
+
    do idust=1,ndust
 
     delta_v(1) =  q(i,ivdx(idust)) - q(i,ivx)
     delta_v(2) =  q(i,ivdy(idust)) - q(i,ivy)
     delta_v(3) =  q(i,ivdz(idust)) - q(i,ivz)
+
+
+   ! print*, 'q(i,ivdx(idust))_n=',q(i,ivdx(idust))
+   ! print*, 'q(i,ivdy(idust))_n=',q(i,ivdy(idust))
+   ! print*, 'q(i,ivdz(idust))_n=',q(i,ivdz(idust))
 
     delta_v_prime = 0.d0
     delta_v_second = 0.d0
@@ -194,6 +205,7 @@ subroutine gyro_drift(i)
       ! print*, 'mdust',mdust(i,idust)
 
       tau_gyr(idust) = clight * mdust(i,idust) / (ABS(zd(i,idust)) * e_el_stat * dsqrt(q(i,iBx)**2 + q(i,iBy)**2 + q(i,iBz)**2))
+
     end do
 
     !Build M_gyro
@@ -226,6 +238,7 @@ subroutine gyro_drift(i)
 
     end do
 
+
     ! ====================================
     ! This is the Crank-Nicholson scheme 
     ! ====================================
@@ -234,7 +247,7 @@ subroutine gyro_drift(i)
     !call DGEMV('N', n, n, 1.d0, Identity_matrix + M_gyro * dt / 2, n, W_drift, 1, 0.d0, right_vector, 1)
 
     !Solve linear system 
-    !call LU_factorization_resolution(Identity_matrix - M_gyro * dt / 2, n, n, right_vector,n,nrhs,output_lin_system) !output_lin_system is now the updated W_drift (t = n+1) 
+    call LU_factorization_resolution(Identity_matrix - M_gyro * dt / 2, n, n, right_vector,n,nrhs,output_lin_system) !output_lin_system is now the updated W_drift (t = n+1) 
     !==============================================================================================================
     
 
@@ -242,8 +255,11 @@ subroutine gyro_drift(i)
     ! This is the Euler scheme 
     ! ====================================
 
-    call LU_factorization_resolution(Identity_matrix - M_gyro * dt, n, n, W_drift,n,nrhs,output_lin_system) 
+
+    ! print*, 'W_drift^n =',W_drift
+    !call LU_factorization_resolution(Identity_matrix - M_gyro * dt, n, n, W_drift,n,nrhs,output_lin_system) 
     !==============================================================================================================
+    ! print*, 'W_drift^n+1 =',output_lin_system
 
 
 
@@ -292,6 +308,8 @@ subroutine gyro_drift(i)
         !Rotation
         call DGEMV('N', 3, 3, 1.d0, rotation_z, 3, vgas, 1, 0.d0, vgas_prime, 1) !First: Rotation of an angle beta around z
         call DGEMV('N', 3, 3, 1.d0, rotation_y_prime, 3, vgas_prime, 1, 0.d0, vgas_second, 1) !Second: Rotation of an angle pi/2 - alpha around y'
+    
+
       endif
 
       !Then take the previous intermediate gas velocity to keep updating with the next dust species 
@@ -308,26 +326,24 @@ subroutine gyro_drift(i)
       !Intermediate gas velocity (Note that vdust_second and vgas_second are the velocities a time n (intermediate for the gas). delta_v_second is the drift at n+1)
       vgas_intermediate(:) = 1 / (1 + q(i,irhod(idust))/q(i,irho)) * (vgas_second(:) + q(i,irhod(idust))/q(i,irho) * (vdust_second(:) - delta_v_second(:))) !Individual mom. conservation by component (and for each dust fluid individually).
       !Updated dust velocity
+      ! print*,'vgas_second',vgas_second(:)
+
+      ! print*,'vgas_intermediate',vgas_intermediate(:)
       vdust_second(:) = delta_v_second(:) + vgas_intermediate(:)
+      ! print*,'vdust_second',vdust_second(:)
 
 
       !Bring dust velocity back to original base
       call DGEMV('N', 3, 3, 1.d0, rotation_y_prime_back, 3, vdust_second, 1, 0.d0, vdust_prime, 1)
       call DGEMV('N', 3, 3, 1.d0, rotation_z_back, 3, vdust_prime, 1, 0.d0, vdust, 1)
 
-      ! print*,'vdust(1)-q(i,ivdx(idust))',vdust(1)-q(i,ivdx(idust))
-      ! print*,'vdust(2)-q(i,ivdy(idust))',vdust(2)-q(i,ivdy(idust))
-      ! print*,'vdust(3)-q(i,ivdz(idust))',vdust(3)-q(i,ivdz(idust))
 
       q(i,ivdx(idust)) = vdust(1) !Update q so that the other drag terms work with the updated value
       q(i,ivdy(idust)) = vdust(2)
       q(i,ivdz(idust)) = vdust(3)
 
-      u_prim(i,ivdx(idust)) = u_prim(i,irhod(idust)) * vdust(1) !Update u so that the CFL is computed correctly, with the updated value (needed if this drag term is called last).
-      u_prim(i,ivdy(idust)) = u_prim(i,irhod(idust)) * vdust(2)
-      u_prim(i,ivdz(idust)) = u_prim(i,irhod(idust)) * vdust(3)
 
-
+      !We update u_prim in solve.f90 so that the CFL is computed correctly, with the updated value (needed if this drag term is called last).
 
 
       k = k+2
@@ -338,24 +354,12 @@ subroutine gyro_drift(i)
     call DGEMV('N', 3, 3, 1.d0, rotation_y_prime_back, 3, vgas_intermediate, 1, 0.d0, vgas_prime, 1)
     call DGEMV('N', 3, 3, 1.d0, rotation_z_back, 3, vgas_prime, 1, 0.d0, vgas, 1) 
 
+
+
+
     q(i,ivx) = vgas(1)
     q(i,ivy) = vgas(2)
     q(i,ivz) = vgas(3)  
-
-    u_prim(i,ivx) = u_prim(i,irho) * vgas(1)
-    u_prim(i,ivy) = u_prim(i,irho) * vgas(2)
-    u_prim(i,ivz) = u_prim(i,irho) * vgas(3)      
-      
-    ! print*,'vgas(1) - q(i,ivx)',vgas(1) - q(i,ivx)
-    ! print*,'vgas(2) - q(i,ivy)',vgas(2) - q(i,ivy)
-    ! print*,'vgas(3) - q(i,ivz)',vgas(3) - q(i,ivz)
-
-
-
-
-
-
-
 
 
 
@@ -1260,5 +1264,35 @@ subroutine magnetic_drag
             end do
 
 end subroutine magnetic_drag
+
+
+
+subroutine magnetic_drag_ideal_MHD
+
+!!!For each term, both q & u_prim have to be updated. The former so that the next term called can work with the updated velocity. The latter so that the CFL works with the updated velocity!!!
+!!N.B.: Updating q(:,ivd) is not a problem since those are local source terms. There is no communication with neighboring cells and thus no need for buffer values!!
+    
+
+!!!This is the gyro-drift felt by charged dust grains in  the ideal MHD configuraton, where only the gas backreacts on the magnetic field and creates induction (see Moseley, Eric R. +23)!!! 
+  use commons
+  use parameters
+
+
+  implicit none 
+  integer :: i
+
+
+
+
+            do i=1,ncells
+              !if(active_cell(i)==1) then
+
+
+                call gyro_drift(i)
+
+
+            end do
+
+end subroutine magnetic_drag_ideal_MHD
 #endif
 #endif

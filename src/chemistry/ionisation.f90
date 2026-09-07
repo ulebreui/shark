@@ -1233,6 +1233,20 @@ subroutine analytical_charge  !(Fujii et. al 2011) and see Lebreuilly 2020.
 
          end do 
       endif
+
+
+      if (ideal_MHD) then !Tune Zd
+
+        do i=1,ncells
+
+                zd(i,idust) = -5d0
+
+
+
+         end do 
+      endif
+
+
     endif
 
 ! $OMP END DO

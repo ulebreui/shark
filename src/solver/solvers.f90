@@ -120,14 +120,16 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 #if NDUST==0
 !If no dust, field lines frozen to the gas --> magnetic conservative terms to account for
 !If dust present, the gas is considered neutral and the code won't go into this part of the routine
-    flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
-    flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
+    flx_mom_u_rgt  = flx_mom_u_rgt + 1/(4*pi)*(P_mag_rgt + mag_tension_x_rgt)
+    flx_mom_u_lft  = flx_mom_u_lft + 1/(4*pi)*(P_mag_lft + mag_tension_x_lft)
 
-    flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-    flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
+    flx_mom_v_rgt = flx_mom_v_rgt + 1/(4*pi)*(mag_tension_y_rgt)
+    flx_mom_v_lft = flx_mom_v_lft + 1/(4*pi)*(mag_tension_y_lft)
        
-    flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-    flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
+    flx_mom_w_rgt = flx_mom_w_rgt + 1/(4*pi)*(mag_tension_z_rgt)
+    flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*(mag_tension_z_lft)
+
+
 
     E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
     E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
@@ -147,19 +149,19 @@ subroutine solver_llf(qleft,qright,flx,csl,csr,idim,i)
 
 
     !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
-        flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
-        flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
+        flx_mom_u_rgt  = flx_mom_u_rgt + 1/(4*pi)*(P_mag_rgt + mag_tension_x_rgt)
+        flx_mom_u_lft  = flx_mom_u_lft + 1/(4*pi)*(P_mag_lft + mag_tension_x_lft)
 
-        flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-        flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
+        flx_mom_v_rgt = flx_mom_v_rgt + 1/(4*pi)*(mag_tension_y_rgt)
+        flx_mom_v_lft = flx_mom_v_lft + 1/(4*pi)*(mag_tension_y_lft)
            
-        flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-        flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
+        flx_mom_w_rgt = flx_mom_w_rgt + 1/(4*pi)*(mag_tension_z_rgt)
+        flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*(mag_tension_z_lft)
 
         E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
         E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
 
-        flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v)
+        flx_P_rgt = (E_rgt + P_rgt + P_mag_rgt)   * u_rgt + Bx_rgt*(Bx_rgt*u_rgt+By_rgt*v_rgt+Bz_rgt*w_rgt) ! (E+P+Pmag) v + B(B.v) !!!Is it not rather (E+P+Pmag) v - B(B.v) ?? !!!
         flx_P_lft = (E_lft + P_lft + P_mag_lft)   * u_lft + Bx_lft*(Bx_lft*u_lft+By_lft*v_lft+Bz_lft*w_lft)
 
 
@@ -300,14 +302,14 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 
 #if MHD==1 
 #if NDUST==0
-        flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
-        flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
+        flx_mom_u_rgt  = flx_mom_u_rgt + 1/(4*pi)*(P_mag_rgt + mag_tension_x_rgt)
+        flx_mom_u_lft  = flx_mom_u_lft + 1/(4*pi)*(P_mag_lft + mag_tension_x_lft)
 
-        flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-        flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
+        flx_mom_v_rgt = flx_mom_v_rgt + 1/(4*pi)*(mag_tension_y_rgt)
+        flx_mom_v_lft = flx_mom_v_lft + 1/(4*pi)*(mag_tension_y_lft)
            
-        flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-        flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
+        flx_mom_w_rgt = flx_mom_w_rgt + 1/(4*pi)*(mag_tension_z_rgt)
+        flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*(mag_tension_z_lft)
 
         E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
         E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
@@ -332,14 +334,14 @@ subroutine solver_hll(qleft,qright,flx,csl,csr,idim,i)
 #if NDUST>0
     if (ideal_MHD .or. dusty_nonideal_MHD) then
     !if (ideal_MHD .or. dusty_nonideal_MHD) then, recouple to gas even in presence of dust. !If dust and ideal_MHD==true, field lines frozen to the gas and dust does not backreact on B.
-        flx_mom_u_rgt  = flx_mom_u_rgt + P_mag_rgt + mag_tension_x_rgt
-        flx_mom_u_lft  = flx_mom_u_lft + P_mag_lft + mag_tension_x_lft
+        flx_mom_u_rgt  = flx_mom_u_rgt + 1/(4*pi)*(P_mag_rgt + mag_tension_x_rgt)
+        flx_mom_u_lft  = flx_mom_u_lft + 1/(4*pi)*(P_mag_lft + mag_tension_x_lft)
 
-        flx_mom_v_rgt = flx_mom_v_rgt + mag_tension_y_rgt
-        flx_mom_v_lft = flx_mom_v_lft + mag_tension_y_lft
+        flx_mom_v_rgt = flx_mom_v_rgt + 1/(4*pi)*(mag_tension_y_rgt)
+        flx_mom_v_lft = flx_mom_v_lft + 1/(4*pi)*(mag_tension_y_lft)
            
-        flx_mom_w_rgt = flx_mom_w_rgt + mag_tension_z_rgt
-        flx_mom_w_lft = flx_mom_w_lft + mag_tension_z_lft
+        flx_mom_w_rgt = flx_mom_w_rgt + 1/(4*pi)*(mag_tension_z_rgt)
+        flx_mom_w_lft = flx_mom_w_lft + 1/(4*pi)*(mag_tension_z_lft)
 
         E_rgt = E_rgt + half*(Bx_rgt**2+By_rgt**2+Bz_rgt**2) ! E = epsilon + Kinetic + magnetic
         E_lft = E_lft + half*(Bx_lft**2+By_lft**2+Bz_lft**2)
@@ -958,7 +960,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
     real(dp) :: rho_lft,rho_rgt,u_lft,u_rgt,v_lft,v_rgt,w_lft,w_rgt
     real(dp) :: mom_u_lft,mom_u_rgt,mom_v_lft,mom_v_rgt,mom_w_lft,mom_w_rgt
     real(dp) :: flx_rho_lft,flx_mom_u_lft,flx_mom_v_lft,flx_mom_w_lft,flx_P_lft
-    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt,flx_pscal_lft,flx_pscal_rgt
+    real(dp) :: flx_rho_rgt,flx_mom_u_rgt,flx_mom_v_rgt,flx_mom_w_rgt,flx_P_rgt,flx_pscal_lft,flx_pscal_rgt,c_lft,c_rgt
 #if MHD==1
 
     real(dp) :: Bx_lft,By_lft,Bz_lft,Bx_rgt,By_rgt,Bz_rgt,P_mag_lft,P_mag_rgt,mag_tension_y_lft,mag_tension_y_rgt,mag_tension_z_lft,mag_tension_z_rgt,mag_tension_x_lft,mag_tension_x_rgt,c_fast_lft,c_fast_rgt 
@@ -1163,6 +1165,7 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
     S_lft  = min(min(u_lft,u_rgt),0.0d0)
 
 
+
 #if DUST_PRESSURE==1 
 !!!TO DO!!! Add a NDUST==1. If NDUST>1, we don't consider any dust pressure.
         c_lft = delta_dust_cs*csl 
@@ -1213,6 +1216,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         if (ideal_MHD .eqv. .true.) then
 
             lambda_llf_d        = max(abs(u_lft),abs(u_rgt))
+
+
 #if DUST_PRESSURE==1
          lambda_llf_d        = max(abs(u_lft) + abs(c_lft),abs(u_rgt) + abs(c_rgt))
 #endif
@@ -1417,6 +1422,41 @@ subroutine solver_induction_llf(qleft,qright,flx,csl,csr,idim,i)
         flx_Bz_lft = flx_Bz_lft + B_norm_lft/hall_i_left*(v_lft - qleft(index_vt(idim)))
         flx_Bz_rgt = flx_Bz_rgt + B_norm_rgt/hall_i_right*(v_rgt - qright(index_vt(idim)))
 
+
+        lambda_llf_B        = max(abs(u_lft)+dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft),abs(u_rgt)+dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt))
+
+    endif
+
+    if (ideal_MHD) then
+
+        rho_rgt   = qright(irho)
+        rho_lft   = qleft(irho)
+
+        !Velocity
+        u_rgt   = qright(index_vn(idim)) ! u
+        u_lft   = qleft(index_vn(idim))
+        !Transverse velocity
+        v_rgt   = qright(index_vt(idim)) ! v
+        v_lft   = qleft(index_vt(idim))
+        w_rgt   = qright(ivz)! w
+        w_lft   = qleft(ivz)
+
+
+
+        flx_Bx_lft = 0.0d0
+        flx_Bx_rgt = 0.0d0
+
+        flx_By_lft = By_lft*u_lft - Bx_lft*v_lft
+        flx_By_rgt = By_rgt*u_rgt - Bx_rgt*v_rgt
+
+        flx_Bz_lft = Bz_lft*u_lft - Bx_lft*w_lft
+        flx_Bz_rgt = Bz_rgt*u_rgt - Bx_rgt*w_rgt  
+
+        magnetosonic_fast_rgt = dsqrt(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/(4*pi*rho_rgt)) 
+        magnetosonic_fast_lft = dsqrt(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/(4*pi*rho_lft)) 
+        lambda_llf_B        = max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
+
+
     endif
 
 
@@ -1424,38 +1464,14 @@ subroutine solver_induction_llf(qleft,qright,flx,csl,csr,idim,i)
 
 
 #if NDUST==0
-magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
-magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
+!magnetosonic_fast_rgt = dsqrt(half*(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt + dsqrt((csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/rho_rgt)**2-4*csr**2*Bx_rgt**2/rho_rgt))) 
+!magnetosonic_fast_lft = dsqrt(half*(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft + dsqrt((csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/rho_lft)**2-4*csl**2*Bx_lft**2/rho_lft))) 
+magnetosonic_fast_rgt = dsqrt(csr**2+(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/(4*pi*rho_rgt)) 
+magnetosonic_fast_lft = dsqrt(csl**2+(Bx_lft**2+By_lft**2+Bz_lft**2)/(4*pi*rho_lft)) 
 lambda_llf_B        = max(abs(u_lft)+magnetosonic_fast_lft,abs(u_rgt)+magnetosonic_fast_rgt)
 
 #endif
 
-#if NDUST>0
-
-    idust=i_coupled_species !Is the grain species considered in the magnetosonic/Alfven velocity expressions
-
-    i_rho= irhod(idust)
-
-    i_u  = index_vdn(idust,idim)
-    i_v  = index_vdt(idust,idim)
-    i_w  = ivdz(idust)
-    !print *, idust, i_rho,i_n,i_t,i_z
-
-    !Dust momentum
-    u_rgt     = qright(i_u)
-    u_lft     = qleft(i_u)
-      !Dust transverse momentum
-    v_rgt     = qright(i_v)
-    v_lft     = qleft(i_v)
-      !Dust second transverse momentum
-    w_rgt     = qright(i_w)
-    w_lft     = qleft(i_w)
-
-    rho_rgt   = qright(i_rho)
-    rho_lft   = qleft(i_rho)
-    
-    lambda_llf_B        = max(abs(u_lft)+dsqrt(Bx_lft**2+By_lft**2+Bz_lft**2)/dsqrt(4*pi*rho_lft),abs(u_rgt)+dsqrt(Bx_rgt**2+By_rgt**2+Bz_rgt**2)/dsqrt(4*pi*rho_rgt))
-#endif
 
 
 flx(iBy) = half*(flx_By_lft   + flx_By_rgt)    - half*lambda_llf_B*(By_rgt   - By_lft)

@@ -231,9 +231,9 @@ subroutine predictor
 #if NDUST==0
     sBy   = -u*dBy_x + Bx*dvx - By*dux
     sBz   = -u*dBz_x + Bx*dwx - Bz*dux
-    su0   = su0 - By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x/r_rho 
-    sv0   = sv0 + Bx*dBy_x/r_rho
-    sw0   = sw0 + Bx*dBz_x/r_rho
+    su0   = su0 - 1/(4*pi)*(By/r_rho*dBy_x - Bz/r_rho*dBz_x - Bx*dBx_x/r_rho + 2.0d0*Bx*dBx_x/r_rho) 
+    sv0   = sv0 + 1/(4*pi)*(Bx*dBy_x/r_rho)
+    sw0   = sw0 + 1/(4*pi)*(Bx*dBz_x/r_rho)
 #endif
 #if NDUST>0
     if (ideal_MHD .or. dusty_nonideal_MHD) then !Recouple too gas even in presence of dust

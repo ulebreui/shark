@@ -26,6 +26,11 @@ subroutine solve(verbose,outputing)
   if(force_kick) call update_force_setup
 
   call system_clock ( t3, clock_rate, clock_max )
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Create dust distribution!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #if NDUST>1
   ! Re-calc distribution
   if (restarting==0 .and. call_dust_distribution .eqv. .true.) then
@@ -41,8 +46,11 @@ endif
 #endif
 
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!All the quantities needed to compute MHD effects and charging!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-if(charging) then !All the quantities needed to compute MHD effects and charging
+if(charging) then
 
     if (analytical_charging .eqv. .false.) call charge 
 
@@ -93,29 +101,37 @@ endif
 
   call system_clock ( t4, clock_rate, clock_max )
 
-  ! We compute the stability timestep
-   call courant
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!We compute the stability timestep!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  
+  call courant
 
   call system_clock ( t5, clock_rate, clock_max )
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Solving the Riemann problem (Godunov method)!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   ! Predictor step. Variables are estimated at cell interfaces and half dt
-   call predictor
+  call predictor
 
   call system_clock ( t6, clock_rate, clock_max )
 
   ! Flux are computed and added to u_prim
-   call add_delta_u
+  call add_delta_u
 
 
   call system_clock ( t7, clock_rate, clock_max )
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Source terms (without hydro drag!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! Source terms are computed and added to u_prim
+  call ctoprim !To update q from u_prim before calling source terms
 
-  call apply_boundaries
-  call source_terms !!!WARNING: working with q(:,:) and thus not with the updated values from the Riemann problem. But: not overwriting u_prim, so probably not a big issue!!!
 
-  call system_clock ( t8, clock_rate, clock_max )
 
 #if NDUST>0
   !!!Dust step (dynamics, growth, charging)!!!
@@ -126,8 +142,9 @@ if (charging) then
     if(dusty_nonideal_MHD) then 
 
        if (apply_Lorentz_force_implicit) call magnetic_drag !Calculations made with q(:,:) (primitive var). The various terms are split.
+       call primtoc !to update u_prim
 
-       if (apply_Lorentz_force_explicit) call Lorentz_force_explicit_terms
+       if (apply_Lorentz_force_explicit) call Lorentz_force_explicit_terms !Working with q. Must be called before source_terms.
 
 
 
@@ -136,9 +153,9 @@ if (charging) then
 
     if(ideal_MHD) then !Ideal MHD on the gas. The Lorentz force on the charged grains leads to gyromotion of the drift vector. If apply_Lorentz_force_implicit=False, grains are neutral.
 
-        !call b_unit_vector
-
-        !if (apply_Lorentz_force_implicit) call magnetic_drag !Charged dust grains (but not backreacting on the magnetic field)
+        call b_unit_vector
+        if (apply_Lorentz_force_implicit) call magnetic_drag_ideal_MHD !Charged dust grains (but not backreacting on the magnetic field)
+        call primtoc
 
     endif
 
@@ -146,7 +163,25 @@ if (charging) then
 #endif
 endif
 
-  if(drag)   call dust_drag(1.0d0) ! Second half kick. Working with u_prim and updating u_prim. Note that t_stop has not been updated, i.e. we are working with the old gas density.
+#endif
+
+
+
+  call apply_boundaries !Necessary for source terms that rely on the neighboring cell values
+  call source_terms !Computed explicitly. WARNING: working with q and updating u_prim.
+  call ctoprim !To update q again
+
+  call system_clock ( t8, clock_rate, clock_max )
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Dust step (dynamics, growth)!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#if NDUST>0
+
+  if(drag)   call dust_drag(1.0d0) ! Second half kick. Working with u_prim and updating u_prim. Note that t_stop has not been updated, i.e. we are working with t_stop computed with the old gas density.
   if(growth) then
      call ctoprim !To update q() from u_prim
      call dust_growth(verbose)
@@ -161,10 +196,15 @@ endif
   endif
 #endif
 #endif
+
   call system_clock ( t9, clock_rate, clock_max )
 
   ! if(force_kick) call kick(1.0d0)
   if(force_kick) call kick(0.5d0)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Turb step (applied to the gas)!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if TURB>0
 
@@ -185,7 +225,11 @@ endif
 
 
 #endif 
-  ! Setup related modifs
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!Setup related modifs!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   call setup_inloop
   call system_clock ( t10,  clock_rate, clock_max )
   

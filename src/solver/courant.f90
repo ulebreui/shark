@@ -119,6 +119,7 @@ endif
 
 #if MHD==1
 
+#if NDUST>0
 if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in induction equation and Lorentz force (source term)
 
 
@@ -144,6 +145,7 @@ if (dusty_nonideal_MHD_no_electron) then !!Adapt timestep to hyper_diffusion in 
 
 
 endif
+#endif
 
 if (dusty_nonideal_MHD) then !!Adapt timestep to to magnetocompressive modes, hyper_diffusion in induction equation and Lorentz force (source term)
 
@@ -171,6 +173,9 @@ if (dusty_nonideal_MHD) then !!Adapt timestep to to magnetocompressive modes, hy
    dt = min(dt,CFL*dxx/abs(vmax))
 
 #endif
+
+#if NDUST>0
+
    
 
     if (hyper_diffusion_with_electrons) then
@@ -184,15 +189,9 @@ if (dusty_nonideal_MHD) then !!Adapt timestep to to magnetocompressive modes, hy
 
       ! dt_diffusion(i) = 0.4d0*dxx**2/D_max
 
-
-
-
-
-
-
- 
-
    endif
+   
+#endif
 
 
 endif
@@ -210,7 +209,6 @@ if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
       end do
    endif
 end if
-#endif
 
 if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
 
@@ -221,6 +219,10 @@ if(dusty_nonideal_MHD_no_electron .or. dusty_nonideal_MHD) then
       endif
    endif
 endif
+#endif
+
+
+
 
 #endif
 
