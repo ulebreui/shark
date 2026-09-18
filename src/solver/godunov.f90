@@ -314,8 +314,8 @@ subroutine predictor
             Pd     = q(i,iPd_spe)
             dPd   = dq(i,iPd_spe,1) !Implemented only in 1D and cartesian geometry (isothermal transformation)
             if (iso_cs==1) then 
-                Pd = q(i,irho_spe)*(delta_dust_cs*cs(i))**2
-                dPd = dq(i,irho_spe,1)*(delta_dust_cs*cs(i))**2
+                Pd = q(i,irho_spe)*(delta_dust_cs(i,idust)*cs(i))**2
+                dPd = dq(i,irho_spe,1)*(delta_dust_cs(i,idust)*cs(i))**2
             endif
 #endif
 #if NY>1   
@@ -423,8 +423,8 @@ subroutine predictor
 #if DUST_PRESSURE==1
         if(iso_cs==1) then
 
-            qp(i,iPd_spe,1)   = (delta_dust_cs*cs(i))**2*qp(i,irho_spe,1)
-            qm(i,iPd_spe,1)   = (delta_dust_cs*cs(i))**2*qm(i,irho_spe,1)
+            qp(i,iPd_spe,1)   = (delta_dust_cs(i,idust)*cs(i))**2*qp(i,irho_spe,1)
+            qm(i,iPd_spe,1)   = (delta_dust_cs(i,idust)*cs(i))**2*qm(i,irho_spe,1)
         endif
 #endif
 

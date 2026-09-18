@@ -148,6 +148,9 @@ subroutine allocate_dust
 
 #if DUST_PRESSURE==1
    allocate(iPd(1:ndust))
+   allocate(delta_dust_cs(1:ncells,1:ndust))
+   delta_dust_cs = 0.0d0
+
 #endif
 
 #if NDUSTPSCAL>0
@@ -389,7 +392,7 @@ subroutine read_dust_params(ilun,nmlfile)
   &, CFL_growth,rhodust_threshold,dust_ratio_min,dust_distribution,call_dust_distribution,aO_themis,acut_themis,awidthcut_themis,&
   &themis_slope,sigma_themis,kernel_type, turb_in_growth, drift_in_growth,brownian_in_growth,&
   &ambipolar_in_growth,slope_mono,ice_mantle,delta_vambi,gamma_grains, estar_grains ,sticking_efficiency , &
- & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs, write_Ormel_velocity
+ & dtcontrol_growth,clustered_fraction,i_coupled_species,alpha_turb,delta_dust_cs_0, write_Ormel_velocity,dust_soundspeed_Ormel
   print *, "########################################################################################################################################"
   print *, "########################################################################################################################################"
   print *, "Dust namelist reading  !"

@@ -17,6 +17,7 @@ module dust_parameters
   logical             ::  electrostatic_barrier = .false.     ! Add the electrostatic barrier for dust growth
   logical             ::  modified_Ormel        = .false.     ! Modify soundspeed of the mixture due to dust mass loading 
   logical             ::  write_Ormel_velocity         = .false.   
+  logical             ::  dust_soundspeed_Ormel = .false.
 
   real(dp)            ::  sticking_efficiency   = 1.0d0       ! Add the electrostatic barrier for dust growth
   real(dp)            ::  clustered_fraction    = 1.0d0       ! Fraction of the dust that is clustered / ! \ must be equal or > 1
@@ -39,7 +40,7 @@ module dust_parameters
   integer ::  i_coupled_species = 1 ! Index of the dust species coupled to B in the induction eq
   logical ::  dust_growth_disk = .false.
 
-  real(dp) :: delta_dust_cs = 0.0d0 !dust soundspeed defined by hand as a fraction delta_dust_cs of the gas soundspeed
+  real(dp) :: delta_dust_cs_0 = 0.01d0 !dust soundspeed defined by hand as a fraction delta_dust_cs of the gas soundspeed
 
 
   
@@ -93,6 +94,8 @@ module dust_commons
   real(dp), dimension(:,:), allocatable    :: St
   real(dp), dimension(:,:), allocatable    :: size_frag_Ormel
   real(dp), dimension(:,:), allocatable    :: dv_ormel_step
+  real(dp), dimension(:,:), allocatable    :: delta_dust_cs
+
 
 
   ! Indices of the variables

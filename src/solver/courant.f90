@@ -84,7 +84,7 @@ if (ideal_MHD .eqv. .false.) then
       vmax =  max(vmax,ca+vv)
 #if DUST_PRESSURE==1
 
-      c_fast = dsqrt((delta_dust_cs*cs(i))**2 + ca**2) !Safer to use this one
+      c_fast = dsqrt((delta_dust_cs(i,idust)*cs(i))**2 + ca**2) !Safer to use this one
 
       !magnetosonic_fast = dsqrt(half*(c_fast**2 + dsqrt(c_fast**4-4*(delta_dust_cs*cs(i))**2*ca**2))) !In 1D along B: reduces to a simple soundwave
 

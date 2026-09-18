@@ -131,10 +131,7 @@ endif
 
   call ctoprim !To update q from u_prim before calling source terms
 
-
-
 #if NDUST>0
-  !!!Dust step (dynamics, growth, charging)!!!
 
 if (charging) then
 
@@ -182,6 +179,7 @@ endif
 #if NDUST>0
 
   if(drag)   call dust_drag(1.0d0) ! Second half kick. Working with u_prim and updating u_prim. Note that t_stop has not been updated, i.e. we are working with t_stop computed with the old gas density.
+  !Note also that includes both hydro and magnetic drag if dusty_nonideal_MHD_no_electron = .true.
   if(growth) then
      call ctoprim !To update q() from u_prim
      call dust_growth(verbose)
@@ -195,6 +193,12 @@ endif
     call dust_growth_stepinski ! Dust growth with Stepinski /!\ dust size is in the first pscal
   endif
 #endif
+
+#if DUST_PRESSURE==1
+    if (dust_soundspeed_Ormel) call compute_dust_soundspeed !Compute dust sounsdpeed from the velocity dispersion in Ormel 2007 (depends on St of dust grain). Otherwise, keep the initial value specified in the namelist.
+    !print*,'delta_dust_cs(:)=',delta_dust_cs
+#endif
+
 #endif
 
   call system_clock ( t9, clock_rate, clock_max )
@@ -312,7 +316,7 @@ subroutine ctoprim
         q(i,ivdy(idust))  = u_prim(i,ivdy(idust))/u_prim(i,irhod(idust))
         q(i,ivdz(idust))  = u_prim(i,ivdz(idust))/u_prim(i,irhod(idust))
 #if DUST_PRESSURE==1
-        q(i,iPd(idust))  =  u_prim(i,irhod(idust))*(delta_dust_cs*cs(i))**2
+        q(i,iPd(idust))  =  u_prim(i,irhod(idust))*(delta_dust_cs(i,idust)*cs(i))**2
 #endif
 #if NDUSTPSCAL>0
     do ipscal=1,ndustpscal

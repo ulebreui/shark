@@ -1037,8 +1037,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
         flx_mom_u_rgt  = rho_rgt * u_rgt**2 + P_rgt
         flx_mom_u_lft  = rho_lft * u_lft**2 + P_lft
 
-        S_lft  = min(min(u_lft,u_rgt)-max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
-        S_rgt  = max(max(u_lft,u_rgt)+max(delta_dust_cs*csl,delta_dust_cs*csr),0.0d0)
+        S_lft  = min(min(u_lft,u_rgt)-max(delta_dust_cs(i,idust)*csl,delta_dust_cs(i,idust)*csr),0.0d0)
+        S_rgt  = max(max(u_lft,u_rgt)+max(delta_dust_cs(i,idust)*csl,delta_dust_cs(i,idust)*csr),0.0d0)
 
 #endif
         flx_mom_v_rgt = rho_rgt * u_rgt  * v_rgt
@@ -1150,8 +1150,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
 #if DUST_PRESSURE==1 
 !!!TO DO!!! Add a NDUST==1. If NDUST>1, we don't consider any dust pressure.
-        c_fast_lft = dsqrt((delta_dust_cs*csl)**2 + ca_lft**2) !Safer to use this
-        c_fast_rgt = dsqrt((delta_dust_cs*csr)**2 + ca_rgt**2)
+        c_fast_lft = dsqrt((delta_dust_cs(i,idust)*csl)**2 + ca_lft**2) !Safer to use this
+        c_fast_rgt = dsqrt((delta_dust_cs(i,idust)*csr)**2 + ca_rgt**2)
 
         S_lft  = min(min(u_lft,u_rgt) -max(c_fast_lft,c_fast_rgt),0.0d0)
         S_rgt  = max(max(u_lft,u_rgt) +max(c_fast_lft,c_fast_rgt),0.0d0) 
@@ -1168,8 +1168,8 @@ subroutine solver_dust_hll(qleft,qright,csl,csr,flx,idim,i)
 
 #if DUST_PRESSURE==1 
 !!!TO DO!!! Add a NDUST==1. If NDUST>1, we don't consider any dust pressure.
-        c_lft = delta_dust_cs*csl 
-        c_rgt = delta_dust_cs*csr
+        c_lft = delta_dust_cs(i,idust)*csl 
+        c_rgt = delta_dust_cs(i,idust)*csr
 
         !magnetosonic_fast_rgt = dsqrt(half*(c_fast_rgt**2 + dsqrt(c_fast_rgt**4-4*(delta_dust_cs*csr)**2*ca_rgt**2))) !In 1D along B: reduces to a simple soundwave
         !magnetosonic_fast_lft = dsqrt(half*(c_fast_lft**2 + dsqrt(c_fast_lft**4-4*(delta_dust_cs*csl)**2*ca_lft**2))) 
@@ -2106,8 +2106,8 @@ subroutine solver_induction_hll(qleft,qright,flx,csl,csr,idim,i)
 
 #if DUST_PRESSURE==1
 
-        c_fast_lft = dsqrt((delta_dust_cs*csl)**2 + ca_lft**2)
-        c_fast_rgt = dsqrt((delta_dust_cs*csr)**2 + ca_rgt**2)
+        c_fast_lft = dsqrt((delta_dust_cs(i,idust)*csl)**2 + ca_lft**2)
+        c_fast_rgt = dsqrt((delta_dust_cs(i,idust)*csr)**2 + ca_rgt**2)
 
         ! magnetosonic_fast_rgt = dsqrt(half*(c_fast_rgt**2 + dsqrt(c_fast_rgt**4-4*(delta_dust_cs*csr)**2*ca_rgt**2))) !In 1D along B: reduces to a simple soundwave
         ! magnetosonic_fast_lft = dsqrt(half*(c_fast_lft**2 + dsqrt(c_fast_lft**4-4*(delta_dust_cs*csl)**2*ca_lft**2))) 

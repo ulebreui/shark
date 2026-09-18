@@ -93,7 +93,9 @@ subroutine setup
         
 
 #if DUST_PRESSURE==1
-        q(i,iPd(idust))=q(i,irhod(idust))*(delta_dust_cs*cs(i))**2
+
+        delta_dust_cs(i,idust) = delta_dust_cs_0
+        q(i,iPd(idust))=q(i,irhod(idust))*(delta_dust_cs(i,idust)*cs(i))**2
 #endif
 
 #endif
@@ -493,6 +495,48 @@ end do
 
 end subroutine compute_tcoag
 #endif
+
+
+
+#if NDUST>0
+#if DUST_PRESSURE==1
+! Dust soubdspeed estimated from velocity dispersion in Ormel 2007
+subroutine compute_dust_soundspeed
+  
+  use parameters
+  use commons
+  use units
+  use OMP_LIB
+
+  implicit none
+  integer :: i,idust
+
+
+  !$OMP PARALLEL &
+  !$OMP DEFAULT(SHARED)&
+  !$OMP PRIVATE(i,idust)
+  !$OMP DO
+  do i=1,ncells
+   if(active_cell(i)==1) then
+     do idust=1,ndust
+
+        if (St(i,idust) <= 1) delta_dust_cs(i,idust) = dsqrt(alpha_turb)*dsqrt(St(i,idust)) !Regime II
+        if (St(i,idust) > 1) delta_dust_cs(i,idust) = dsqrt(alpha_turb)*dsqrt(2./(1.+St(i,idust))) !Regime III     
+
+     end do
+  end if
+end do
+
+
+  !$OMP END DO
+  !$OMP END PARALLEL
+
+
+end subroutine compute_dust_soundspeed
+#endif
+#endif
+
+
 
 
 subroutine restart_setup_quantities
