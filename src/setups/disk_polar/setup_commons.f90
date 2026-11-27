@@ -11,9 +11,7 @@ module setup_parameters
   real(dp) :: R0_disk     = 1.0d0    ! in AU
   real(dp) :: R_out_disk  = 40.d0
   real(dp) :: Mstar       = 1.0d0    ! in solar mass
-  real(dp) :: Mplanet     = 0.0d0    ! in solar mass
-  real(dp) :: Rplanet     = 20.0d0    ! in au
-  real(dp) :: a_smooth_pl = 0.1
+  real(dp) :: a_smooth_pl = 0.6
   real(dp) :: decrease_density = 1d-2
   real(dp) :: HoverR      = 0.1   ! H/R
   real(dp) :: smooth_r    = 1.0  ! softening lenght
@@ -24,10 +22,23 @@ module setup_parameters
   real(dp) :: phi_mom     = 2.0d0
   real(dp) :: L_out       = 1.0d0
   real(dp),dimension(:,:,:),allocatable :: uprim_condinit 
-  integer  :: ix_relax = 0
-  real(dp),dimension(:),allocatable :: inv_trel
+  
+  logical  :: damping       = .true.   ! de Val-Borro (2006) wave-damping zones
+  real(dp) :: damp_in_frac  = 1.25d0   ! inner zone: r < damp_in_frac  * r_in
+  real(dp) :: damp_out_frac = 0.84d0   ! outer zone: r > damp_out_frac * r_out
+  real(dp) :: damp_tau      = 0.1d0    ! damping time, in orbital periods at the boundary
+  real(dp), dimension(:), allocatable :: damp_rate   ! R(r)/tau for each ring
+
   real(dp) :: bump_amp = 0.0d0   ! test: amplitude of a Gaussian dust bump (0 = no bump)
   real(dp) :: bump_r   = 10.0d0  ! its radius (au)
   real(dp) :: bump_phi = 3.0d0   ! its azimuth (rad)
   real(dp) :: bump_w   = 2.0d0   ! its width (au)
+  integer, parameter :: nplanet_max = 10
+  integer  :: nplanet = 0                                     ! number of planets
+  real(dp), dimension(nplanet_max) :: Mplanet      = 0.0d0   ! masses (Msun)
+  real(dp), dimension(nplanet_max) :: Rplanet      = 20.0d0  ! orbital radii (au)
+  real(dp), dimension(nplanet_max) :: phi_planet   = 0.0d0   ! initial azimuths (rad)
+  real(dp), dimension(nplanet_max) :: nramp_planet = 5.0d0   ! mass ramp-up duration (planet orbits)
+  logical  :: indirect_term = .true.  ! indirect term of the planets (star-centred frame)
+  integer  :: freq_torque = 50       ! torques written every freq_torque steps
 end module setup_parameters

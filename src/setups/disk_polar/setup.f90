@@ -9,6 +9,7 @@ subroutine setup
   real(dp) :: B_field,vfarg,ts_loc,eta_drift,Stokes_num
   integer  :: idust,imax,ix,iy,icell,ivar
   real(dp) :: dphi_b
+  real(dp) :: r_in_edge, r_out_edge, xi
   call allocate_init
   allocate(uprim_condinit(1:nx_max,1:ny_max,1:nvar))
   uprim_condinit = 0.0d0
@@ -21,14 +22,21 @@ subroutine setup
 
   call gridinit_disk_log(box_l,smooth_r,smooth_r)
 
-  allocate(inv_trel(1:nx_max)); inv_trel = 0.0d0
+  ! Damping rate R(r)/tau per ring (edges taken from the actual grid)
+  allocate(damp_rate(1:nx_max)); damp_rate = 0.0d0
+  r_in_edge  = radii(first_active,first_active_y) - half*dx(first_active,first_active_y,1)
+  r_out_edge = radii(last_active, first_active_y) + half*dx(last_active, first_active_y,1)
   do ix = first_active, last_active
      rr = radii(ix,first_active_y)
-     if (rr < r_relax) then
-        ix_relax     = ix
-        inv_trel(ix) = sqrt(Mstar)/(n_rel*2.0d0*pi*(sqrt(rr**3) - sqrt(smooth_r**3)))
+     if (rr < damp_in_frac*r_in_edge) then
+        xi = (damp_in_frac*r_in_edge - rr)/((damp_in_frac - 1.0d0)*r_in_edge)     ! 0 -> 1 towards r_in
+        damp_rate(ix) = xi**2*sqrt(Mstar/r_in_edge**3)/(2.0d0*pi*damp_tau)
+     else if (rr > damp_out_frac*r_out_edge) then
+        xi = (rr - damp_out_frac*r_out_edge)/((1.0d0 - damp_out_frac)*r_out_edge) ! 0 -> 1 towards r_out
+        damp_rate(ix) = xi**2*sqrt(Mstar/r_out_edge**3)/(2.0d0*pi*damp_tau)
      end if
   end do
+
   q      = 0.0d0
   iso_cs = 1
 
@@ -143,6 +151,7 @@ subroutine read_setup_info(ilun)
 end subroutine read_setup_info
 
 
+
 subroutine read_setup_params(ilun,nmlfile)
   use parameters
   use commons
@@ -150,7 +159,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk,bump_amp,bump_r,bump_phi,bump_w
+  namelist/setup_params/damping, damp_in_frac, damp_out_frac, damp_tau,indirect_term,freq_torque,n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk,bump_amp,bump_r,bump_phi,bump_w,nplanet, phi_planet, nramp_planet
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -185,6 +194,7 @@ subroutine read_setup_params(ilun,nmlfile)
    implicit none
    integer :: icount,iout,ix,iy
    logical :: outputing,verbose
+   integer, save :: istep_tq = 0
    real(dp) :: Mtot
 
         !We make an output at a certain frequency rate of for specific values of the density. This can be tuned at will
@@ -195,7 +205,8 @@ subroutine read_setup_params(ilun,nmlfile)
         outputing=.true.
         icount=0
      endif
-
+     istep_tq = istep_tq + 1
+     if (nplanet > 0 .and. mod(istep_tq - 1, freq_torque) == 0) call write_planet_torques
      if(time.eq.0) outputing=.true.   
      if(outputing)call output(iout)
      if(outputing) iout=iout+1
@@ -210,7 +221,6 @@ subroutine read_setup_params(ilun,nmlfile)
      endif
      if(outputing) print *, "Total mass is", Mtot
      if(outputing) print *, "Total momentum is", sum(u_prim(ivx,:,:)+u_prim(ivy,:,:))
-
      outputing=.false.
 
  end subroutine check_output
@@ -241,12 +251,14 @@ subroutine setup_inloop
    !Relaxation in the inner boundary
 
    !Relaxation in the inner boundary
+   if (damping) then
    !$omp parallel do default(shared) schedule(static) &
    !$omp private(ix,iy,idust,ipscal,f,f1,rho_init,vx_init,vy_init,rho_old,vx_old,vy_old,rho_new,vx_new,vy_new)
    do iy = first_active_y, last_active_y
-      do ix = first_active+1, ix_relax      ! ix=first_active is reset to the IC just after
-         f  = exp(-dt*inv_trel(ix))
-         f1 = 1.0d0 - f
+      do ix = first_active, last_active
+         if (damp_rate(ix) <= 0.0d0) cycle
+         f1 = dt*damp_rate(ix)/(1.0d0 + dt*damp_rate(ix))   ! implicit relaxation weight
+         f  = 1.0d0 - f1
 
          rho_init = uprim_condinit(ix,iy,irho)
          vx_init  = uprim_condinit(ix,iy,ivx)/rho_init
@@ -291,15 +303,7 @@ subroutine setup_inloop
    end do
    !$omp end parallel do
 
-
-   do ix=1,first_active
-        do iy=first_active_y,last_active_y
-                do ivar=1,nvar
-                    u_prim(ivar,ix,iy)=uprim_condinit(first_active,iy,ivar)
-                end do
-        end do
-    end do
-
+  endif
 
 end subroutine setup_inloop
 
@@ -314,9 +318,18 @@ end subroutine setup_inloop
 
    integer :: idust,ix,iy,ixx,iyy,icell
    real(dp) :: xx, yy, rr, xx_p, yy_p, rr_p, theta_p,r_cyl,x_soft,y_soft,d_planet,px,py,p_r,p_theta,phi_loc,phi_p
+   integer :: ipl
+   real(dp) :: dphi, d2, fac, fr, fphi
+   real(dp), dimension(nplanet_max) :: phip, mp, eps2
 
-   do iy=first_active_y,last_active_y
-    do ix=first_active,last_active
+    do ipl = 1, nplanet
+      call planet_state(ipl, time, phip(ipl), mp(ipl))
+      eps2(ipl) = (a_smooth_pl*HoverR*Rplanet(ipl))**2     ! Plummer softening, eps = a_smooth_pl*H(r_p)
+    end do
+   !$omp parallel do default(shared) schedule(static) &
+   !$omp private(ix,iy,idust,ipl,dphi,d2,fac,fr,fphi)
+   do iy = 1, ny_max
+    do ix = 1, nx_max
         force_x(ix,iy)  = - Mstar/radii(ix,iy)**2
         force_y(ix,iy)  = 0.0d0
         force_z(ix,iy)  = 0.0d0
@@ -327,8 +340,28 @@ end subroutine setup_inloop
          force_dust_z(idust,ix,iy)  = 0.0d0
         end do
 #endif
+        do ipl = 1, nplanet                    ! planet gravity (polar components)
+           dphi = phi(ix,iy) - phip(ipl)
+           d2   = radii(ix,iy)**2 + Rplanet(ipl)**2 - 2.0d0*radii(ix,iy)*Rplanet(ipl)*cos(dphi) + eps2(ipl)
+           fac  = mp(ipl)/(d2*sqrt(d2))
+           fr   = -fac*(radii(ix,iy) - Rplanet(ipl)*cos(dphi))
+           fphi = -fac*Rplanet(ipl)*sin(dphi)
+           if (indirect_term) then   ! star accelerated by the planet (frame centred on the star)
+              fr   = fr   - mp(ipl)/Rplanet(ipl)**2*cos(dphi)
+              fphi = fphi + mp(ipl)/Rplanet(ipl)**2*sin(dphi)
+           end if           
+           force_x(ix,iy) = force_x(ix,iy) + fr
+           force_y(ix,iy) = force_y(ix,iy) + fphi
+#if NDUST>0
+           do idust = 1, ndust
+              force_dust_x(idust,ix,iy) = force_dust_x(idust,ix,iy) + fr
+              force_dust_y(idust,ix,iy) = force_dust_y(idust,ix,iy) + fphi
+           end do
+#endif
+        end do
 
 #if NDUST>0
+        if (ix >= first_active .and. ix <= last_active .and. iy >= first_active_y .and. iy <= last_active_y) then
         do idust=1,ndust
          if(.not. drag) then
           force_x(ix,iy)  = force_x(ix,iy)  - q(irhod(idust),ix,iy)/q(irho,ix,iy)*(q(ivx,ix,iy) - q(ivdx(idust),ix,iy))/tstop(idust,ix,iy)
@@ -337,13 +370,14 @@ end subroutine setup_inloop
           force_dust_x(idust,ix,iy)  = force_dust_x(idust,ix,iy)  + (q(ivx,ix,iy) - q(ivdx(idust),ix,iy))/tstop(idust,ix,iy)
           force_dust_y(idust,ix,iy)  = force_dust_y(idust,ix,iy)  + (q(ivy,ix,iy) - q(ivdy(idust),ix,iy))/tstop(idust,ix,iy)
           force_dust_z(idust,ix,iy)  = force_dust_z(idust,ix,iy)  + (q(ivz,ix,iy) - q(ivdz(idust),ix,iy))/tstop(idust,ix,iy)
-
          endif
         end do
+        end if
 #endif
-    end do
 
+    end do
    end do 
+   !$omp end parallel do
 end subroutine update_force_setup
 
 
@@ -401,3 +435,52 @@ subroutine compute_tstop
 
 end subroutine compute_tstop
 #endif
+
+
+subroutine planet_state(ipl, t, phip, mp)
+  use parameters
+  use commons
+  implicit none
+  integer,  intent(in)  :: ipl
+  real(dp), intent(in)  :: t
+  real(dp), intent(out) :: phip, mp
+  real(dp) :: omp, tramp
+  omp   = sqrt((Mstar + Mplanet(ipl))/Rplanet(ipl)**3)
+  phip  = modulo(phi_planet(ipl) + omp*t, 2.0d0*pi)
+  tramp = nramp_planet(ipl)*2.0d0*pi/omp
+  mp    = Mplanet(ipl)
+  if (tramp > 0.0d0) mp = Mplanet(ipl)*sin(0.5d0*pi*min(t/tramp, 1.0d0))**2
+end subroutine planet_state
+
+! Torque of the gas and dust on each planet (about the star), appended to planet_torques.dat
+subroutine write_planet_torques
+  use parameters
+  use commons
+  use units
+  implicit none
+  integer  :: ipl, ix, iy, idust
+  real(dp) :: phip, mp, eps2, dphi, d2, aphi, tq_gas, tq_dust
+  if (nplanet == 0) return
+  open(31, file='planet_torques.dat', position='append')
+  do ipl = 1, nplanet
+     call planet_state(ipl, time, phip, mp)
+     eps2 = (a_smooth_pl*HoverR*Rplanet(ipl))**2
+     tq_gas = 0.0d0; tq_dust = 0.0d0
+     do iy = first_active_y, last_active_y
+        do ix = first_active, last_active
+           dphi = phi(ix,iy) - phip
+           d2   = radii(ix,iy)**2 + Rplanet(ipl)**2 - 2.0d0*radii(ix,iy)*Rplanet(ipl)*cos(dphi) + eps2
+           aphi = -mp*Rplanet(ipl)*sin(dphi)/(d2*sqrt(d2))     ! azimuthal acceleration of the cell
+           ! central force => torque on the planet = - torque on the cell
+           tq_gas = tq_gas - u_prim(irho,ix,iy)*vol(ix,iy)*radii(ix,iy)*aphi
+#if NDUST>0
+           do idust = 1, ndust
+              tq_dust = tq_dust - u_prim(irhod(idust),ix,iy)*vol(ix,iy)*radii(ix,iy)*aphi
+           end do
+#endif
+        end do
+     end do
+     write(31,'(E23.15,I4,3E23.15)') time, ipl, mp, tq_gas, tq_dust
+  end do
+  close(31)
+end subroutine write_planet_torques

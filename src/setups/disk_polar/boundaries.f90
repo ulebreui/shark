@@ -37,12 +37,12 @@ subroutine apply_boundaries
             u_prim(ivar,ix,iy)          = u_prim(ivar,first_active,iy) 
             u_prim(ivar,nx_max+1-ix,iy) = u_prim(ivar,last_active,iy)
          end do     
-         u_prim(ivx,nx_max+1-ix,iy)  = min(u_prim(ivx,nx_max+1-ix,iy),0.0d0)
-         u_prim(ivx,ix,iy)           = max(u_prim(ivx,ix,iy) ,0.0d0)
+         u_prim(ivx,nx_max+1-ix,iy)  = max(u_prim(ivx,nx_max+1-ix,iy),0.0d0)
+         u_prim(ivx,ix,iy)           = min(u_prim(ivx,ix,iy) ,0.0d0)
 #if NDUST>0
         do idust=1,ndust
-           u_prim(ivdx(idust),nx_max+1-ix,iy)  = min(u_prim(ivdx(idust),nx_max+1-ix,iy),0.0d0)
-           u_prim(ivdx(idust),ix,iy)           = max(u_prim(ivdx(idust),ix,iy) ,0.0d0)      
+           u_prim(ivdx(idust),nx_max+1-ix,iy)  = max(u_prim(ivdx(idust),nx_max+1-ix,iy),0.0d0)
+           u_prim(ivdx(idust),ix,iy)           = min(u_prim(ivdx(idust),ix,iy) ,0.0d0)     
         end do
 #endif
       end do
