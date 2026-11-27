@@ -67,9 +67,9 @@ subroutine gridinit(rmax_x, rmax_y)
             dx(ix,iy,1) = rmax_x/DBLE(nx)
             dx(ix,iy,2) = rmax_y/DBLE(ny)
 
-            surf(ix,iy,1) = dx(ix,iy,1)
-            surf(ix,iy,2) = dx(ix,iy,2)
-
+            surf(ix,iy,1) = dx(ix,iy,2)   ! face normal to x: length dy
+            surf(ix,iy,2) = dx(ix,iy,1)   ! face normal to y: length dx
+            
             vol(ix,iy) = dx(ix,iy,1)*dx(ix,iy,2)
             position(ix,iy,1) = (DBLE(ix - first_active) + half)*rmax_x/DBLE(nx)
             position(ix,iy,2) = (DBLE(iy - first_active_y) + half)*rmax_y/DBLE(ny)

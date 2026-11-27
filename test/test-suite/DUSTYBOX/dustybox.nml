@@ -1,0 +1,26 @@
+!Dustybox (Laibe & Price 2011), compile with SETUP=tests GEOM=0 NY=1 NDUST=1 (or 3 with the arrays below extended)
+
+&GRID_PARAMS
+freq_out   = 10
+CFL        = 0.8
+tend       = 3.0
+gamma      = 1.4
+force_kick = .false.
+slope_type = 1
+/
+
+&SETUP_PARAMS
+test_case = 'dustybox'
+box_l     = 1.0
+box_l_y   = 0.01
+cs0       = 1.0
+vg0       = 1.0
+eps_dust  = 1.0
+ts_dust   = 1.0
+vd0       = 0.0
+/
+
+&DUST_PARAMS
+drag               = .true.
+dust_back_reaction = .true.
+/

@@ -1,0 +1,21 @@
+!Sod shock tube (adiabatic), compile with SETUP=tests GEOM=0 NY=1 NDUST=0
+
+&GRID_PARAMS
+freq_out   = 1000000
+CFL        = 0.8
+tend       = 0.2
+gamma      = 1.4
+force_kick = .false.
+slope_type = 1
+/
+
+&SETUP_PARAMS
+test_case = 'sod'
+box_l     = 1.0
+box_l_y   = 0.01
+sod_rho_l     = 1.0
+sod_p_l       = 1.0
+sod_rho_r     = 0.125
+sod_p_r       = 0.1
+x_disc    = 0.5
+/

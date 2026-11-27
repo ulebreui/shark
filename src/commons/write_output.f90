@@ -14,6 +14,7 @@ subroutine output(iout)
   format_out=trim("unformatted")
   ilun=20
   if(iout==nrestart) return
+  call ctoprim   ! q from the current u_prim (otherwise intermediate outputs lag by one step)
   call title(iout,nchar)
   makedirectory = 'mkdir ' // trim(path) // trim(nchar)
   call system(makedirectory)

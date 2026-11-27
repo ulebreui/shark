@@ -1,0 +1,19 @@
+!Isothermal linear sound wave (one period), compile with SETUP=tests GEOM=0 NY=1 NDUST=0
+
+&GRID_PARAMS
+freq_out   = 1000000
+CFL        = 0.8
+tend       = 1.0
+gamma      = 1.4
+force_kick = .false.
+slope_type = 3
+/
+
+&SETUP_PARAMS
+test_case = 'soundwave'
+box_l     = 1.0
+box_l_y   = 0.01
+cs0       = 1.0
+amp       = 1d-4
+nwave     = 1.0
+/

@@ -1,0 +1,26 @@
+!Dustywave (Laibe & Price 2011), compile with SETUP=tests GEOM=0 NY=1 NDUST=1
+
+&GRID_PARAMS
+freq_out   = 1000000
+CFL        = 0.8
+tend       = 1.0
+gamma      = 1.4
+force_kick = .false.
+slope_type = 3
+/
+
+&SETUP_PARAMS
+test_case = 'dustywave'
+box_l     = 1.0
+box_l_y   = 0.01
+cs0       = 1.0
+amp       = 1d-4
+nwave     = 1.0
+eps_dust  = 1.0
+ts_dust   = 0.1
+/
+
+&DUST_PARAMS
+drag               = .true.
+dust_back_reaction = .true.
+/
