@@ -8,7 +8,7 @@ subroutine setup
   real(dp) :: rmax,vol_tot,xx,yy,x_soft,y_soft,Omega,H,cutoff,T_100
   real(dp) :: B_field,vfarg,ts_loc,eta_drift,Stokes_num
   integer  :: idust,imax,ix,iy,icell,ivar
-
+  real(dp) :: dphi_b
   call allocate_init
   allocate(uprim_condinit(1:nx_max,1:ny_max,1:nvar))
   uprim_condinit = 0.0d0
@@ -20,6 +20,15 @@ subroutine setup
   print *, 'tend = ', tend
 
   call gridinit_disk_log(box_l,smooth_r,smooth_r)
+
+  allocate(inv_trel(1:nx_max)); inv_trel = 0.0d0
+  do ix = first_active, last_active
+     rr = radii(ix,first_active_y)
+     if (rr < r_relax) then
+        ix_relax     = ix
+        inv_trel(ix) = sqrt(Mstar)/(n_rel*2.0d0*pi*(sqrt(rr**3) - sqrt(smooth_r**3)))
+     end if
+  end do
   q      = 0.0d0
   iso_cs = 1
 
@@ -46,6 +55,11 @@ subroutine setup
 #if NDUST>0
      do idust=1,ndust
         q(irhod(idust),ix,iy)   = dust2gas*q(irho,ix,iy)
+        if (bump_amp > 0.0d0) then   ! test: Gaussian dust bump advected by the rotation
+           dphi_b = modulo(phi(ix,iy) - bump_phi + pi, 2.0d0*pi) - pi
+           q(irhod(idust),ix,iy) = q(irhod(idust),ix,iy)*(1.0d0 + bump_amp* &
+                &  exp(-((rr - bump_r)**2 + (bump_r*dphi_b)**2)/(2.0d0*bump_w**2)))
+        end if     
         !if(rr>R_out_disk) q(irhod(idust),ix,iy)   = dust2gas*q(irho,ix,iy)/100.0d0
         epsilondust(icell(ix,iy),idust)= dust2gas
         sdust(idust)      = scut/unit_l ! The 2H term comes from the vertical integration 
@@ -56,7 +70,7 @@ subroutine setup
         ts_loc=  sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sdust(idust)/(q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
         eta_drift = sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))-1.0d0
         Stokes_num= ts_loc * omega
-        q(ivdx(idust),ix,iy)    = eta_drift*omega*rr/(Stokes_num+1.0d0/Stokes_num)
+        q(ivdx(idust),ix,iy) = 2.0d0*eta_drift*omega*rr/(Stokes_num+1.0d0/Stokes_num)
         q(ivdy(idust),ix,iy)    = omega*rr
      end do
 #endif
@@ -136,7 +150,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk
+  namelist/setup_params/n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk,bump_amp,bump_r,bump_phi,bump_w
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -221,59 +235,61 @@ subroutine setup_inloop
    real(dp)::rho_new,vx_new,vy_new
    real(dp)::rho_old,vx_old,vy_old
    real(dp)::rho_init,vx_init,vy_init
-
+   real(dp) :: f, f1
 
 
    !Relaxation in the inner boundary
 
-   do ix= 1,last_active
-        do iy=first_active_y,last_active_y
-            if(radii(ix,iy)<r_relax) then
-                t_rel=n_rel*2.0d0*pi/(sqrt(Mstar/(radii(ix,iy))**3))-n_rel*2.0d0*pi/(sqrt(Mstar/smooth_r**3))! Relaxation timescale
+   !Relaxation in the inner boundary
+   !$omp parallel do default(shared) schedule(static) &
+   !$omp private(ix,iy,idust,ipscal,f,f1,rho_init,vx_init,vy_init,rho_old,vx_old,vy_old,rho_new,vx_new,vy_new)
+   do iy = first_active_y, last_active_y
+      do ix = first_active+1, ix_relax      ! ix=first_active is reset to the IC just after
+         f  = exp(-dt*inv_trel(ix))
+         f1 = 1.0d0 - f
 
-                rho_init= uprim_condinit(ix,iy,irho)
-                vx_init = uprim_condinit(ix,iy,ivx)/rho_init
-                vy_init = uprim_condinit(ix,iy,ivy)/rho_init
+         rho_init = uprim_condinit(ix,iy,irho)
+         vx_init  = uprim_condinit(ix,iy,ivx)/rho_init
+         vy_init  = uprim_condinit(ix,iy,ivy)/rho_init
 
-                rho_old = u_prim(irho,ix,iy)
-                vx_old  = u_prim(ivx,ix,iy)/rho_old
-                vy_old  = u_prim(ivy,ix,iy)/rho_old
+         rho_old  = u_prim(irho,ix,iy)
+         vx_old   = u_prim(ivx,ix,iy)/rho_old
+         vy_old   = u_prim(ivy,ix,iy)/rho_old
 
-                rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
-                vx_new  = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
-                vy_new  = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
+         rho_new  = rho_init*f1 + rho_old*f
+         vx_new   = vx_init *f1 + vx_old *f
+         vy_new   = vy_init *f1 + vy_old *f
 
-                u_prim(irho,ix,iy) = rho_new
-                u_prim(ivx,ix,iy)  = rho_new*vx_new
-                u_prim(ivy,ix,iy)  = rho_new*vy_new
+         u_prim(irho,ix,iy) = rho_new
+         u_prim(ivx,ix,iy)  = rho_new*vx_new
+         u_prim(ivy,ix,iy)  = rho_new*vy_new
 #if NDUST>0
-                do idust=1,ndust
-                
-                    rho_init= uprim_condinit(ix,iy,irhod(idust))
-                    vx_init = uprim_condinit(ix,iy,ivdx(idust))/rho_init
-                    vy_init = uprim_condinit(ix,iy,ivdy(idust))/rho_init
+         do idust = 1, ndust
+            rho_init = uprim_condinit(ix,iy,irhod(idust))
+            vx_init  = uprim_condinit(ix,iy,ivdx(idust))/rho_init
+            vy_init  = uprim_condinit(ix,iy,ivdy(idust))/rho_init
 
-                    rho_old = u_prim(irhod(idust),ix,iy)
-                    vx_old  = u_prim(ivdx(idust),ix,iy)/rho_old
-                    vy_old  = u_prim(ivdy(idust),ix,iy)/rho_old
+            rho_old  = u_prim(irhod(idust),ix,iy)
+            vx_old   = u_prim(ivdx(idust),ix,iy)/rho_old
+            vy_old   = u_prim(ivdy(idust),ix,iy)/rho_old
 
-                    rho_new = (rho_init)  * (1.0d0-exp(-dt/t_rel)) + rho_old*exp(-dt/t_rel)
-                    vx_new  = ( vx_init)  * (1.0d0-exp(-dt/t_rel)) +  vx_old*exp(-dt/t_rel)
-                    vy_new  = ( vy_init)  * (1.0d0-exp(-dt/t_rel)) +  vy_old*exp(-dt/t_rel)
+            rho_new  = rho_init*f1 + rho_old*f
+            vx_new   = vx_init *f1 + vx_old *f
+            vy_new   = vy_init *f1 + vy_old *f
 
-                    u_prim(irhod(idust),ix,iy) = rho_new
-                    u_prim(ivdx(idust),ix,iy)  = rho_new*vx_new
-                    u_prim(ivdy(idust),ix,iy)  = rho_new*vy_new
-#if NDUSTPSCAL>0 
-                do ipscal=1,ndustpscal
-                    u_prim(idust_pscal(idust,ipscal),ix,iy) = u_prim(idust_pscal(idust,ipscal),ix,iy)/rho_old*rho_new ! We don't relax passive scalars
-                end do
-#endif                
-                end do
-#endif                
-            endif
-        end do
-    end do
+            u_prim(irhod(idust),ix,iy) = rho_new
+            u_prim(ivdx(idust),ix,iy)  = rho_new*vx_new
+            u_prim(ivdy(idust),ix,iy)  = rho_new*vy_new
+#if NDUSTPSCAL>0
+            do ipscal = 1, ndustpscal  ! passive scalars are not relaxed
+               u_prim(idust_pscal(idust,ipscal),ix,iy) = u_prim(idust_pscal(idust,ipscal),ix,iy)/rho_old*rho_new
+            end do
+#endif
+         end do
+#endif
+      end do
+   end do
+   !$omp end parallel do
 
 
    do ix=1,first_active
@@ -347,6 +363,8 @@ subroutine compute_tstop
   
   ! Re-calc distribution
 
+  !$omp parallel do default(shared) schedule(static) &
+  !$omp private(ix,iy,idust,rr,H,t_L,sloc,x_stokes,f_Stokes,St1,vdrift_turb,sd,Hd,nd)
    do iy=first_active_y,last_active_y
     do ix=first_active,last_active
         rr       = radii(ix,iy)
@@ -358,7 +376,7 @@ subroutine compute_tstop
 #if NDUSTPSCAL>0
         if(growth_step) sloc = q(idust_pscal(idust,1),ix,iy) 
 #endif    
-        tstop(idust,ix,iy) = sqrt(pi*gamma/8.0d0)*(rhograin/unit_d)*sloc/(q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
+        tstop(idust,ix,iy) = sqrt(pi/8.0d0)*(rhograin/unit_d)*sloc/(q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)*cs(ix,iy))
 #if NDUSTPSCAL>0
         if(growth_step) then
 
@@ -370,12 +388,15 @@ subroutine compute_tstop
             Hd             = H*min(1.0d0,sqrt(alpha_turb/(min(St1,0.5d0/(1.0d0+St1**2)))))
             nd             = q(irhod(idust),ix,iy)/(4./3.*pi*sd**3*rhograin/unit_d)/(sqrt(2.0d0*pi)*Hd)
             tcoag(ix,iy,idust) = 3.0d0/(pi*sd**2*nd*vdrift_turb)/min(1.0d0,-log10(vdrift_turb*unit_v/vfrag)/log10(5.))
-
+            sfrag(ix,iy,idust) = sd*(vfrag/(vdrift_turb*unit_v))**2
         endif
 #endif        
         end do
      end do
   end do
+  !$omp end parallel do
+
+
 
 
 end subroutine compute_tstop

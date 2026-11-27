@@ -16,6 +16,7 @@ module commons
   ! Disk face-on geometry /!\ Phi is the azimuthal angle here it ranges from 0 to 2pi
   real(dp), dimension(:,:), allocatable     :: phi
   real(dp), dimension(:,:,:,:), allocatable :: distance
+  real(dp), dimension(:), allocatable       :: vbar   ! FARGO mean azimuthal velocity per ring
 #endif
 
   real(dp), dimension(:,:), allocatable   :: vol

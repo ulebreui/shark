@@ -24,5 +24,10 @@ module setup_parameters
   real(dp) :: phi_mom     = 2.0d0
   real(dp) :: L_out       = 1.0d0
   real(dp),dimension(:,:,:),allocatable :: uprim_condinit 
-
+  integer  :: ix_relax = 0
+  real(dp),dimension(:),allocatable :: inv_trel
+  real(dp) :: bump_amp = 0.0d0   ! test: amplitude of a Gaussian dust bump (0 = no bump)
+  real(dp) :: bump_r   = 10.0d0  ! its radius (au)
+  real(dp) :: bump_phi = 3.0d0   ! its azimuth (rad)
+  real(dp) :: bump_w   = 2.0d0   ! its width (au)
 end module setup_parameters

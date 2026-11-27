@@ -32,10 +32,12 @@ subroutine allocate_init
     phi = 1.0d0
     allocate(SG_Kernel(1:nx,1:ny,1:64))
     SG_Kernel=0.0d0
+    allocate(vbar(1:nx_max)); vbar = 0.0d0
 #endif
 
   ! Variable related quantities
   allocate(q(1:nvar,1:nx_max,1:ny_max))
+  allocate(qh(1:nvar,1:nx_max,1:ny_max)); qh = 0.0d0
   allocate(u_prim(1:nvar,1:nx_max,1:ny_max))
   allocate(qm_x(1:nvar,1:nx_max,1:ny_max))
   allocate(qp_x(1:nvar,1:nx_max,1:ny_max))

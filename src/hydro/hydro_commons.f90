@@ -1,6 +1,7 @@
 module hydro_commons
   use precision
   real(dp), dimension(:,:,:), allocatable :: q
+  real(dp), dimension(:,:,:), allocatable :: qh      ! cell-centred half-step primitives (for source terms)
   real(dp), dimension(:,:,:),   allocatable :: u_prim
 
   real(dp), dimension(:,:),     allocatable :: cs

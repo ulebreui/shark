@@ -70,7 +70,7 @@ MODOBJ = precision.o phys_const.o hydro_commons.o setup_commons.o random.o dust_
 ifneq ($(NDUST),0)
 MODOBJ+=dust_commons.o 
 endif
-MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o grid.o solvers.o setup.o courant.o godunov.o boundaries.o write_output.o source_terms.o force_kicks.o
+MODOBJ+= commons.o parameters.o units.o boundary_types.o slope_limiters.o allocate_init.o grid.o solvers.o setup.o courant.o godunov.o boundaries.o write_output.o source_terms.o fargo.o force_kicks.o
 ifneq ($(NDUST),0)
 MODOBJ+= dust_init.o dust_drag.o dust_growth.o
 endif

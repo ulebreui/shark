@@ -16,13 +16,13 @@ subroutine Source_terms
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
 
-        u_prim(ivx,ix,iy) = u_prim(ivx,ix,iy) + dt*(q(iP,ix,iy)+q(irho,ix,iy)*q(ivy,ix,iy)**2)/radii(ix,iy)
-        u_prim(ivy,ix,iy) = u_prim(ivy,ix,iy) - dt*(q(irho,ix,iy)*q(ivy,ix,iy)*q(ivx,ix,iy))/radii(ix,iy)
+        u_prim(ivx,ix,iy) = u_prim(ivx,ix,iy) + dt*(qh(iP,ix,iy)+qh(irho,ix,iy)*qh(ivy,ix,iy)**2)/radii(ix,iy)
+        u_prim(ivy,ix,iy) = u_prim(ivy,ix,iy) - dt*(qh(irho,ix,iy)*qh(ivy,ix,iy)*qh(ivx,ix,iy))/radii(ix,iy)
 
 #if NDUST>0
          do idust = 1, ndust
-            u_prim(ivdx(idust),ix,iy)   = u_prim(ivdx(idust),ix,iy) + dt*(q(irhod(idust),ix,iy)*q(ivdy(idust),ix,iy)**2/radii(ix,iy))
-            u_prim(ivdy(idust),ix,iy)   = u_prim(ivdy(idust),ix,iy)-dt*(q(irhod(idust),ix,iy)*q(ivdy(idust),ix,iy)*q(ivdx(idust),ix,iy)/radii(ix,iy))
+            u_prim(ivdx(idust),ix,iy)   = u_prim(ivdx(idust),ix,iy) + dt*(qh(irhod(idust),ix,iy)*qh(ivdy(idust),ix,iy)**2/radii(ix,iy))
+            u_prim(ivdy(idust),ix,iy)   = u_prim(ivdy(idust),ix,iy)-dt*(qh(irhod(idust),ix,iy)*qh(ivdy(idust),ix,iy)*qh(ivdx(idust),ix,iy)/radii(ix,iy))
          end do
 #endif
 

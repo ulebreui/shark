@@ -73,7 +73,7 @@ subroutine dust_growth(verbose)
             do jdust = 1, ndust
                if (turbgrow  == 1)  dvij(idust,jdust)  = dv_ormel(alpha_turb,cs(ix,iy),tstop(idust,ix,iy),tstop(jdust,ix,iy),Reynolds,t_L)
                if (browgrow  == 1)  dvij(idust,jdust)  = dsqrt(dvij(idust,jdust)**2.&
-                  &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi*gamma/8.0d0),mdust(idust),mdust(jdust)))**2.)
+                  &+(dv_brownian(cs(ix,iy)*sqrt(mu_gas*mh/unit_m)/sqrt(pi/8.0d0),mdust(idust),mdust(jdust)))**2.)
                if (driftgrow == 1)  dvij(idust, jdust)  = dsqrt(dvij(idust, jdust)**2.&
                   &+(q(ivdx(idust),ix,iy)-q(ivdx(jdust),ix,iy))**2&
                   &+(q(ivdy(idust),ix,iy)-q(ivdy(jdust),ix,iy))**2&
@@ -94,6 +94,7 @@ subroutine dust_growth(verbose)
          end do         
       end do
    end do
+   !$omp end parallel do
 
 end subroutine dust_growth
 
@@ -106,15 +107,28 @@ subroutine dust_growth_stepinski
    use OMP_LIB
    implicit none
    logical :: verbose
-   integer :: idust, jdust, ipscal, ix,iy
+   integer  :: idust, jdust, ipscal, ix, iy, ipp
+   real(dp) :: unew, uold, ufrag
 
+   !$omp parallel do default(shared) schedule(static) private(ix,iy,idust,ipp,unew,uold,ufrag)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
-         ! Differential velocity loop
          do idust = 1, ndust
-           u_prim(idust_pscal(idust,1),ix,iy)=max(u_prim(idust_pscal(idust,1),ix,iy)*(1.0d0+dt/tcoag(ix,iy,idust)),q(irhod(idust),ix,iy)*sminstep/unit_l)
+            ipp   = idust_pscal(idust,1)
+            uold = u_prim(ipp,ix,iy)
+            unew = uold*(1.0d0 + dt/tcoag(ix,iy,idust))
+            if (sfrag(ix,iy,idust) > 0.0d0) then         ! cap at s_frag (no cap if not computed by the setup)
+               ufrag = u_prim(irhod(idust),ix,iy)*sfrag(ix,iy,idust)
+               if (tcoag(ix,iy,idust) > 0.0d0) then
+                  unew = min(unew, max(uold, ufrag))     ! growth cannot overshoot s_frag
+               else
+                  unew = max(unew, min(uold, ufrag))     ! fragmentation cannot undershoot s_frag
+               end if
+            end if
+            u_prim(ipp,ix,iy) = max(unew, u_prim(irhod(idust),ix,iy)*sminstep/unit_l)
          end do
-      end do
+      end do   
    end do
+   !$omp end parallel do
 
 end subroutine dust_growth_stepinski

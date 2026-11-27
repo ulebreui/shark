@@ -7,7 +7,7 @@ subroutine read_params
   character(len=70):: nmlfile,infile
   integer :: io
   logical::nml_ok
-  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma,force_kick,slope_type,smallr,smallc,smallP
+  namelist/grid_params/tend,rin,freq_out,static,CFL,nrestart,gamma,force_kick,slope_type,smallr,smallc,smallP,fargo
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
@@ -27,6 +27,12 @@ subroutine read_params
    print *, "Grid namelist reading  !"
    read(13,grid_params,IOSTAT=io)
    rewind(13)
+#if GEOM!=2
+   if (fargo) then
+      print *, 'FARGO is only available for GEOM=2'
+      stop
+   end if
+#endif
    if (io/=0) then
       write(*,*) 'Invalid line in the grid namelist'
       stop

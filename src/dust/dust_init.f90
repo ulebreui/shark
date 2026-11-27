@@ -100,6 +100,7 @@ subroutine allocate_dust
    allocate (mdust(1:ndust))
    allocate (tstop(1:ndust,1:nx_max, 1:ny_max))
    allocate (tcoag(1:nx_max, 1:ny_max, 1:ndust))
+   allocate (sfrag(1:nx_max, 1:ny_max, 1:ndust))
 
    allocate (force_dust_x(1:ndust,1:nx_max, 1:ny_max))
    allocate (force_dust_y(1:ndust,1:nx_max, 1:ny_max))
@@ -127,6 +128,7 @@ subroutine allocate_dust
 
    tstop = 0.0d0
    tcoag = 0.0d0
+   sfrag = 0.0d0
    force_dust_x = 0.0d0
    force_dust_y = 0.0d0
    force_dust_z = 0.0d0

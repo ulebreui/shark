@@ -77,7 +77,7 @@ module dust_commons
 
   real(dp), dimension(:,:,:), allocatable    :: tstop
   real(dp), dimension(:,:,:), allocatable    :: tcoag
-
+  real(dp), dimension(:,:,:), allocatable    :: sfrag   ! fragmentation-limited size (Stepinski growth)
   ! Indices of the variables
   integer,  dimension(:),  allocatable     :: irhod
   integer,  dimension(:),  allocatable     :: ivdx

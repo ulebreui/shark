@@ -14,91 +14,74 @@ subroutine courant
    use units
    implicit none
 
-   integer  :: idust, ix,iy,ivar
-   real(dp) :: vmax, dxx, force_max, vv,fratio,dt_loc
-   real(dp), dimension(1:nvar) :: qloc,floc
-   if (static) then
-      return
-   end if
+   integer  :: idust, ix, iy
+   real(dp) :: dr, dl, inv_dt, dt_loc, u, v, vb
+   real(dp), parameter :: tiny_v = 1d-30
+
+   if (static) return
 
    dt = 2d44
-   if (force_kick) then
-
-   !$omp parallel do default(shared) schedule(static) private(idust, ix,iy,vmax, dxx,force_max, vv, fratio,dt_loc,qloc,ivar) reduction(min: dt)
+   !$omp parallel do default(shared) schedule(static) &
+   !$omp private(idust,ix,iy,dr,dl,inv_dt,dt_loc,u,v,vb) reduction(min:dt)
    do iy = first_active_y, last_active_y
-      !$omp simd
       do ix = first_active, last_active
-         !Cas 1D
-         dxx  = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
-
-         do ivar =1,nvar
-            qloc(ivar) = q(ivar,ix,iy)
-         end do
-
-         vv   = sqrt((qloc(ivx))**2 + (qloc(ivy))**2 + (qloc(ivz))**2)
-
-         vmax = cs(ix,iy) + vv
-
+         dr = dx(ix,iy,1)                   ! radial (or x) width
+         dl = radii(ix,iy)*dx(ix,iy,2)      ! azimuthal (or y) width, radii=1 in Cartesian
+         vb = 0.0d0                         ! FARGO: azimuthal velocity handled by the shift
+#if GEOM==2
+         if (fargo) vb = vbar(ix)
+#endif
+         ! Unsplit CFL: sum of the inverse crossing times over the directions
+         u = abs(q(ivx,ix,iy)); v = abs(q(ivy,ix,iy) - vb)
+         inv_dt = (u + cs(ix,iy))/dr
+#if NY>1
+         inv_dt = inv_dt + (v + cs(ix,iy))/dl
+#endif
 #if NDUST>0
          do idust = 1, ndust
-            vmax = max(vmax, sqrt(qloc(ivdx(idust))**2 + qloc(ivdy(idust))**2 + qloc(ivdz(idust))**2))
+            u = abs(q(ivdx(idust),ix,iy)); v = abs(q(ivdy(idust),ix,iy) - vb)
+#if NY>1
+            inv_dt = max(inv_dt, u/dr + v/dl)
+#else
+            inv_dt = max(inv_dt, u/dr)
+#endif
          end do
 #endif
-         dt_loc = 2d44
-         !print(vmax)
-         dt_loc = min(dt_loc, CFL*dxx/abs(vmax))
+         dt_loc = CFL/inv_dt
 
-         
-         force_max = sqrt(force_x(ix,iy)**2 + force_y(ix,iy)**2 + force_z(ix,iy)**2)
-         fratio = max(force_max*dxx/vv**2, 1d-3)
-         dt_loc = min(dt_loc, CFL*dxx/vv*(sqrt(1.0d0 + 2.0d0*CFL*fratio) - 1.0d0)/fratio)
+         ! Force constraint, per direction: |v| dt + |F| dt^2/2 = CFL dx
+         if (force_kick) then
+            dt_loc = min(dt_loc, dt_force(abs(q(ivx,ix,iy)), abs(force_x(ix,iy)), CFL*dr))
+#if NY>1
+            dt_loc = min(dt_loc, dt_force(abs(q(ivy,ix,iy) - vb), abs(force_y(ix,iy)), CFL*dl))
+#endif
 #if NDUST>0
-         do idust = 1, ndust
+            do idust = 1, ndust
+               dt_loc = min(dt_loc, dt_force(abs(q(ivdx(idust),ix,iy)), abs(force_dust_x(idust,ix,iy)), CFL*dr))
+#if NY>1
+               dt_loc = min(dt_loc, dt_force(abs(q(ivdy(idust),ix,iy) - vb), abs(force_dust_y(idust,ix,iy)), CFL*dl))
+#endif
+            end do
+#endif
+         end if
 
-            force_max = sqrt(force_dust_x(idust,ix,iy)**2 + force_dust_y(idust,ix,iy)**2 + force_dust_z(idust,ix,iy)**2)
-            vv = sqrt(qloc(ivdx(idust))**2 + qloc(ivdy(idust))**2 + qloc(ivdz(idust))**2)
-            fratio = max(force_max*dxx/vv**2, 1d-3)
-            dt_loc = min(dt_loc, CFL*dxx/vv*(sqrt(1.0d0 + 2.0d0*CFL*fratio) - 1.0d0)/fratio)
-         end do
+#if GEOM==2
+         ! FARGO: shear between adjacent rings (Masset 2000)
+         if (fargo) dt_loc = min(dt_loc, CFL*dl/max(abs(vbar(ix+1)-vbar(ix)), abs(vbar(ix)-vbar(ix-1)), tiny_v))
 #endif
          dt = min(dt, dt_loc)
       end do
    end do
+   !$omp end parallel do
 
-   else
+   dt = min(dt, tend - time)   ! land exactly on tend
 
+contains
 
-
-   !$omp parallel do default(shared) schedule(static) private(idust, ix,iy,vmax, dxx,force_max, vv, fratio,dt_loc,qloc,ivar) reduction(min: dt)
-   do iy = first_active_y, last_active_y
-      !$omp simd
-      do ix = first_active, last_active
-         !Cas 1D
-         dxx  = min(dx(ix,iy,1), radii(ix,iy)*dx(ix,iy,2))
-
-         do ivar =1,nvar
-            qloc(ivar) = q(ivar,ix,iy)
-         end do
-
-         vv   = sqrt((qloc(ivx))**2 + (qloc(ivy))**2 + (qloc(ivz))**2)
-
-         vmax = cs(ix,iy) + vv
-
-#if NDUST>0
-         do idust = 1, ndust
-            vmax = max(vmax, sqrt(qloc(ivdx(idust))**2 + qloc(ivdy(idust))**2 + qloc(ivdz(idust))**2))
-         end do
-#endif
-         dt_loc = 2d44
-         !print(vmax)
-         dt_loc = min(dt_loc, CFL*dxx/abs(vmax))
-         dt = min(dt, dt_loc)
-      end do
-   end do
-
-
-   endif
-
+   ! Positive root of v*t + F*t**2/2 = L, written without cancellation (valid for F=0 or v=0)
+   pure real(dp) function dt_force(vel, force, L)
+      real(dp), intent(in) :: vel, force, L
+      dt_force = 2.0d0*L/max(vel + sqrt(vel**2 + 2.0d0*force*L), tiny_v)
+   end function dt_force
 
 end subroutine courant
-

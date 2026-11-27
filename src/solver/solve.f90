@@ -21,7 +21,9 @@ subroutine solve(verbose)
 
    call system_clock(t2, clock_rate, clock_max)
    call ctoprim
-
+#if GEOM==2
+   if (fargo) call compute_vbar
+#endif
    call system_clock(t3, clock_rate, clock_max)
 
     if (force_kick) call update_force_setup
@@ -50,7 +52,9 @@ subroutine solve(verbose)
 
    ! Source terms are computed and added to u_prim
    call source_terms
-
+#if GEOM==2
+   if (fargo) call fargo_shift
+#endif
    call system_clock(t8, clock_rate, clock_max)
 
 #if NDUST>0

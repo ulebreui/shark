@@ -158,7 +158,7 @@ subroutine gridinit(rmax_x, rmax_y)
 #if GRIDSPACE==1
       print *, 'You are using a log space cylindrical grid.'
       radii_left=0.0d0
-      zeta_r = (rmax_x/(inner_r))**(1.0d0/(nx+1)) 
+      zeta_r = (rmax_x/(inner_r))**(1.0d0/(nx)) 
       do ix = 1, nghost
          radii_left(ix) = inner_r/((zeta_r)**(nghost-ix+1))
       end do
@@ -212,7 +212,7 @@ subroutine gridinit(rmax_x, rmax_y)
          radii_left(ix)=DBLE(ix-1)*rcut/nxcut
       end do
 
-      zeta_r = (rmax_x/(rcut))**(1.0d0/(nx-nxcut+1)) 
+      zeta_r = (rmax_x/(rcut))**(1.0d0/(nx-nxcut)) 
       do ix = nxcut+1, nx_max+1
          radii_left(ix)= radii_left(ix-1)*zeta_r
       end do      

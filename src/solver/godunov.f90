@@ -13,7 +13,7 @@ subroutine predictor
    integer  :: ix,iy,idust
    integer  :: ivar, idim
    real(dp) :: barotrop, cs_eos, dx_loc,dx_l,dx_r,dy_l,dy_r
-   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar
+   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt
    integer  :: irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal
 
 
@@ -23,7 +23,7 @@ subroutine predictor
 
 
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal)
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
          radius_polar = radii(ix,iy)
@@ -65,7 +65,7 @@ subroutine predictor
          end if
 
 !Cartesian geometry
-#if GE0M==0
+#if GEOM==0
          sr0 = -u*drx - v*dry - (dux + dvy)*r_rho
          sp0 = -u*dpx - v*dpy - (dux + dvy)*gamma*p
          su0 = -u*dux - v*duy - (dpx)/r_rho
@@ -75,13 +75,18 @@ subroutine predictor
 
 !Disk (face-on) geometry
 #if GEOM==2
-         sr0 = -u*drx - v*dry - (dux + dvy)*r_rho - r_rho*u/radius_polar
-         sp0 = -u*dpx - v*dpy - (dux + dvy)*gamma*p - gamma*p*u/radius_polar
-         su0 = -u*dux - v*duy - (dpx)/r_rho + (v**2.)/radius_polar
-         sv0 = -u*dvx - v*dvy - (dpy)/r_rho - u*v/radius_polar
-         sw0 = -u*dwx - v*dwy
+         vt = v                          ! azimuthal transport velocity
+         if (fargo) vt = v - vbar(ix)    ! FARGO: residual velocity, vbar is handled by fargo_shift
+         sr0 = -u*drx - vt*dry - (dux + dvy)*r_rho - r_rho*u/radius_polar
+         sp0 = -u*dpx - vt*dpy - (dux + dvy)*gamma*p - gamma*p*u/radius_polar
+         su0 = -u*dux - vt*duy - (dpx)/r_rho + (v**2.)/radius_polar
+         sv0 = -u*dvx - vt*dvy - (dpy)/r_rho - u*v/radius_polar
+         sw0 = -u*dwx - vt*dwy
 #endif
-
+         qh(irho,ix,iy) = r_rho + half*dt*sr0
+         qh(ivx,ix,iy)  = u     + half*dt*su0
+         qh(ivy,ix,iy)  = v     + half*dt*sv0
+         qh(iP,ix,iy)   = max(p + half*dt*sp0, smallP)
 
          !direction x
          dx_loc = dx(ix,iy,1)
@@ -141,10 +146,14 @@ subroutine predictor
 
             end if
 
-            sr0 = -u*drx - v*dry - (dux + dvy)*r_rho
-            su0 = -u*dux - v*duy
-            sv0 = -u*dvx - v*dvy
-            sw0 = -u*dwx - v*dwy
+            vt = v                          ! azimuthal transport velocity of the dust
+#if GEOM==2
+            if (fargo) vt = v - vbar(ix)
+#endif
+            sr0 = -u*drx - vt*dry - (dux + dvy)*r_rho
+            su0 = -u*dux - vt*duy
+            sv0 = -u*dvx - vt*dvy
+            sw0 = -u*dwx - vt*dwy
 
 #if GEOM==2
             !Polar geometry source terms
@@ -153,6 +162,9 @@ subroutine predictor
             sv0 = sv0 - u*v/radius_polar
 #endif
 
+            qh(irho_spe,ix,iy) = r_rho + half*dt*sr0
+            qh(ivx_spe,ix,iy)  = u     + half*dt*su0
+            qh(ivy_spe,ix,iy)  = v     + half*dt*sv0
             !Direction x
             dx_loc = dx(ix,iy,1)
             qm_x(irho_spe,ix,iy) = r_rho + half*dt*sr0 + half*drx*dx_loc
@@ -182,7 +194,7 @@ subroutine predictor
                drx   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix-1,iy))/dx_l,(q(idust_pscal(idust,ipscal),ix+1,iy) - q(idust_pscal(idust,ipscal),ix,iy))/dx_r)
                dry   = slope_limit((q(idust_pscal(idust,ipscal),ix,iy) - q(idust_pscal(idust,ipscal),ix,iy-1))/dy_l,(q(idust_pscal(idust,ipscal),ix,iy+1) - q(idust_pscal(idust,ipscal),ix,iy))/dy_r)/radius_polar
 
-               sr0 = -u*drx - v*dry
+               sr0 = -u*drx - vt*dry
 #if GEOM==2
                !Polar geometry source terms
                ! sr0 = sr0 - r_rho*u/radius_polar
@@ -208,6 +220,7 @@ subroutine predictor
                qm_x(iP, ix,iy) = cs(ix,iy)**2*qm_x(irho, ix,iy)
                qp_y(iP, ix,iy) = cs(ix,iy)**2*qp_y(irho, ix,iy)
                qm_y(iP, ix,iy) = cs(ix,iy)**2*qm_y(irho, ix,iy)
+               qh(iP, ix,iy)   = cs(ix,iy)**2*qh(irho, ix,iy)
          end if
       end do
    end do
@@ -230,7 +243,7 @@ subroutine add_delta_u
    if (static) return
 
 
-   !$omp parallel default(shared) private(ivar, ix,iy, qleft, qright, flx, csr, csl,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy)
+   !$omp parallel default(shared) private(ivar, ix,iy, idust,qleft, qright, flx, csr, csl,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy)
    !$omp do  schedule(static) 
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
@@ -263,7 +276,18 @@ subroutine add_delta_u
             qright(ivar) = qp_y(ivar,ix,iy)
             flx(ivar)    = 0.0d0
          end do
-
+#if GEOM==2
+         if (fargo) then   ! FARGO: Riemann problem in the frame moving with vbar(ix)
+            qleft(ivy)  = qleft(ivy)  - vbar(ix)
+            qright(ivy) = qright(ivy) - vbar(ix)
+#if NDUST>0
+            do idust = 1, ndust
+               qleft(ivdy(idust))  = qleft(ivdy(idust))  - vbar(ix)
+               qright(ivdy(idust)) = qright(ivdy(idust)) - vbar(ix)
+            end do
+#endif            
+         end if
+#endif
          if (iso_cs == 1) then
             csl = cs(ix,iy - 1)
             csr = cs(ix,iy)
@@ -275,7 +299,17 @@ subroutine add_delta_u
          end if
 
          call solve_wrapper(qleft, qright, flx, csl, csr, 2)
-
+#if GEOM==2
+         if (fargo) then   ! back to the fixed frame (Galilean transform; order matters)
+            flx(iP)  = flx(iP)  + vbar(ix)*flx(ivy) + half*vbar(ix)**2*flx(irho)
+            flx(ivy) = flx(ivy) + vbar(ix)*flx(irho)
+#if NDUST>0
+            do idust = 1, ndust
+               flx(ivdy(idust)) = flx(ivdy(idust)) + vbar(ix)*flx(irhod(idust))
+            end do
+#endif
+         end if
+#endif
          do ivar = 1, nvar
             flux_y(ivar,ix,iy) = flx(ivar)
          end do
