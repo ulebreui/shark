@@ -10,7 +10,11 @@ subroutine setup
   real(dp), dimension(1:2*ndust+2) :: v_sol
   real (dp) :: A_nak, B_nak
   real(dp), dimension(1:ndust) :: ux_nak, uy_nak
-
+  real(dp)    :: kx_lin, ky_lin, ev, theta
+  complex(dp) :: ce
+  complex(dp), parameter :: rg_hat = ( 0.0000224d0,-0.0000212d0)
+  complex(dp), parameter :: ux_hat = ( 0.1691364d0, 0.0361606d0), uy_hat = (-0.1691355d0,-0.0361609d0), uz_hat = ( 0.1336710d0,-0.0591673d0)
+  complex(dp), parameter :: wx_hat = ( 0.1398594d0, 0.0373000d0), wy_hat = (-0.1639522d0,-0.0233330d0), wz_hat = ( 0.1305635d0,-0.0640552d0)
   !real(dp) :: ux_nak, uy_nak
 
   integer :: ind_ux,ind_uy,info
@@ -87,14 +91,12 @@ subroutine setup
 
   end do
 
-  vx_nak = 2.0d0*eta_stream*vkep*A_nak/(A_nak+B_nak)
-  vy_nak = -eta_stream*vkep*B_nak/(A_nak+B_nak)
+  vx_nak = -2.0d0*eta_stream*vkep*A_nak/(A_nak**2+B_nak**2) 
+  vy_nak = -eta_stream*vkep*B_nak/(A_nak**2+B_nak**2)
 
   do idust=1,ndust
-
-    ux_nak(idust) = (vx_nak+2.0d0*Stokes_species(idust)*vy_nak)/(1.0d0+Stokes_species(idust)**2)
-    uy_nak(idust) = (vy_nak-half*Stokes_species(idust)*vx_nak)/(1.0d0+Stokes_species(idust)**2)
-
+    ux_nak(idust) = (vx_nak-2.0d0*Stokes_species(idust)*vy_nak)/(1.0d0+Stokes_species(idust)**2)
+    uy_nak(idust) = (vy_nak+half*Stokes_species(idust)*vx_nak)/(1.0d0+Stokes_species(idust)**2)
   end do
 
   call gridinit(box_l,box_l_y)
@@ -140,6 +142,21 @@ subroutine setup
         q(ivdz(idust),ix,iy)     = perturbation+ q_shear*Omega_shear*xx + uy_nak(idust)
      end do
 #endif
+        if (lin_test == 1) then
+           theta = kx_lin*position(ix,iy,1) + ky_lin*position(ix,iy,2)
+           ce    = cmplx(cos(theta), sin(theta), kind=dp)
+           q(irho,ix,iy) = rho_init*(1.0d0 + lin_amp*real(rg_hat*ce))
+           q(ivx,ix,iy)  = vx_nak + lin_amp*ev*real(ux_hat*ce)
+           q(ivy,ix,iy)  =          lin_amp*ev*real(uy_hat*ce)
+           q(ivz,ix,iy)  = q_shear*Omega_shear*xx + vy_nak + lin_amp*ev*real(uz_hat*ce)
+           q(iP,ix,iy)   = q(irho,ix,iy)*cs0**2
+#if NDUST>0
+           q(irhod(1),ix,iy) = dust2gas_species(1)*rho_init*(1.0d0 + lin_amp*real(ce))
+           q(ivdx(1),ix,iy)  = ux_nak(1) + lin_amp*ev*real(wx_hat*ce)
+           q(ivdy(1),ix,iy)  =             lin_amp*ev*real(wy_hat*ce)
+           q(ivdz(1),ix,iy)  = q_shear*Omega_shear*xx + uy_nak(1) + lin_amp*ev*real(wz_hat*ce)
+#endif
+        end if
   end do
   cs=cs0
 

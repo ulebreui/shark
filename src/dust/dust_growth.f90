@@ -148,6 +148,7 @@ subroutine dust_growth_stepinski
          do idust = 1, ndust
            !Sticking
            u_prim(idust_pscal(idust,1),ix,iy)=u_prim(idust_pscal(idust,1),ix,iy)*(1.0d0+dt/tcoag(idust,ix,iy))
+           !print*, q(idust_pscal(idust,1),ix,iy)*dt/tcoag(idust,ix,iy)
            ! Fragmentation
            if (frag_step)  then
                u_prim(idust_pscal(idust,1),ix,iy) = min(u_prim(irhod(idust),ix,iy)*sfrag(idust,ix,iy), u_prim(idust_pscal(idust,1),ix,iy))
