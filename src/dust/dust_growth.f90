@@ -25,7 +25,12 @@ subroutine dust_growth(verbose)
    real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
    real(dp), dimension(1:ndust)           :: dust_dens
    real(dp):: dt_growth, time_growth
-
+   real(dp) :: H, rho_mid, St_d
+   real(dp), dimension(1:ndust)          :: Hd
+   real(dp), dimension(1:ndust, 1:ndust) :: vfac
+#if GEOM==2
+   real(dp), external :: gas_scale_height
+#endif
    ! Flags
    frag_test = 0
    turbgrow  = 0
@@ -58,14 +63,34 @@ subroutine dust_growth(verbose)
       redistribute_fragments(:, idust) = redistribute_fragments(:, idust)/sum(redistribute_fragments(:, idust))
    end do
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust, jdust, T, t_L, t_eta, Reynolds,dvij,dust_dens)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust, jdust, T, t_L, t_eta, Reynolds,dvij,dust_dens,H,rho_mid,St_d,Hd,vfac)
    do iy = first_active_y, last_active_y
       do ix = first_active, last_active
 
-         T        = (cs(ix,iy)*unit_v)**2*sqrt(mu_gas*mH/gamma/kB)
-         Reynolds = 6.2d7*dsqrt(q(irho,ix,iy)*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
-         t_L      = sqrt(3.*pi/(32.*grav*q(irho,ix,iy)*unit_d))/unit_t
+#if GEOM==2
+         ! Face-on disk: q(irho) is the surface density -> midplane density, large-eddy time 1/Omega,
+         ! vertically integrated kernel with the dust scale heights (Birnstiel et al. 2010)
+         H        = gas_scale_height(ix,iy)
+         rho_mid  = q(irho,ix,iy)/(sqrt(2.0d0*pi)*H)
+         t_L      = H/cs(ix,iy)
+         do idust = 1, ndust
+            St_d      = tstop(idust,ix,iy)/t_L
+            Hd(idust) = H*min(1.0d0, sqrt(alpha_turb/(min(St_d, 0.5d0)*(1.0d0 + St_d**2))))
+         end do
+         do idust = 1, ndust
+            do jdust = 1, ndust
+               vfac(idust,jdust) = 1.0d0/(sqrt(2.0d0*pi)*sqrt(Hd(idust)**2 + Hd(jdust)**2))
+            end do
+         end do
+#else
+         rho_mid  = q(irho,ix,iy)
+         t_L      = sqrt(3.*pi/(32.*grav*rho_mid*unit_d))/unit_t
+         vfac     = 1.0d0
+#endif
+         T        = (cs(ix,iy)*unit_v)**2*mu_gas*mH/kB
+         Reynolds = 6.2d7*dsqrt(rho_mid*unit_d/(mu_gas*mH)/1d5)*dsqrt(T/10.0d0)
          t_eta    = t_L/dsqrt(Reynolds)
+
 
          ! Differential velocity loop
          dvij = 0.0d0
@@ -87,7 +112,7 @@ subroutine dust_growth(verbose)
 
          call dust_growth_shark(dt,pi,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
          &eta,dvij,u_prim(irho,ix,iy),sticking_efficiency,eps_threshold,u_prim(irho,ix,iy)*dust_ratio_min,&
-         &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,kernel_type,frag_thre,vfrag/unit_v)
+         &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,kernel_type,frag_thre,vfrag/unit_v,vfac)       
          do idust = 1, ndust
             u_prim(irhod(idust),ix,iy) = dust_dens(idust)
          end do         

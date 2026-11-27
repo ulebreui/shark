@@ -1,22 +1,33 @@
-! Standard 1D validation tests (Cartesian, GEOM=0, NY=1). See setup_commons.f90 for the list.
+! Standard 1D validation tests (Cartesian, GEOM=0), along x (NY=1, direction=1) or y (NX=1, direction=2).
+! See setup_commons.f90 for the list.
 subroutine setup
   use parameters
   use commons
   use units
   implicit none
-  integer  :: ix, iy, idust
-  real(dp) :: xx, kw, sn, mg, md, pitot, vdn
+  integer  :: ix, iy, idust, iv, ivdd
+  real(dp) :: xx, kw, sn, mg, md, pitot, vdn, lbox
 
   call allocate_init
+#if GEOM==2
+  call gridinit(box_l, box_l_y, r_in_test)       ! polar grid (disk_kernel test)
+#else
   call gridinit(box_l, box_l_y)
+#endif
   allocate(uprim_condinit(1:nvar,1:nx_max,1:ny_max))
 
   q = 0.0d0
   iso_cs = 1
   if (trim(test_case) == 'sod') iso_cs = 0
-  kw = 2.0d0*pi*nwave/box_l
+  ! Direction of the 1D problem: coordinate, length and velocity component
+  lbox = box_l; iv = ivx
+  if (direction == 2) then
+     lbox = box_l_y; iv = ivy
+  end if
+  kw = 2.0d0*pi*nwave/lbox
 #if NDUST>0
-  if (trim(test_case) == 'smoluchowski') call distribution_dust   ! bins + exponential IC of the kernel tests
+  if (trim(test_case) == 'smoluchowski' .or. trim(test_case) == 'fragmentation' .or. trim(test_case) == 'disk_kernel') &
+       & call distribution_dust   ! bins + IC
 #endif
 
   ! Dusty shock: downstream state from mass and total momentum conservation
@@ -26,7 +37,7 @@ subroutine setup
 
   do iy = 1, ny_max
      do ix = 1, nx_max
-        xx = position(ix,iy,1)
+        xx = position(ix,iy,direction)
         sn = sin(kw*xx)
         cs(ix,iy) = cs0
         select case (trim(test_case))
@@ -39,20 +50,22 @@ subroutine setup
            cs(ix,iy) = sqrt(gamma*q(iP,ix,iy)/q(irho,ix,iy))
         case ('soundwave')                       ! right-moving wave
            q(irho,ix,iy) = 1.0d0 + amp*sn
-           q(ivx,ix,iy)  = cs0*amp*sn
+           q(iv,ix,iy)   = cs0*amp*sn
         case ('dustybox')
            q(irho,ix,iy) = 1.0d0
-           q(ivx,ix,iy)  = vg0
+           q(iv,ix,iy)   = vg0
         case ('dustywave')
            q(irho,ix,iy) = 1.0d0 + amp*sn
-           q(ivx,ix,iy)  = cs0*amp*sn
-        case ('smoluchowski')                    ! uniform gas at rest
+           q(iv,ix,iy)   = cs0*amp*sn
+        case ('smoluchowski', 'disk_kernel', 'pscal_advect')   ! uniform gas at rest
            q(irho,ix,iy) = 1.0d0
+        case ('fragmentation')                   ! uniform gas at rest (cgs units)
+           q(irho,ix,iy) = rho_frag
         case ('dustyshock')
            if (xx < x_disc) then
-              q(irho,ix,iy) = 1.0d0;  q(ivx,ix,iy) = v_shock
+              q(irho,ix,iy) = 1.0d0;  q(iv,ix,iy) = v_shock
            else
-              q(irho,ix,iy) = mg/vdn; q(ivx,ix,iy) = vdn
+              q(irho,ix,iy) = mg/vdn; q(iv,ix,iy) = vdn
            end if
         case default
            print *, 'Unknown test_case: ', trim(test_case)
@@ -62,25 +75,37 @@ subroutine setup
 
 #if NDUST>0
         do idust = 1, ndust
+           ivdd = ivdx(idust)
+           if (direction == 2) ivdd = ivdy(idust)
            select case (trim(test_case))
            case ('dustybox')
               q(irhod(idust),ix,iy) = eps_dust(idust)
-              q(ivdx(idust),ix,iy)  = vd0(idust)
+              q(ivdd,ix,iy)         = vd0(idust)
            case ('dustywave')
               q(irhod(idust),ix,iy) = eps_dust(idust)*(1.0d0 + amp*sn)
-              q(ivdx(idust),ix,iy)  = cs0*amp*sn
-           case ('smoluchowski')                 ! n(m,0) = exp(-m): rho_i = m_i exp(-m_i) dm_i
+              q(ivdd,ix,iy)         = cs0*amp*sn
+           case ('smoluchowski', 'disk_kernel')  ! n(m,0) = exp(-m): rho_i = m_i exp(-m_i) dm_i
               q(irhod(idust),ix,iy) = max(epsilondust(1,idust), dust_ratio_min*q(irho,ix,iy))   ! floor: empty bins would give 1/0 in ctoprim
+           case ('pscal_advect')                 ! dust advected at constant velocity vd0, no drag
+              q(irhod(idust),ix,iy) = eps_dust(idust)*(1.0d0 + 0.5d0*sn)
+              q(ivdd,ix,iy)         = vd0(idust)
+           case ('fragmentation')                ! MRN between scutmin and scut (dust_distribution = 'mrn')
+              q(irhod(idust),ix,iy) = epsilondust(1,idust)*q(irho,ix,iy)
            case ('dustyshock')
               if (xx < x_disc) then
-                 q(irhod(idust),ix,iy) = eps_shock;  q(ivdx(idust),ix,iy) = v_shock
+                 q(irhod(idust),ix,iy) = eps_shock;  q(ivdd,ix,iy) = v_shock
               else
-                 q(irhod(idust),ix,iy) = md/vdn;     q(ivdx(idust),ix,iy) = vdn
+                 q(irhod(idust),ix,iy) = md/vdn;     q(ivdd,ix,iy) = vdn
               end if
            case default
               print *, 'test_case ', trim(test_case), ' must be compiled with NDUST=0'
               stop
            end select
+#if NDUSTPSCAL>0
+           ! Passive scalar (first one): profile for pscal_advect, uniform 1 otherwise (must stay exactly 1)
+           q(idust_pscal(idust,1),ix,iy) = 1.0d0
+           if (trim(test_case) == 'pscal_advect') q(idust_pscal(idust,1),ix,iy) = 1.0d0 + ps_amp*sin(kw*xx + 1.0d0)
+#endif
         end do
 #endif
      end do
@@ -142,7 +167,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70) :: nmlfile
   integer :: io, ilun
   namelist/setup_params/test_case,box_l,box_l_y,cs0,amp,nwave,sod_rho_l,sod_p_l,sod_rho_r,sod_p_r,x_disc, &
-       & eps_dust,ts_dust,vd0,vg0,v_shock,eps_shock,K_drag
+       & eps_dust,ts_dust,vd0,vg0,v_shock,eps_shock,K_drag,rho_frag,h_test,r_in_test,direction,ps_amp
   read(13,setup_params,IOSTAT=io)
   rewind(13)
   if (io /= 0) then
@@ -241,6 +266,10 @@ subroutine compute_tstop
         do idust = 1, ndust
            if (trim(test_case) == 'dustyshock') then
               tstop(idust,ix,iy) = max(q(irhod(idust),ix,iy), smallr)/K_drag
+           else if (trim(test_case) == 'disk_kernel') then       ! t_s proportional to size
+              tstop(idust,ix,iy) = ts_dust(1)*sdust(idust)/sdust(1)
+           else if (trim(test_case) == 'fragmentation') then     ! Epstein, isothermal (cgs units)
+              tstop(idust,ix,iy) = sqrt(pi/8.0d0)*rhograin*sdust(idust)/(q(irho,ix,iy)*cs(ix,iy))
            else
               tstop(idust,ix,iy) = ts_dust(idust)
            end if
@@ -250,3 +279,14 @@ subroutine compute_tstop
   !$omp end parallel do
 end subroutine compute_tstop
 #endif
+
+
+! Gas scale height, used by the vertically integrated coagulation kernel (GEOM=2)
+function gas_scale_height(ix,iy)
+  use parameters
+  use commons
+  implicit none
+  integer  :: ix, iy
+  real(dp) :: gas_scale_height
+  gas_scale_height = h_test
+end function gas_scale_height

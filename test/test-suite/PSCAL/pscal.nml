@@ -1,0 +1,27 @@
+!Dust passive scalar advected with the dust at constant velocity (one crossing), no drag
+!Compile with SETUP=tests GEOM=0 NDUST=1 NDUSTPSCAL=1, NX=N NY=1 (direction=1) or NX=1 NY=N (direction=2)
+
+&GRID_PARAMS
+freq_out   = 1000000
+CFL        = 0.8
+tend       = 1.0
+gamma      = 1.4
+force_kick = .false.
+slope_type = 3
+/
+
+&SETUP_PARAMS
+test_case = 'pscal_advect'
+box_l     = 1.0
+box_l_y   = 1.0
+cs0       = 1.0
+nwave     = 1.0
+eps_dust  = 1.0
+vd0       = 1.0
+ps_amp    = 0.5
+/
+
+&DUST_PARAMS
+drag               = .false.
+dust_back_reaction = .false.
+/

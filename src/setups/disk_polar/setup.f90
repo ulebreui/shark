@@ -484,3 +484,13 @@ subroutine write_planet_torques
   end do
   close(31)
 end subroutine write_planet_torques
+
+! Gas scale height (used by the vertically integrated coagulation kernel)
+function gas_scale_height(ix,iy)
+  use parameters
+  use commons
+  implicit none
+  integer  :: ix, iy
+  real(dp) :: gas_scale_height
+  gas_scale_height = HoverR*radii(ix,iy)
+end function gas_scale_height

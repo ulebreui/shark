@@ -9,10 +9,15 @@ module setup_parameters
   !   'dustywave'  linear gas+dust acoustic wave (Laibe & Price 2011)
   !   'dustyshock' stationary isothermal dusty shock (Loren-Aguilar & Bate 2014), constant drag coefficient
   !   'smoluchowski' coagulation with constant/additive kernel (kernel_type in DUST_PARAMS), uniform medium
+  !   'fragmentation' coagulation + fragmentation, turbulent dv, Epstein drag (cgs units)
+  !   'disk_kernel'  constant kernel in a face-on disk cell (GEOM=2): vertically integrated kernel
+  !   'pscal_advect' dust passive scalar advected with the dust at constant velocity (NDUSTPSCAL>0)
 
   real(dp), parameter :: mu_gas = 2.31d0      ! needed by the dust growth module
 
   character(len=20) :: test_case = 'sod'
+  integer  :: direction = 1                   ! 1D problem along x (1, NY=1) or y (2, NX=1)
+  real(dp) :: ps_amp    = 0.5d0               ! pscal_advect: amplitude of the scalar profile
   real(dp) :: box_l   = 1.0d0                 ! domain length
   real(dp) :: box_l_y = 1.0d0                 ! (unused in 1D)
   real(dp) :: cs0     = 1.0d0                 ! isothermal sound speed
@@ -33,6 +38,13 @@ module setup_parameters
   real(dp) :: v_shock   = 2.0d0
   real(dp) :: eps_shock = 1.0d0
   real(dp) :: K_drag    = 1.0d0
+
+  ! Fragmentation test: gas density (g/cm^3)
+  real(dp) :: rho_frag  = 1.0d-8
+
+  ! Disk kernel test (GEOM=2): gas scale height and inner radius of the polar grid
+  real(dp) :: h_test    = 1.0d0
+  real(dp) :: r_in_test = 10.0d0
 
   real(dp), dimension(:,:,:), allocatable :: uprim_condinit   ! initial state (fixed boundaries)
 

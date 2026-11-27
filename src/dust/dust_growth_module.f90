@@ -3,7 +3,7 @@ module smoluchowski
 
 	subroutine dust_growth_shark(dt,K_0,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
 	   &eta,dvij,rho_gas,sticking_efficiency,eps_threshold,rhodust_min,&
-	   &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,kernel,frag_model,vfrag_code)
+	   &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,kernel,frag_model,vfrag_code,vfac)
 
 	   ! Smoluchowski coagulation/fragmentation in one cell (explicit, sub-cycled).
 	   ! frag_model 0 (energy):   a fraction f_frag(Ecol/Ebr) of the colliding mass is fragmented, the rest coagulates.
@@ -21,6 +21,7 @@ module smoluchowski
 	   real(dp), dimension(1:ndust)           :: dust_dens,sdust,mdust
 	   real(dp), dimension(1:ndust,1:ndust)   :: dvij
 	   real(dp), dimension(1:ndust, 1:ndust)  :: redistribute_fragments
+	   real(dp), dimension(1:ndust, 1:ndust)  :: vfac   ! vertical integration of the kernel (GEOM=2), 1 otherwise
 
 	   real(dp) :: f_frag,p_frag,p_coag,sticking_efficiency,eps_threshold_frag,eps_threshold
 
@@ -31,7 +32,7 @@ module smoluchowski
 	   real(dp) :: vfrag_code      ! fragmentation velocity (code units, used if frag_model = 1)
 	   real(dp) :: Ebr_mono,m_mono,s1,s2,m1,m2
 	   real(dp) :: epsilon_mass,rhodust_min,xfrag
-	   real(dp) :: m_coag,frac_coag,frac_frag,m_frag_max
+	   real(dp) :: m_coag,frac_coag,frac_frag,m_frag_max,rho_ref
 
 	   real(dp) , dimension(1:ndust) :: drhodt
 	   real(dp) :: dndt
@@ -59,6 +60,7 @@ module smoluchowski
 	            case default
 	               dndt = K_0*(s1+s2)**2.*dvij(idust, jdust)*dust_dens(idust)*dust_dens(jdust)/m1/m2
 	            end select
+	            dndt = dndt*vfac(idust, jdust)     ! vertical integration (GEOM=2), 1 otherwise
 	            if (idust == jdust) dndt = dndt/2.0d0
 
 	            ! Outcome of the collision
@@ -131,10 +133,13 @@ module smoluchowski
 	         end do
 	      end do
 
+	      ! Sub-step: each bin may change by at most CFL_growth of max(rho_i, 1e-6 rho_dust,total).
+	      ! The floor avoids vanishing sub-steps when mass flows into (nearly) empty bins.
+	      rho_ref   = 1.0d-6*sum(dust_dens)
 	      dt_growth = 1d32
 	      do idust = 1, ndust
-	         if (abs(drhodt(idust)) .ne. 0.0d0) then
-	            dt_growth = min(dt_growth, dust_dens(idust)/abs(drhodt(idust))*CFL_growth)
+	         if (drhodt(idust) /= 0.0d0) then
+	            dt_growth = min(dt_growth, max(dust_dens(idust), rho_ref)/abs(drhodt(idust))*CFL_growth)
 	         end if
 	      end do
 	      dt_growth=min(dt_growth,dt-time_growth)

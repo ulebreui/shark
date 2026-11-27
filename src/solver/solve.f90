@@ -152,7 +152,7 @@ subroutine ctoprim
          if (iso_cs == 1 ) then 
             qloc(iP,ix) = uloc(irho)*cs(ix,iy)**2
          else
-            ekin        = half*uloc(irho)*((uloc(ivx)*onerho)**2.0) + half*uloc(irho)*((uloc(ivy))*onerho**2.0) + half*uloc(irho)*((uloc(ivz))*onerho**2.0)
+            ekin        = half*(uloc(ivx)**2 + uloc(ivy)**2 + uloc(ivz)**2)*onerho
             qloc(iP,ix) = max((gamma - 1.0d0)*(uloc(iP) - ekin), smallp) 
          endif
 
