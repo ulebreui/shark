@@ -22,5 +22,6 @@ module setup_parameters
   real(dp) :: theta_dust  = 1d-11 ! Ratio between disk density and dust grain density
 
   logical  :: stokes_distrib = .false. ! Use a MRN like distribution
-
+  integer  :: lin_test = 0      ! 1 = linA eigenmode of Youdin & Johansen (2007), without noise
+  real(dp) :: lin_amp  = 1d-6   ! amplitude of the eigenmode
 end module setup_parameters
