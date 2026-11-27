@@ -87,8 +87,7 @@ subroutine dust_growth(verbose)
 
          call dust_growth_shark(dt,pi,CFL_growth,dust_dens,ndust,sdust,mdust,massmin,&
          &eta,dvij,u_prim(irho,ix,iy),sticking_efficiency,eps_threshold,u_prim(irho,ix,iy)*dust_ratio_min,&
-         &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag)
-
+         &frag_test,Ebr_mono,m_mono,redistribute_fragments,eps_threshold_frag,kernel_type,frag_thre,vfrag/unit_v)
          do idust = 1, ndust
             u_prim(irhod(idust),ix,iy) = dust_dens(idust)
          end do         

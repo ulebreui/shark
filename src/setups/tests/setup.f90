@@ -15,6 +15,9 @@ subroutine setup
   iso_cs = 1
   if (trim(test_case) == 'sod') iso_cs = 0
   kw = 2.0d0*pi*nwave/box_l
+#if NDUST>0
+  if (trim(test_case) == 'smoluchowski') call distribution_dust   ! bins + exponential IC of the kernel tests
+#endif
 
   ! Dusty shock: downstream state from mass and total momentum conservation
   mg  = v_shock; md = eps_shock*v_shock
@@ -43,6 +46,8 @@ subroutine setup
         case ('dustywave')
            q(irho,ix,iy) = 1.0d0 + amp*sn
            q(ivx,ix,iy)  = cs0*amp*sn
+        case ('smoluchowski')                    ! uniform gas at rest
+           q(irho,ix,iy) = 1.0d0
         case ('dustyshock')
            if (xx < x_disc) then
               q(irho,ix,iy) = 1.0d0;  q(ivx,ix,iy) = v_shock
@@ -64,6 +69,8 @@ subroutine setup
            case ('dustywave')
               q(irhod(idust),ix,iy) = eps_dust(idust)*(1.0d0 + amp*sn)
               q(ivdx(idust),ix,iy)  = cs0*amp*sn
+           case ('smoluchowski')                 ! n(m,0) = exp(-m): rho_i = m_i exp(-m_i) dm_i
+              q(irhod(idust),ix,iy) = max(epsilondust(1,idust), dust_ratio_min*q(irho,ix,iy))   ! floor: empty bins would give 1/0 in ctoprim
            case ('dustyshock')
               if (xx < x_disc) then
                  q(irhod(idust),ix,iy) = eps_shock;  q(ivdx(idust),ix,iy) = v_shock

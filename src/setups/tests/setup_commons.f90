@@ -8,6 +8,7 @@ module setup_parameters
   !   'dustybox'   uniform drag relaxation (Laibe & Price 2011)
   !   'dustywave'  linear gas+dust acoustic wave (Laibe & Price 2011)
   !   'dustyshock' stationary isothermal dusty shock (Loren-Aguilar & Bate 2014), constant drag coefficient
+  !   'smoluchowski' coagulation with constant/additive kernel (kernel_type in DUST_PARAMS), uniform medium
 
   real(dp), parameter :: mu_gas = 2.31d0      ! needed by the dust growth module
 

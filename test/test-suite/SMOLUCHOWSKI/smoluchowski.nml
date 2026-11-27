@@ -1,0 +1,31 @@
+!Smoluchowski coagulation, constant (kernel_type=1) or additive (kernel_type=2) kernel, n(m,0) = exp(-m)
+!Compile with SETUP=tests GEOM=0 NX=1 NY=1 NDUST=40. dt = CFL*box_l/cs0 (growth is sub-cycled inside)
+
+&GRID_PARAMS
+freq_out   = 1
+CFL        = 0.8
+tend       = 100.0
+gamma      = 1.4
+force_kick = .false.
+slope_type = 1
+/
+
+&SETUP_PARAMS
+test_case = 'smoluchowski'
+box_l     = 1.0
+box_l_y   = 1.0
+cs0       = 1.0
+/
+
+&DUST_PARAMS
+growth             = .true.
+kernel_type        = 1
+smin               = 0.0464158883
+smax               = 100.0
+eps_threshold      = 0.0
+eps_threshold_frag = 0.0
+CFL_growth         = 0.1
+drag               = .false.
+dust_back_reaction = .false.
+ice_mantle         = 0.0
+/
