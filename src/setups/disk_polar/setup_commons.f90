@@ -16,6 +16,7 @@ module setup_parameters
   real(dp) :: HoverR      = 0.1   ! H/R
   real(dp) :: smooth_r    = 1.0  ! softening lenght
   real(dp) :: alpha_visc  = 1d-2
+  real(dp) :: perturbation = 0.0d0
   logical  :: accretion   = .false.
   logical  :: test_planet_disk = .false.
   real(dp) :: M_acc       = 1d-7! Solar mass per yer

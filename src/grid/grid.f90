@@ -269,3 +269,44 @@ subroutine gridinit(rmax_x, rmax_y)
 
 #endif
 
+#if GEOM==3
+   ! Spherical (r,theta) axisymmetric grid, log in r, uniform in theta
+   ! radii = r (cell centre), phi = theta (cell centre), dx(:,:,2) = dtheta
+   ! surf(:,:,1) = area of the inner r-face, surf(:,:,2) = area of the lower theta-face (per radian in phi)
+   subroutine gridinit_sph(rin_g, rout_g, thmin_g, thmax_g)
+      use parameters
+      use commons
+      implicit none
+      real(dp), intent(in) :: rin_g, rout_g, thmin_g, thmax_g
+      real(dp), dimension(1:nx_max+1) :: re      ! r edges
+      real(dp), dimension(1:ny_max+1) :: te      ! theta edges
+      real(dp) :: zeta, dth
+      integer  :: ix, iy
+
+      print *, 'You are using a spherical (r,theta) grid, log in r.'
+
+      zeta = (rout_g/rin_g)**(1.0d0/dble(nx))
+      do ix = 1, nx_max+1
+         re(ix) = rin_g*zeta**(ix - first_active)          ! re(first_active)=rin_g, re(last_active+1)=rout_g
+      end do
+      dth = (thmax_g - thmin_g)/dble(ny)
+      do iy = 1, ny_max+1
+         te(iy) = thmin_g + dble(iy - first_active_y)*dth  ! te(first_active_y)=thmin_g
+      end do
+
+      do iy = 1, ny_max
+         do ix = 1, nx_max
+            radii(ix,iy) = half*(re(ix) + re(ix+1))
+            phi(ix,iy)   = half*(te(iy) + te(iy+1))
+            dx(ix,iy,1)  = re(ix+1) - re(ix)
+            dx(ix,iy,2)  = dth
+            surf(ix,iy,1) = re(ix)**2*(cos(te(iy)) - cos(te(iy+1)))
+            surf(ix,iy,2) = half*(re(ix+1)**2 - re(ix)**2)*sin(te(iy))
+            vol(ix,iy)    = (re(ix+1)**3 - re(ix)**3)/3.0d0*(cos(te(iy)) - cos(te(iy+1)))
+            position(ix,iy,1) = radii(ix,iy)*sin(phi(ix,iy))   ! cylindrical R
+            position(ix,iy,2) = radii(ix,iy)*cos(phi(ix,iy))   ! z
+         end do
+      end do
+   end subroutine gridinit_sph
+#endif
+

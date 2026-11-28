@@ -1,0 +1,44 @@
+!Coagulation + fragmentation (Maxwellian fragmentation probability, frag_thre=1), turbulent dv (Ormel), cgs units
+!Compile with SETUP=tests GEOM=0 NX=1 NY=1 NDUST=40. dt = CFL*box_l/cs0 (growth is sub-cycled inside)
+
+&GRID_PARAMS
+freq_out   = 1
+CFL        = 0.8
+tend       = 1d9
+gamma      = 1.4
+force_kick = .false.
+slope_type = 1
+/
+
+&SETUP_PARAMS
+test_case = 'fragmentation'
+box_l     = 1.25d12
+box_l_y   = 1.25d12
+cs0       = 1d5
+rho_frag  = 1d-8
+/
+
+&DUST_PARAMS
+growth             = .true.
+fragmentation      = .true.
+frag_thre          = 1
+turb_in_growth     = .true.
+alpha_turb         = 1d-2
+vfrag              = 100.0
+kernel_type        = 0
+dust_distribution  = 'mrn'
+smin               = 1d-5
+smax               = 10.0
+scutmin            = 1d-5
+scut               = 1d-4
+mrn                = 3.5
+slope_mono         = 3.5
+rhograin           = 2.7
+dust2gas           = 0.01
+ice_mantle         = 0.0
+eps_threshold      = 1d-8
+eps_threshold_frag = 1d-8
+CFL_growth         = 0.1
+drag               = .false.
+dust_back_reaction = .false.
+/

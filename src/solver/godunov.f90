@@ -13,7 +13,7 @@ subroutine predictor
    integer  :: ix,iy,idust
    integer  :: ivar, idim
    real(dp) :: barotrop, cs_eos, dx_loc,dx_l,dx_r,dy_l,dy_r
-   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt
+   real(dp) :: drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt,cot_th
    integer  :: irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal
 
 
@@ -23,7 +23,7 @@ subroutine predictor
 
 
 
-   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal)
+   !$omp parallel do default(shared) schedule(RUNTIME) private(ix,iy,idust,ivar, idim,dx_l,dx_r,dy_l,dy_r, dx_loc,drx,dry,dpx,dpy,dux,duy,dvx,dvy,dwx,dwy,r_rho,u,v,w,p,sr0,sp0,su0,sv0,sw0,radius_polar,vt,irho_spe, ivx_spe, ivy_spe, ivz_spe, ipscal,cot_th)
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
          radius_polar = radii(ix,iy)
@@ -83,9 +83,18 @@ subroutine predictor
          sv0 = -u*dvx - vt*dvy - (dpy)/r_rho - u*v/radius_polar
          sw0 = -u*dwx - vt*dwy
 #endif
+#if GEOM==3
+         cot_th = cos(phi(ix,iy))/sin(phi(ix,iy))
+         sr0 = -u*drx - v*dry - (dux + dvy)*r_rho       - r_rho*(2.0d0*u + v*cot_th)/radius_polar
+         sp0 = -u*dpx - v*dpy - (dux + dvy)*gamma*p     - gamma*p*(2.0d0*u + v*cot_th)/radius_polar
+         su0 = -u*dux - v*duy - (dpx)/r_rho + (v**2 + w**2)/radius_polar
+         sv0 = -u*dvx - v*dvy - (dpy)/r_rho + (w**2*cot_th - u*v)/radius_polar
+         sw0 = -u*dwx - v*dwy                - w*(u + v*cot_th)/radius_polar
+#endif
          qh(irho,ix,iy) = r_rho + half*dt*sr0
          qh(ivx,ix,iy)  = u     + half*dt*su0
          qh(ivy,ix,iy)  = v     + half*dt*sv0
+         qh(ivz,ix,iy)  = w     + half*dt*sw0
          qh(iP,ix,iy)   = max(p + half*dt*sp0, smallP)
 
          !direction x
@@ -161,10 +170,18 @@ subroutine predictor
             su0 = su0 + v**2./radius_polar
             sv0 = sv0 - u*v/radius_polar
 #endif
-
+#if GEOM==3
+            cot_th = cos(phi(ix,iy))/sin(phi(ix,iy))
+            sr0 = sr0 - r_rho*(2.0d0*u + v*cot_th)/radius_polar
+            su0 = su0 + (v**2 + w**2)/radius_polar
+            sv0 = sv0 + (w**2*cot_th - u*v)/radius_polar
+            sw0 = sw0 - w*(u + v*cot_th)/radius_polar
+#endif
             qh(irho_spe,ix,iy) = r_rho + half*dt*sr0
             qh(ivx_spe,ix,iy)  = u     + half*dt*su0
             qh(ivy_spe,ix,iy)  = v     + half*dt*sv0
+            qh(ivz_spe,ix,iy)  = w     + half*dt*sw0
+            
             !Direction x
             dx_loc = dx(ix,iy,1)
             qm_x(irho_spe,ix,iy) = r_rho + half*dt*sr0 + half*drx*dx_loc
@@ -239,12 +256,25 @@ subroutine add_delta_u
 
    real(dp), dimension(1:nvar) :: qleft, qright, flx
    real(dp) :: csr, csl, barotrop, cs_eos,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy
-
+   real(dp) :: lev
+   real(dp) :: Rfx, Rfy
+#if GEOM==3
+   logical, dimension(1:nvar) :: is_ang
+#endif
    if (static) return
 
+#if GEOM==3
+   is_ang      = .false.
+   is_ang(ivz) = .true.
+#if NDUST>0
+   do idust = 1, ndust
+      is_ang(ivdz(idust)) = .true.
+   end do
+#endif
+#endif
 
-   !$omp parallel default(shared) private(ivar, ix,iy, idust,qleft, qright, flx, csr, csl,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy)
-   !$omp do  schedule(static) 
+!$omp parallel default(shared) private(ivar, ix,iy, idust, qleft, qright, flx, csr, csl,vol_loc,s_plusx,s_minusx,s_plusy,s_minusy,lev,Rfx,Rfy)
+!$omp do  schedule(static) 
    do iy = 2, ny_max - 1
       do ix = 2, nx_max - 1
 
@@ -320,6 +350,26 @@ subroutine add_delta_u
 
    !$omp barrier
 
+#if GEOM==3
+   !$omp do schedule(static)
+   do iy = first_active_y, last_active_y + 1
+      do ix = first_active, last_active + 1
+         Rfx = (radii(ix,iy) - half*dx(ix,iy,1))*sin(phi(ix,iy))      ! inner r-face
+         Rfy = radii(ix,iy)*sin(phi(ix,iy) - half*dx(ix,iy,2))         ! lower theta-face
+         flux_x(ivz,ix,iy) = flux_x(ivz,ix,iy)*Rfx
+         flux_y(ivz,ix,iy) = flux_y(ivz,ix,iy)*Rfy
+#if NDUST>0
+         do idust = 1, ndust
+            flux_x(ivdz(idust),ix,iy) = flux_x(ivdz(idust),ix,iy)*Rfx
+            flux_y(ivdz(idust),ix,iy) = flux_y(ivdz(idust),ix,iy)*Rfy
+         end do
+#endif
+      end do
+   end do
+   !$omp end do
+   !$omp barrier
+#endif
+
    !$omp do schedule(static)
       do iy = first_active_y, last_active_y
          do ix = first_active, last_active
@@ -330,9 +380,13 @@ subroutine add_delta_u
             s_minusy=surf(ix,iy,2)
 
                do ivar = 1, nvar
-                  u_prim(ivar,ix,iy)=u_prim(ivar,ix,iy) + (flux_x(ivar,ix,iy)*s_minusx-flux_x(ivar,ix+1,iy) *s_plusx)  /vol_loc*dt&
-&                             + (flux_y(ivar,ix,iy)*s_minusy - flux_y(ivar,ix,iy + 1)*s_plusy)/vol_loc*dt
-         end do
+                  lev = 1.0d0
+#if GEOM==3
+                  if (is_ang(ivar)) lev = radii(ix,iy)*sin(phi(ix,iy))
+#endif
+                  u_prim(ivar,ix,iy) = ( u_prim(ivar,ix,iy)*lev + (flux_x(ivar,ix,iy)*s_minusx - flux_x(ivar,ix+1,iy)*s_plusx)/vol_loc*dt &
+&                                    + (flux_y(ivar,ix,iy)*s_minusy - flux_y(ivar,ix,iy+1)*s_plusy)/vol_loc*dt )/lev
+               end do
       end do
    end do
    !$omp end parallel

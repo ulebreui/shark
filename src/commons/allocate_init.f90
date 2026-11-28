@@ -27,9 +27,11 @@ subroutine allocate_init
     end do
   end do
 
-#if GEOM==2
+#if GEOM>=2
     allocate(phi(1:nx_max,1:ny_max))
     phi = 1.0d0
+#endif
+#if GEOM==2
     allocate(SG_Kernel(1:nx,1:ny,1:64))
     SG_Kernel=0.0d0
     allocate(vbar(1:nx_max)); vbar = 0.0d0

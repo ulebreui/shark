@@ -321,7 +321,7 @@ end subroutine setup_inloop
    !$omp parallel do default(shared) schedule(RUNTIME) private(idust, ix,iy)
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
-        force_x(ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivz,ix,iy) -  2.0d0*rad0*Omega_shear*eta_stream
+        force_x(ix,iy)  = 2.0d0*q_shear*Omega_shear**2.*(position(ix,iy,1)-half*box_l) -2.0d0*Omega_shear*q(ivz,ix,iy) - 2.0d0*rad0*Omega_shear**2*eta_stream
         force_y(ix,iy)  = 0.0d0
         force_z(ix,iy)  = 2.0d0*Omega_shear*q(ivx,ix,iy)
 #if NDUST>0

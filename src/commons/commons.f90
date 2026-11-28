@@ -12,11 +12,14 @@ module commons
   real(dp), dimension(:,:,:), allocatable :: position
   real(dp), dimension(:,:), allocatable   :: radii
 
-#if GEOM==2
-  ! Disk face-on geometry /!\ Phi is the azimuthal angle here it ranges from 0 to 2pi
+
+#if GEOM>=2
+  ! GEOM=2: azimuthal angle (0..2pi), GEOM=3: polar angle theta
   real(dp), dimension(:,:), allocatable     :: phi
-  real(dp), dimension(:,:,:,:), allocatable :: distance
   real(dp), dimension(:), allocatable       :: vbar   ! FARGO mean azimuthal velocity per ring
+#endif
+#if GEOM==2
+  real(dp), dimension(:,:,:,:), allocatable :: distance
 #endif
 
   real(dp), dimension(:,:), allocatable   :: vol

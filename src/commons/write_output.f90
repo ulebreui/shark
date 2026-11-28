@@ -125,7 +125,7 @@ subroutine write_x(iout)
 #if GEOM<2
          write(ilun) position(ix,iy,1) !
 #endif
-#if GEOM==2
+#if GEOM>=2
          write(ilun) radii(ix,iy) !
 #endif
   end do
@@ -153,9 +153,13 @@ subroutine write_y(iout)
 
     do iy = first_active_y,last_active_y
       do ix = first_active,last_active
+#if GEOM==3
+         write(ilun) phi(ix,iy)          ! theta
+#else
          write(ilun) position(ix,iy,2)
-      end do
-  end do
+#endif      
+   end do
+   end do
   close(ilun)
 
 end subroutine write_y

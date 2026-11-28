@@ -4,12 +4,13 @@ subroutine setup
   use units
   implicit none
 
-  real(dp) :: rho_cloud,r_cloud,mcloud,perturbation,cs0,rr,r_cyl
+  real(dp) :: rho_cloud,r_cloud,mcloud,cs0,rr,r_cyl
   real(dp) :: rmax,vol_tot,xx,yy,x_soft,y_soft,Omega,H,cutoff,T_100
   real(dp) :: B_field,vfarg,ts_loc,eta_drift,Stokes_num
   integer  :: idust,imax,ix,iy,icell,ivar
   real(dp) :: dphi_b
   real(dp) :: r_in_edge, r_out_edge, xi
+  real(dp) :: del
   call allocate_init
   allocate(uprim_condinit(1:nx_max,1:ny_max,1:nvar))
   uprim_condinit = 0.0d0
@@ -57,7 +58,10 @@ subroutine setup
       !q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*2.0d0)
       q(ivy,ix,iy)                     = omega*rr*sqrt(1.0d0-HoverR**2.0*(2.0d0+(rr/R_out_disk)))
       if(test_planet_disk)q(ivy,ix,iy) = omega*rr
-
+      if (perturbation > 0.0d0) then
+         call get_rhoturb(perturbation, del)
+         q(irho,ix,iy) = q(irho,ix,iy)*(1.0d0 + del)
+      end if
       q(iP,ix,iy)                      = q(irho,ix,iy)*cs0**2.0
       cs(ix,iy)                        = cs0
 #if NDUST>0
@@ -159,7 +163,7 @@ subroutine read_setup_params(ilun,nmlfile)
   character(len=70):: nmlfile
   integer :: io,ilun
   logical::nml_ok
-  namelist/setup_params/damping, damp_in_frac, damp_out_frac, damp_tau,indirect_term,freq_torque,n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk,bump_amp,bump_r,bump_phi,bump_w,nplanet, phi_planet, nramp_planet
+  namelist/setup_params/perturbation,damping, damp_in_frac, damp_out_frac, damp_tau,indirect_term,freq_torque,n_rel,box_l,r_relax,accretion,a_smooth_pl, sigma_R0,R_out_disk, R0_disk,Mstar , HoverR ,smooth_r, Mstar, Mplanet, Rplanet,alpha_visc,decrease_density,test_planet_disk,bump_amp,bump_r,bump_phi,bump_w,nplanet, phi_planet, nramp_planet
 
    print *, "########################################################################################################################################"
    print *, "########################################################################################################################################"
